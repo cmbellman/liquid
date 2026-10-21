@@ -8,26 +8,31 @@ namespace com.swecial.web {
     /// /liquid/expense.html : a new expense, or ?id= to change or remove one. The form is
     /// multipart so the receipt (photo or PDF) comes with it. The category picks the account and
     /// suggests the VAT rate; the VAT amount is computed while typing and can be changed.
+    /// A receipt from Pantpåsen is sorted here: the receipt is shown beside the form, and saving
+    /// books it and moves on to the next receipt in the bag.
     /// </summary>
     public class WebExpense : LiquidPage {
         SwecialObject expense;
+
+        bool sorting => expense != null && Db.str(expense, "status") == Expenses.Inbox;
 
         public override void processPage() {
             if (!requireCompany()) return;
             string id = isPost ? form("id") : query("id");
             if (id.Length > 0) {
                 expense = Db.getOwned("expense", id, companyId);
-                if (expense == null || Db.str(expense, "status") == "removed") {
+                if (expense == null || Db.str(expense, "status") == Expenses.Removed) {
                     redirect(BasePath + "/expenses.html");
                     return;
                 }
             }
-            title(expense == null ? "Ny utgift" : "Utgift");
+            title(expense == null ? "Ny utgift" : sorting ? "Sortera kvitto" : "Utgift");
 
             if (isPost) {
                 if (form("action") == "remove") {
+                    bool removedFromBag = sorting;
                     Expenses.remove(expense, account.id);
-                    redirect(BasePath + "/expenses.html?ok=deleted");
+                    redirect(BasePath + (removedFromBag ? "/pant.html" : "/expenses.html") + "?ok=deleted");
                     return;
                 }
                 req.body.files.TryGetValue("receipt", out var upload);
@@ -43,9 +48,15 @@ namespace com.swecial.web {
                     note = form("note"),
                 };
                 bool isNew = expense == null;
+                bool fromBag = sorting;
                 expense = Expenses.save(companyId, expense, input, account.id);
                 Expenses.attachReceipt(expense, upload);
-                redirect(isNew && form("action") == "another" ? BasePath + "/expense.html?ok=saved" : BasePath + "/expenses.html?ok=saved");
+                if (fromBag) {
+                    var next = Expenses.inbox(companyId).FirstOrDefault();
+                    redirect(next != null ? BasePath + "/expense.html?id=" + u(next.id) + "&ok=sorted" : BasePath + "/pant.html?ok=sorted");
+                } else {
+                    redirect(isNew && form("action") == "another" ? BasePath + "/expense.html?ok=saved" : BasePath + "/expenses.html?ok=saved");
+                }
                 return;
             }
             renderForm();
@@ -64,12 +75,31 @@ namespace com.swecial.web {
 
         void renderForm() {
             string category = value("category");
-            var sb = new StringBuilder("<section class='panel'><h1>" + (expense == null ? "Ny utgift" : "Utgift") + "</h1>");
+            string receiptId = Db.str(expense, "receiptFileId");
+            string src = BasePath + "/receipt.html?id=" + u(expense?.id) + "&v=" + u(receiptId);
+            var file = receiptId.Length > 0 ? Expenses.receipt(receiptId, companyId) : null;
+
+            var sb = new StringBuilder();
+            if (sorting) {
+                int left = Expenses.inbox(companyId).Count;
+                sb.Append(heading("Sortera kvitto", left + (left == 1 ? " kvitto kvar" : " kvitton kvar") + " i pantpåsen. Fyll i det som står på kvittot.",
+                    "<a href='" + BasePath + "/pant.html'>Till påsen</a>"));
+                sb.Append("<div class='sort'><div class='preview'>");
+                if (file?.fileType == "pdf") sb.Append("<iframe src='" + src + "' title='Kvitto'></iframe>");
+                else if (file != null && file.fileType != "heic") sb.Append("<img src='" + src + "' alt='Kvitto'>");
+                sb.Append("<a href='" + src + "' target='_blank'>Öppna kvittot i en ny flik</a></div>");
+                sb.Append("<section class='panel'>");
+            } else {
+                sb.Append(heading(expense == null ? "Ny utgift" : "Utgift", "Något som betalats från företagskontot"));
+                sb.Append("<section class='panel'>");
+            }
             sb.Append("<form method='post' enctype='multipart/form-data' id='expense'>");
             if (expense != null) sb.Append(input("id", expense.id, "hidden"));
 
             sb.Append("<div class='grid'>");
-            sb.Append(field("Datum då pengarna drogs", input("date", expense == null && !isPost ? Dates.today() : value("date"), "date", "required")));
+            string date = value("date");
+            if (date.Length == 0 && !isPost) date = Dates.today();
+            sb.Append(field("Datum då pengarna drogs", input("date", date, "date", "required")));
             sb.Append(field("Var handlade du?", input("supplier", value("supplier"), "text", "required placeholder='T.ex. Clas Ohlson' autocomplete='off'")));
             sb.Append("</div>");
 
@@ -90,10 +120,8 @@ namespace com.swecial.web {
             sb.Append("</div>");
             sb.Append("<p class='hint' id='foreignHint'>Liquid räknar då ut den svenska momsen (25 %) själv. Den dras av i samma momsdeklaration, så den kostar inget.</p>");
 
-            sb.Append("<label>Kvitto (foto eller PDF)<input type='file' name='receipt' accept='image/*,application/pdf'></label>");
-            if (expense != null && Db.str(expense, "receiptFileId").Length > 0) {
-                string src = BasePath + "/receipt.html?id=" + u(expense.id) + "&v=" + u(Db.str(expense, "receiptFileId"));
-                var file = Expenses.receipt(Db.str(expense, "receiptFileId"), companyId);
+            sb.Append("<label>" + (receiptId.Length > 0 ? "Byt kvitto (foto eller PDF)" : "Kvitto (foto eller PDF)") + "<input type='file' name='receipt' accept='image/*,application/pdf'></label>");
+            if (receiptId.Length > 0 && !sorting) {
                 sb.Append("<p class='receipt'>");
                 if (file != null && file.fileType != "pdf" && file.fileType != "heic") sb.Append("<a href='" + src + "' target='_blank'><img src='" + src + "' alt='Kvitto'></a>");
                 else sb.Append("<a href='" + src + "' target='_blank'>Visa kvittot</a>");
@@ -101,13 +129,14 @@ namespace com.swecial.web {
             }
             sb.Append(field("Anteckning (valfritt)", input("note", value("note"), "text", "placeholder='T.ex. vilka som var med på lunchen'")));
 
-            sb.Append("<div class='actions'><button type='submit' name='action' value='save'>Spara</button>");
+            sb.Append("<div class='actions'><button type='submit' name='action' value='save'>" + (sorting ? "Bokför och ta nästa" : "Spara") + "</button>");
             if (expense == null) sb.Append("<button type='submit' name='action' value='another' class='secondary'>Spara och lägg till en till</button>");
-            sb.Append("<a href='" + BasePath + "/expenses.html'>Avbryt</a>");
-            if (expense != null) sb.Append("<button type='submit' name='action' value='remove' class='danger' formnovalidate>Ta bort</button>");
+            sb.Append("<a href='" + BasePath + (sorting ? "/pant.html" : "/expenses.html") + "'>Avbryt</a>");
+            if (expense != null) sb.Append("<button type='submit' name='action' value='remove' class='danger' formnovalidate>" + (sorting ? "Släng kvittot" : "Ta bort") + "</button>");
             sb.Append("</div>");
-            if (expense != null) sb.Append("<p class='hint'>En ändring bokförs som en rättelse av den gamla bokföringen plus en ny, så allt går att följa i efterhand.</p>");
+            if (expense != null && !sorting) sb.Append("<p class='hint'>En ändring bokförs som en rättelse av den gamla bokföringen plus en ny, så allt går att följa i efterhand.</p>");
             sb.Append("</form></section>");
+            if (sorting) sb.Append("</div>");
             sb.Append(Script);
             render(sb.ToString());
         }

@@ -12,7 +12,7 @@ namespace com.swecial.web {
     public class WebBank : LiquidPage {
         public override void processPage() {
             if (!requireCompany()) return;
-            title("Bank");
+            title("Kassan");
             if (isPost) {
                 if (form("action") == "remove") {
                     var bankEvent = Db.getOwned("bank_event", form("id"), companyId) ?? throw new LiquidException("Händelsen finns inte.");
@@ -36,7 +36,8 @@ namespace com.swecial.web {
             var lines = Reports.generalLedger(companyId, Bas.Bank, "0000-01-01", "9999-12-31", out _);
             long balance = lines.Count > 0 ? lines.Last().balance : 0;
 
-            var sb = new StringBuilder("<section class='panel'><div class='heading'><h1>Företagskontot</h1></div>");
+            var sb = new StringBuilder(heading("Kassan", "Företagskontot: allt som gått in och ut"));
+            sb.Append("<section class='panel'>");
             sb.Append("<div class='tiles'><div class='tile'><small>Saldo enligt Liquid</small><strong>" + Money.format(balance) + " kr</strong></div></div>");
             sb.Append(reconcile(lines, today));
             sb.Append("</section>");

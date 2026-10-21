@@ -170,6 +170,8 @@ namespace com.swecial.web {
                 case "sent": return "Fakturan har fått sitt nummer. Den bokförs när betalningen kommer in.";
                 case "paid": return "Betalningen är bokförd.";
                 case "deleted": return "Borttaget.";
+                case "bagged": return "I påsen. Sortera kvittona när det passar.";
+                case "sorted": return "Sorterat och bokfört.";
                 default: return "";
             }
         }
@@ -178,32 +180,40 @@ namespace com.swecial.web {
 
         string nav() {
             var sb = new StringBuilder();
-            sb.Append("<a class='brand' href='" + BasePath + "/'>Liquid</a>");
-            if (account != null) {
+            sb.Append("<a class='brand' href='" + BasePath + "/'>liquid</a>");
+            if (account == null) return sb.ToString();
+            if (company != null) {
+                int bag = Expenses.inbox(companyId).Count;
                 sb.Append("<nav>");
-                if (company != null) {
-                    sb.Append(link("/", "Översikt"));
-                    sb.Append(link("/invoices.html", "Fakturor", "/invoice.html"));
-                    sb.Append(link("/expenses.html", "Utgifter", "/expense.html"));
-                    sb.Append(link("/bank.html", "Bank"));
-                    sb.Append(link("/customers.html", "Kunder"));
-                    sb.Append(link("/reports.html", "Rapporter"));
-                    // Accounts and vouchers are there for those who want them, not needed day to day
-                    sb.Append(link("/vouchers.html", "Avancerat", "/voucher.html", "/accounts.html"));
-                }
-                sb.Append("</nav><div class='who'>");
-                if (company != null) sb.Append("<a href='" + BasePath + "/company.html'>" + h(Db.str(company, "name")) + "</a>");
-                sb.Append("<a href='" + BasePath + "/login.html?logout=true'>Logga ut</a></div>");
+                sb.Append(link("/", "Baren", Icons.Bar, "", "/index.html"));
+                sb.Append(link("/invoices.html", "Fakturor", Icons.Invoice, "", "/invoice.html", "/invoice-print.html"));
+                sb.Append(link("/expenses.html", "Utgifter", Icons.Receipt, "", "/expense.html"));
+                sb.Append(link("/pant.html", "Pantpåsen", Icons.Bag, bag > 0 ? bag.ToString() : ""));
+                sb.Append(link("/bank.html", "Kassan", Icons.Wallet, ""));
+                sb.Append(link("/customers.html", "Stamgästerna", Icons.People, ""));
+                sb.Append(link("/reports.html", "Rapporter", Icons.Chart, ""));
+                // Accounts and vouchers are there for those who want them, not needed day to day
+                sb.Append(link("/vouchers.html", "Avancerat", Icons.Gear, "", "/voucher.html", "/accounts.html"));
+                sb.Append("</nav>");
             }
+            sb.Append("<div class='who'>");
+            if (company != null) sb.Append("<a href='" + BasePath + "/company.html'>" + Icons.Building + "<span>" + h(Db.str(company, "name")) + "</span></a>");
+            sb.Append("<a href='" + BasePath + "/login.html?logout=true'>" + Icons.Logout + "<span>Logga ut</span></a></div>");
             return sb.ToString();
         }
 
-        /// <summary>A nav link, marked active on its own page and on the related pages.</summary>
-        string link(string path, string text, params string[] related) {
+        /// <summary>A nav link with icon and an optional badge, active on its own page and the related pages.</summary>
+        string link(string path, string text, string icon, string badge, params string[] related) {
             string href = BasePath + path;
-            bool active = req.mappedPath == href || (path == "/" && req.mappedPath == BasePath + "/index.html")
-                || related.Any(r => req.mappedPath == BasePath + r);
-            return "<a href='" + href + "'" + (active ? " class='active'" : "") + ">" + text + "</a>";
+            bool active = req.mappedPath == href || related.Any(r => req.mappedPath == BasePath + r);
+            return "<a href='" + href + "'" + (active ? " class='active'" : "") + ">" + icon + "<span>" + text + "</span>"
+                + (badge.Length > 0 ? "<b class='badge'>" + badge + "</b>" : "") + "</a>";
+        }
+
+        /// <summary>A page heading with the plain-words explanation under it.</summary>
+        protected static string heading(string title, string subtitle, string actions = "") {
+            return "<div class='heading'><div><h1>" + h(title) + "</h1>" + (subtitle.Length > 0 ? "<p class='sub'>" + h(subtitle) + "</p>" : "") + "</div>"
+                + (actions.Length > 0 ? "<div class='heading-actions'>" + actions + "</div>" : "") + "</div>";
         }
 
         public static string h(string text) {

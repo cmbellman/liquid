@@ -12,6 +12,11 @@ namespace com.swecial.code {
             return (ore / 100m).ToString("#,##0.00", Sv);
         }
 
+        /// <summary>Whole kronor, rounded, for big figures where öre are noise ("65 000").</summary>
+        public static string formatWhole(long ore) {
+            return Math.Round(ore / 100m, 0, MidpointRounding.AwayFromZero).ToString("#,##0", Sv);
+        }
+
         /// <summary>Empty for zero, for debit/credit columns.</summary>
         public static string formatOrBlank(long ore) {
             return ore == 0 ? "" : format(ore);

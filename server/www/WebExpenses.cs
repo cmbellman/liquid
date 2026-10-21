@@ -14,8 +14,9 @@ namespace com.swecial.web {
             var thisYear = expenses.Where(e => Db.str(e, "date").StartsWith(year)).ToList();
             int missing = expenses.Count(e => Db.str(e, "receiptFileId").Length == 0);
 
-            var sb = new StringBuilder("<section class='panel'><div class='heading'><h1>Utgifter</h1>");
-            sb.Append("<a class='button' href='" + BasePath + "/expense.html'>Ny utgift</a></div>");
+            var sb = new StringBuilder(heading("Utgifter", "Det du har köpt från företagskontot",
+                "<a class='button secondary' href='" + BasePath + "/pant.html'>Pantpåsen</a><a class='button' href='" + BasePath + "/expense.html'>Ny utgift</a>"));
+            sb.Append("<section class='panel'>");
             if (expenses.Count == 0) {
                 sb.Append("<p class='empty'>Inga utgifter än. Lägg till ett inköp som betalats från företagskontot, med kvittot som foto eller PDF.</p>");
             } else {

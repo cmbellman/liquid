@@ -6,7 +6,11 @@ Bookkeeping and invoicing for Swedish companies, running as the `liquid` app in 
 
 Made for small limited companies (AB) that use the cash method (kontantmetoden) and report VAT once a year, run by people who aren't bookkeepers: no accounts, debit or credit in the everyday pages.
 
+Dark, pub-themed web app (Baren, Kranen, Glaset, Notan, Pantpåsen, Kassan, Stamgästerna), with a plain explanation under every themed name.
+
 - Accounts on the shared Swecial user base (sign up, sign in), one company per user.
+- **Baren:** money in and out over time with a forecast of unpaid invoices (Kranen), totals for the period, how long the money lasts (Glaset), unpaid invoices to tick off when paid (Notan), and a drop zone for receipts.
+- **Pantpåsen:** drop, pick or photograph receipts (several at once) without filling anything in; sort them later, one after the other, and they are booked.
 - **Invoices:** customers, invoice drafts, sending (numbered), a printable invoice (print to PDF from the browser), and registering the payment, which books the sale and VAT.
 - **Expenses:** what was bought, from whom and what it's for (plain categories like "Programvara och prenumerationer" or "Resor"), the amount and VAT (suggested), and the receipt as a photo or PDF. Purchases from abroad without Swedish VAT are handled (reverse charge).
 - **Bank:** everything in and out of the company account, other events (share capital, owner loans, the tax account, bank fees, interest, dividends), and a check against the bank's balance.
@@ -28,7 +32,8 @@ Open `http://localhost/liquid/`, create an account and a company.
 
 | URL | Page |
 |-----|------|
-| `/liquid/` | Overview |
+| `/liquid/` | Baren (overview) |
+| `/liquid/pant.html` | Pantpåsen (receipts to sort) |
 | `/liquid/login.html`, `/liquid/signup.html` | Sign in, create account |
 | `/liquid/company.html` | Create the company / company settings |
 | `/liquid/customers.html` | Customers |

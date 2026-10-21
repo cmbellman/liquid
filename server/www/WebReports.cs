@@ -38,7 +38,8 @@ namespace com.swecial.web {
         }
 
         string filter() {
-            var sb = new StringBuilder("<section class='panel'><h1>Rapporter</h1><form method='get' class='grid'>");
+            var sb = new StringBuilder(heading("Rapporter", "Saldobalans, huvudbok och moms"));
+            sb.Append("<section class='panel'><form method='get' class='grid'>");
             sb.Append(field("Rapport", select("report", new[] { ("balance", "Saldobalans"), ("ledger", "Huvudbok"), ("vat", "Momsrapport") }, report)));
             sb.Append(field("Från", input("from", from, "date", "required")));
             sb.Append(field("Till", input("to", to, "date", "required")));

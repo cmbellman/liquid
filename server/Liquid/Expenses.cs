@@ -6,7 +6,8 @@ using System.Linq;
 namespace com.swecial.code {
     /// <summary>
     /// Everyday purchases paid from the company account (cash method: booked on the day the money
-    /// left the account). An expense owns its voucher: changing it reverses the old voucher and books
+    /// left the account). An expense can start as a bare receipt in the bag (status inbox, nothing
+    /// booked) and is booked when it's sorted. An expense owns its voucher: changing it reverses the old voucher and books
     /// a new one, removing it reverses it, so the books always show what happened.
     ///
     /// Booking (series U): cost (category account) D net, 2641 D VAT, 1930 K total. Bought abroad
@@ -40,12 +41,41 @@ namespace com.swecial.code {
             public string note;
         }
 
+        public const string Inbox = "inbox";
+        public const string Booked = "booked";
+        public const string Removed = "removed";
+
+        /// <summary>Booked expenses, newest first (not the receipts still in the bag, not removed ones).</summary>
         public static List<SwecialObject> list(string companyId) {
             return Db.forCompany("expense", companyId)
-                .Where(e => Db.str(e, "status") != "removed")
+                .Where(e => Db.str(e, "status") == Booked)
                 .OrderByDescending(e => Db.str(e, "date"))
                 .ThenByDescending(e => e.createdAt)
                 .ToList();
+        }
+
+        /// <summary>Receipts thrown in the bag (Pantpåsen) that haven't been sorted yet, oldest first.</summary>
+        public static List<SwecialObject> inbox(string companyId) {
+            return Db.forCompany("expense", companyId)
+                .Where(e => Db.str(e, "status") == Inbox)
+                .OrderBy(e => e.createdAt)
+                .ToList();
+        }
+
+        /// <summary>
+        /// Puts a receipt in the bag: an expense without any details yet, booked only once it has been
+        /// sorted (save). The receipt is kept right away, so nothing gets lost.
+        /// </summary>
+        public static SwecialObject addToInbox(string companyId, HttpRequest.UploadedFile upload, string userId) {
+            checkReceipt(upload);
+            lock (Db.Sync) {
+                var expense = Db.create("expense", companyId);
+                expense.set("status", Inbox);
+                expense.set("createdBy", userId);
+                Db.commit(expense);
+                attachReceipt(expense, upload);
+                return expense;
+            }
         }
 
         /// <summary>The VAT included in a total at a rate: total × rate / (100 + rate).</summary>
@@ -85,12 +115,11 @@ namespace com.swecial.code {
             Ledger.validate(companyId, date, text, rows);
 
             lock (Db.Sync) {
-                if (expense != null && Db.str(expense, "status") == "removed") throw new LiquidException("Utgiften är borttagen.");
+                if (expense != null && Db.str(expense, "status") == Removed) throw new LiquidException("Utgiften är borttagen.");
                 if (expense == null) {
                     expense = Db.create("expense", companyId);
-                    expense.set("status", "booked");
                     expense.set("createdBy", userId);
-                } else if (Db.str(expense, "date") == date && Db.str(expense, "supplier") == supplier && Db.str(expense, "category") == category.key
+                } else if (Db.str(expense, "status") == Booked && Db.str(expense, "date") == date && Db.str(expense, "supplier") == supplier && Db.str(expense, "category") == category.key
                         && Db.num(expense, "total") == input.total && Db.num(expense, "vat") == vat
                         && Db.num(expense, "vatRate") == input.vatRate && Db.str(expense, "foreign") == foreign) {
                     // Nothing that is booked changed (only the note or the receipt): keep the voucher
@@ -100,6 +129,7 @@ namespace com.swecial.code {
                 } else {
                     reverseVoucher(expense, userId);
                 }
+                expense.set("status", Booked);
                 expense.set("date", date);
                 expense.set("supplier", supplier);
                 expense.set("category", category.key);
@@ -118,9 +148,9 @@ namespace com.swecial.code {
         /// <summary>Reverses the expense's voucher and hides it. The receipt is kept with the record.</summary>
         public static void remove(SwecialObject expense, string userId) {
             lock (Db.Sync) {
-                if (Db.str(expense, "status") == "removed") return;
+                if (Db.str(expense, "status") == Removed) return;
                 reverseVoucher(expense, userId);
-                expense.set("status", "removed");
+                expense.set("status", Removed);
                 Db.commit(expense);
             }
         }

@@ -22,8 +22,8 @@ namespace com.swecial.web {
                 .ToList();
 
             var sb = new StringBuilder();
-            sb.Append("<section class='panel'><div class='heading'><h1>Fakturor</h1>");
-            sb.Append("<form method='post'><button type='submit'>Ny faktura</button></form></div>");
+            sb.Append(heading("Fakturor", "Det du har fakturerat dina stamgäster", "<form method='post'><button type='submit'>Ny faktura</button></form>"));
+            sb.Append("<section class='panel'>");
             if (invoices.Count == 0) {
                 sb.Append("<p class='empty'>Inga fakturor än.</p>");
             } else {

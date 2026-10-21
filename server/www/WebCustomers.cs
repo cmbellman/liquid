@@ -22,7 +22,7 @@ namespace com.swecial.web {
 
         public override void processPage() {
             if (!requireCompany()) return;
-            title("Kunder");
+            title("Stamgästerna");
             string id = isPost ? form("id") : query("id");
             if (id.Length > 0) {
                 customer = Db.getOwned("customer", id, companyId);
@@ -47,10 +47,11 @@ namespace com.swecial.web {
 
         void renderPage() {
             var sb = new StringBuilder();
-            sb.Append("<section class='panel'><h1>Kunder</h1>");
+            sb.Append(heading("Stamgästerna", "Dina kunder"));
+            sb.Append("<section class='panel'>");
             var customers = Db.forCompany("customer", companyId).OrderBy(c => Db.str(c, "name")).ToList();
             if (customers.Count == 0) {
-                sb.Append("<p class='empty'>Inga kunder än.</p>");
+                sb.Append("<p class='empty'>Inga stamgäster än. Lägg till din första kund nedan.</p>");
             } else {
                 sb.Append("<table><thead><tr><th>Namn</th><th>Org.nr</th><th>E-post</th><th></th></tr></thead><tbody>");
                 foreach (var c in customers) {
