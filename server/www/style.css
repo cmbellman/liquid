@@ -481,3 +481,139 @@ p.label { margin: 6px 0 8px; font-size: 13px; font-weight: 700; color: var(--mut
 .ai-line.failed { color: var(--amber); }
 @keyframes pulse { 50% { opacity: 0.35; } }
 @media (prefers-reduced-motion: reduce) { .ai.reading .icon, .ai-line.reading .icon { animation: none; } }
+
+/* Chart and glass colours come from the theme */
+.s-in { stop-color: var(--cyan); }
+.s-out { stop-color: var(--amber); }
+.s-beer-top { stop-color: var(--beer-top, #ffd35c); }
+.s-beer-bottom { stop-color: var(--beer-bottom, #f59e0b); }
+.clock { display: none; }
+
+/* ============================================================
+   Theme: Nostromo. A green phosphor ship terminal: monospace capitals, thin rules,
+   "SECTION // SUBTITLE" headings, square boxes and faint scanlines.
+   ============================================================ */
+body.theme-nostromo {
+    --bg: #030703;
+    --bg-2: #050b05;
+    --panel: #040904;
+    --panel-2: #050b05;
+    --line: #164a1d;
+    --line-2: #1f6a28;
+    --text: #6dff86;
+    --muted: #3fbf58;
+    --faint: #2a8a3d;
+    --cyan: #5dff7a;
+    --cyan-2: #3fd85d;
+    --cyan-ink: #021204;
+    --amber: #d6ff5a;
+    --amber-ink: #0b1400;
+    --red: #ff6b5a;
+    --green: #8dff9f;
+    --beer-top: #d6ff5a;
+    --beer-bottom: #5dbf2f;
+    --radius: 3px;
+    --glow: none;
+    background:
+        radial-gradient(1100px 700px at 50% 40%, rgba(93, 255, 122, 0.06), transparent 70%),
+        var(--bg);
+    font-family: "Share Tech Mono", ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 15px;
+    letter-spacing: 0.02em;
+    text-shadow: 0 0 6px rgba(93, 255, 122, 0.35);
+}
+/* Scanlines over everything, never in the way of clicks */
+body.theme-nostromo::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 100;
+    background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.18) 0 1px, transparent 1px 3px);
+    mix-blend-mode: multiply;
+}
+.theme-nostromo h1, .theme-nostromo h2, .theme-nostromo h3,
+.theme-nostromo .sub, .theme-nostromo label, .theme-nostromo th,
+.theme-nostromo button, .theme-nostromo .button, .theme-nostromo .side nav a,
+.theme-nostromo .side .who a, .theme-nostromo .chips a, .theme-nostromo .status,
+.theme-nostromo .chip-btn, .theme-nostromo p.label, .theme-nostromo .legend,
+.theme-nostromo .big small, .theme-nostromo .glass small, .theme-nostromo .tab .who {
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+.theme-nostromo h1, .theme-nostromo h2 { font-weight: 400; }
+.theme-nostromo h1 { font-size: 24px; }
+.theme-nostromo h2 { font-size: 15px; color: var(--text); }
+.theme-nostromo strong, .theme-nostromo b { font-weight: 400; }
+
+/* Sidebar: a status column */
+.theme-nostromo .side { background: rgba(3, 7, 3, 0.9); border-right: 1px solid var(--line); }
+.theme-nostromo .brand {
+    font-family: "Share Tech Mono", monospace;
+    font-size: 26px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--cyan);
+    text-shadow: 0 0 10px rgba(93, 255, 122, 0.8);
+}
+.theme-nostromo .clock { display: block; padding: 0 10px; font-size: 40px; line-height: 1; color: var(--cyan); text-shadow: 0 0 14px rgba(93, 255, 122, 0.7); }
+.theme-nostromo .side nav a, .theme-nostromo .side .who a { border-radius: 0; font-weight: 400; font-size: 13px; padding: 8px 10px; border: 1px solid transparent; }
+.theme-nostromo .side nav a:hover, .theme-nostromo .side .who a:hover { background: transparent; border-color: var(--line); }
+.theme-nostromo .side nav a.active { background: rgba(93, 255, 122, 0.06); border-color: var(--line-2); }
+.theme-nostromo .side nav a.active::before { display: none; }
+.theme-nostromo .side nav a.active::after { content: "◄"; margin-left: auto; font-size: 10px; }
+.theme-nostromo .badge { border-radius: 0; background: var(--amber); color: var(--amber-ink); text-shadow: none; }
+.theme-nostromo .icon { stroke-width: 1.4; }
+
+/* Panels: bordered boxes, "TITLE // SUBTITLE" headings over a rule */
+.theme-nostromo .panel { background: transparent; border: 1px solid var(--line); box-shadow: none; padding: 18px 20px; }
+.theme-nostromo .heading > div:first-child, .theme-nostromo .tap-head > div { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 10px; }
+.theme-nostromo .heading .sub::before, .theme-nostromo .tap-head .sub::before { content: "// "; }
+.theme-nostromo .heading .sub, .theme-nostromo .tap-head .sub { margin: 0; color: var(--text); font-size: inherit; }
+.theme-nostromo .panel .heading, .theme-nostromo .tap-head { padding-bottom: 10px; border-bottom: 1px solid var(--line-2); margin-bottom: 14px; }
+.theme-nostromo .panel .heading h2, .theme-nostromo .panel .heading .sub,
+.theme-nostromo .tap-head h2, .theme-nostromo .tap-head .sub { font-size: 14px; }
+.theme-nostromo .tap-head h2 { letter-spacing: 0.08em; }
+main > .heading .sub { font-size: 14px; }
+
+/* Controls: outlined boxes, no fills */
+.theme-nostromo input, .theme-nostromo select, .theme-nostromo textarea {
+    border-radius: 0; background: #020502; border-color: var(--line-2); color: var(--text); font-family: inherit; font-weight: 400;
+}
+.theme-nostromo input:focus, .theme-nostromo select:focus, .theme-nostromo textarea:focus { box-shadow: 0 0 0 1px var(--cyan), 0 0 12px rgba(93, 255, 122, 0.25); }
+.theme-nostromo button, .theme-nostromo .button {
+    border-radius: 0; background: transparent; color: var(--cyan); border: 1px solid var(--line-2); box-shadow: none; font-weight: 400; padding: 9px 18px;
+}
+.theme-nostromo button:hover, .theme-nostromo .button:hover { border-color: var(--cyan); background: rgba(93, 255, 122, 0.08); filter: none; }
+.theme-nostromo button.amber, .theme-nostromo .button.amber { color: var(--amber); }
+.theme-nostromo button.link { border: none; padding: 0; }
+.theme-nostromo .chip-btn { border-radius: 0; box-shadow: none; font-weight: 400; }
+.theme-nostromo .chips { border-radius: 0; }
+.theme-nostromo .chips a { border-radius: 0; font-weight: 400; }
+.theme-nostromo .status { border-radius: 0; background: transparent; font-weight: 400; }
+.theme-nostromo .error, .theme-nostromo .message, .theme-nostromo .ai { border-radius: 0; font-weight: 400; }
+.theme-nostromo .tile, .theme-nostromo .tab, .theme-nostromo .bag-item, .theme-nostromo .choice, .theme-nostromo .drop { border-radius: 0; background: transparent; }
+.theme-nostromo .choice:has(input[type=radio]:checked) { box-shadow: 0 0 0 1px var(--cyan); }
+.theme-nostromo .drop { border-style: dashed; border-color: var(--line-2); }
+.theme-nostromo th { color: var(--muted); font-weight: 400; }
+.theme-nostromo tbody tr:hover td { background: rgba(93, 255, 122, 0.04); }
+
+/* Readouts: big thin numbers like a ship display */
+.theme-nostromo .big strong { font-weight: 400; font-size: clamp(34px, 5vw, 58px); letter-spacing: 0; }
+.theme-nostromo .big.in strong { text-shadow: 0 0 18px rgba(93, 255, 122, 0.6); }
+.theme-nostromo .big.out strong { text-shadow: 0 0 18px rgba(214, 255, 90, 0.5); }
+.theme-nostromo .flow text { font-family: "Share Tech Mono", monospace; font-weight: 400; text-transform: uppercase; }
+.theme-nostromo .flow .in { filter: drop-shadow(0 0 4px rgba(93, 255, 122, 0.8)); }
+.theme-nostromo .flow .out { filter: drop-shadow(0 0 4px rgba(214, 255, 90, 0.6)); }
+.theme-nostromo .glass .foam { fill: #e9ffd0; }
+.theme-nostromo .glass .cup { stroke: var(--cyan); }
+
+@media (prefers-reduced-motion: no-preference) {
+    .theme-nostromo .clock { animation: phosphor 4s ease-in-out infinite; }
+    @keyframes phosphor { 50% { opacity: 0.85; } }
+}
+@media (max-width: 760px) {
+    .theme-nostromo .side nav a, .theme-nostromo .side .who a { font-size: 9px; border: none; }
+    .theme-nostromo .side nav a.active::after { display: none; }
+    .theme-nostromo .clock { display: none; }
+}

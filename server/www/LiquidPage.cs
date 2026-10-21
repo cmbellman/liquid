@@ -30,6 +30,7 @@ namespace com.swecial.web {
             account = getSessionUser();
             company = account != null ? Companies.forUser(account.id) : null;
             set("title", "Liquid");
+            set("theme", Themes.of(account));
             set("error", "");
             set("message", h(messageText(query("ok"))));
             try {
@@ -181,6 +182,8 @@ namespace com.swecial.web {
         string nav() {
             var sb = new StringBuilder();
             sb.Append("<a class='brand' href='" + BasePath + "/'>liquid</a>");
+            // Shown by the Nostromo theme only: a terminal clock under the brand
+            sb.Append("<div class='clock' aria-hidden='true'><span id='clock'></span><script>(function(){function t(){var d=new Date(),e=document.getElementById('clock');if(e)e.textContent=('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);}t();setInterval(t,10000);})();</script></div>");
             if (account == null) return sb.ToString();
             if (company != null) {
                 int bag = Expenses.inbox(companyId).Count;

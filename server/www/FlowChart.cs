@@ -33,8 +33,8 @@ namespace com.swecial.web {
             var sb = new StringBuilder();
             sb.Append("<svg class='flow' viewBox='0 0 " + f(W) + " " + f(H) + "' role='img' aria-label='Pengar in och ut över tid'>");
             sb.Append("<defs>");
-            sb.Append("<linearGradient id='gradIn' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='#2fe0ff' stop-opacity='0.28'/><stop offset='1' stop-color='#2fe0ff' stop-opacity='0'/></linearGradient>");
-            sb.Append("<linearGradient id='gradOut' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='#ffc23d' stop-opacity='0.18'/><stop offset='1' stop-color='#ffc23d' stop-opacity='0'/></linearGradient>");
+            sb.Append("<linearGradient id='gradIn' x1='0' y1='0' x2='0' y2='1'><stop class='s-in' offset='0' stop-opacity='0.28'/><stop class='s-in' offset='1' stop-opacity='0'/></linearGradient>");
+            sb.Append("<linearGradient id='gradOut' x1='0' y1='0' x2='0' y2='1'><stop class='s-out' offset='0' stop-opacity='0.18'/><stop class='s-out' offset='1' stop-opacity='0'/></linearGradient>");
             sb.Append("</defs>");
 
             double baseY = y(0);
@@ -117,7 +117,7 @@ namespace com.swecial.web {
             const double top = 10, bottom = 90, height = bottom - top;
             double liquidTop = bottom - height * level;
             var sb = new StringBuilder("<svg viewBox='0 0 74 96' aria-hidden='true'>");
-            sb.Append("<defs><linearGradient id='beer' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='#ffd35c'/><stop offset='1' stop-color='#f59e0b'/></linearGradient>");
+            sb.Append("<defs><linearGradient id='beer' x1='0' y1='0' x2='0' y2='1'><stop class='s-beer-top' offset='0'/><stop class='s-beer-bottom' offset='1'/></linearGradient>");
             sb.Append("<clipPath id='glassClip'><path d='M10 8 L64 8 L58 90 Q57 93 54 93 L20 93 Q17 93 16 90 Z'/></clipPath></defs>");
             sb.Append("<g clip-path='url(#glassClip)'>");
             if (level > 0) {

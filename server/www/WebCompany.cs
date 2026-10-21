@@ -11,6 +11,7 @@ namespace com.swecial.web {
     /// Otherwise Inställningar: the company's details (printed on invoices), invoice numbering and
     /// payment terms, and the bookkeeping choices (accounting method, VAT period). Every choice is
     /// explained in plain words; the rules that keep the books right live in Settings and Invoicing.
+    /// The look (Themes) is saved on the user, not the company.
     /// </summary>
     public class WebCompany : LiquidPage {
         static readonly (string key, string label)[] Fields = {
@@ -70,6 +71,7 @@ namespace com.swecial.web {
             company.set("accountingMethod", method);
             company.set("vatPeriod", vatPeriod);
             Db.commit(company);
+            Themes.set(account, form("theme"));
         }
 
         string value(string key) {
@@ -130,6 +132,13 @@ namespace com.swecial.web {
             sb.Append(choice("vatPeriod", Settings.VatMonth, vat, "Varje månad", "Krävs om försäljningen är över 40 miljoner kr per år.", ""));
             sb.Append("</div><p class='hint'>Det är Skatteverket som bestämt hur ofta, det står i registreringsbeviset. Momsrapporten visar den här perioden från början.</p>");
             sb.Append("</section>");
+
+            // --- Look (per user) ---
+            string theme = isPost ? form("theme") : Themes.of(account);
+            sb.Append("<section class='panel'><div class='heading'><div><h2>Utseende</h2><p class='sub'>Gäller bara dig</p></div></div><div class='choices'>");
+            sb.Append(choice("theme", Themes.Neon, theme, "Neon", "Mörk pub med cyan och gult ljus.", ""));
+            sb.Append(choice("theme", Themes.Nostromo, theme, "Nostromo", "Grön fosforskärm som i ett gammalt rymdskepp.", ""));
+            sb.Append("</div></section>");
 
             sb.Append("<div class='actions sticky'><button type='submit'>Spara inställningar</button></div></form>");
             sb.Append(Script);
