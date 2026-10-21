@@ -69,8 +69,44 @@ namespace com.swecial.web {
         string value(string key) {
             if (isPost) return form(key);
             if (expense == null) return "";
+            if (sorting && Db.str(expense, "aiStatus") == ReceiptReader.Done) return suggestion(key);
             if (key == "total" || key == "vat") return Money.input(Db.num(expense, key));
             return Db.str(expense, key);
+        }
+
+        /// <summary>What the receipt reader found, as form values ("" where it found nothing usable).</summary>
+        string suggestion(string key) {
+            switch (key) {
+                case "supplier": return Db.str(expense, "aiSupplier");
+                case "date": return Db.str(expense, "aiDate");
+                case "category": return Db.str(expense, "aiCategory");
+                case "total": return expense.hasValue("aiTotal") ? Money.input(Db.num(expense, "aiTotal")) : "";
+                case "vat": return expense.hasValue("aiVat") ? Money.input(Db.num(expense, "aiVat")) : "";
+                case "vatRate": return expense.hasValue("aiVatRate") ? Db.num(expense, "aiVatRate").ToString() : "";
+                case "foreign": return Db.str(expense, "aiForeign");
+                default: return "";
+            }
+        }
+
+        /// <summary>The reader's state above the form, and a reload while it's still reading.</summary>
+        string readerNote() {
+            switch (Db.str(expense, "aiStatus")) {
+                case ReceiptReader.Reading:
+                    return "<p class='ai reading'>" + Icons.Sparkle + "Liquid läser kvittot … fälten fylls i strax.</p>"
+                        + "<script>document.addEventListener('DOMContentLoaded',function(){var t=setTimeout(function(){location.reload();},3000);document.getElementById('expense').addEventListener('input',function(){clearTimeout(t);});});</script>";
+                case ReceiptReader.Done: {
+                    var sb = new StringBuilder("<p class='ai'>" + Icons.Sparkle + "<span>Liquid har läst kvittot och fyllt i ett förslag. Jämför med kvittot och bokför.");
+                    string currency = Db.str(expense, "aiCurrency");
+                    if (currency.Length > 0 && currency != "SEK" && currency != "KR") sb.Append(" Kvittot är i " + h(currency) + ": fyll i beloppet i kronor som drogs från kontot.");
+                    if (expense.get<bool>("aiForeignNoKind")) sb.Append(" Köpt från utlandet: välj om säljaren finns i EU eller inte.");
+                    sb.Append("</span></p>");
+                    return sb.ToString();
+                }
+                case ReceiptReader.Failed:
+                    return "<p class='ai failed'>Liquid kunde inte läsa kvittot. Fyll i uppgifterna själv.</p>";
+                default:
+                    return "";
+            }
         }
 
         void renderForm() {
@@ -88,7 +124,7 @@ namespace com.swecial.web {
                 if (file?.fileType == "pdf") sb.Append("<iframe src='" + src + "' title='Kvitto'></iframe>");
                 else if (file != null && file.fileType != "heic") sb.Append("<img src='" + src + "' alt='Kvitto'>");
                 sb.Append("<a href='" + src + "' target='_blank'>Öppna kvittot i en ny flik</a></div>");
-                sb.Append("<section class='panel'>");
+                sb.Append("<section class='panel'>" + readerNote());
             } else {
                 sb.Append(heading(expense == null ? "Ny utgift" : "Utgift", "Något som betalats från företagskontot"));
                 sb.Append("<section class='panel'>");

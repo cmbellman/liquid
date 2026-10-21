@@ -66,7 +66,7 @@ namespace com.swecial.web {
                     string type = file?.fileType ?? "";
                     sb.Append("<div class='bag-item'><a class='thumb' href='" + BasePath + "/expense.html?id=" + u(item.id) + "'>");
                     sb.Append(type == "pdf" ? "PDF" : type == "heic" ? "HEIC-bild" : "<img src='" + src + "' alt='Kvitto' loading='lazy'>");
-                    sb.Append("</a><div class='meta'><span>" + h(Db.str(file, "originalName")) + "<br>Inlagt " + item.createdAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm") + "</span>");
+                    sb.Append("</a><div class='meta'>" + summary(item) + "<span>" + h(Db.str(file, "originalName")) + "<br>Inlagt " + item.createdAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm") + "</span>");
                     sb.Append("<div class='actions'><a class='button' href='" + BasePath + "/expense.html?id=" + u(item.id) + "'>Sortera</a>");
                     sb.Append("<form method='post' class='row-action'>" + input("id", item.id, "hidden") + "<button type='submit' name='action' value='remove' class='link danger'>Släng</button></form>");
                     sb.Append("</div></div></div>");
@@ -75,7 +75,27 @@ namespace com.swecial.web {
             }
             sb.Append("</section>");
             sb.Append(DropScript);
+            // Refresh while receipts are being read, until the user starts doing something
+            if (items.Any(i => Db.str(i, "aiStatus") == ReceiptReader.Reading)) {
+                sb.Append("<script>(function(){var t=setTimeout(function(){location.reload();},4000);document.addEventListener('click',function(){clearTimeout(t);},true);})();</script>");
+            }
             render(sb.ToString());
+        }
+
+        /// <summary>What the receipt reader found, or that it's still reading.</summary>
+        static string summary(SwecialObject item) {
+            switch (Db.str(item, "aiStatus")) {
+                case ReceiptReader.Reading:
+                    return "<span class='ai-line reading'>" + Icons.Sparkle + "Läser kvittot …</span>";
+                case ReceiptReader.Done:
+                    string amount = item.hasValue("aiTotal") ? Money.format(Db.num(item, "aiTotal")) + " kr" : "";
+                    string what = string.Join(" · ", new[] { Db.str(item, "aiSupplier"), amount, Db.str(item, "aiDate") }.Where(s => s.Length > 0));
+                    return "<span class='ai-line'>" + Icons.Sparkle + h(what) + "</span>";
+                case ReceiptReader.Failed:
+                    return "<span class='ai-line failed'>Kunde inte läsas, fyll i själv</span>";
+                default:
+                    return "";
+            }
         }
 
         /// <summary>

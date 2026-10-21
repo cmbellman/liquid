@@ -74,6 +74,7 @@ namespace com.swecial.code {
                 expense.set("createdBy", userId);
                 Db.commit(expense);
                 attachReceipt(expense, upload);
+                ReceiptReader.queue(expense);
                 return expense;
             }
         }

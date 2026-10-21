@@ -23,6 +23,7 @@ namespace com.swecial.code {
             foreach (var company in Db.all("company")) {
                 Bas.seed(company.id);
             }
+            ReceiptReader.resume();
             log.write("liquid: started");
         }
     }

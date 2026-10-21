@@ -470,3 +470,14 @@ p.label { margin: 6px 0 8px; font-size: 13px; font-weight: 700; color: var(--mut
 #vatSuggest { align-self: flex-start; font-size: 13px; }
 .side .who .company { display: flex; align-items: center; gap: 12px; padding: 6px 10px; color: var(--faint); font-size: 13px; font-weight: 600; }
 .side .who .company span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Receipt reader (AI) */
+.ai { display: flex; gap: 10px; align-items: flex-start; margin: 0 0 16px; padding: 10px 12px; border-radius: 10px; background: rgba(47, 224, 255, 0.07); border: 1px solid rgba(47, 224, 255, 0.25); color: var(--text); font-size: 14px; }
+.ai .icon { color: var(--cyan); width: 20px; height: 20px; }
+.ai.reading .icon, .ai-line.reading .icon { animation: pulse 1.2s ease-in-out infinite; }
+.ai.failed { background: rgba(255, 194, 61, 0.07); border-color: rgba(255, 194, 61, 0.3); color: var(--amber); }
+.ai-line { display: flex; align-items: center; gap: 6px; color: var(--text); font-weight: 700; font-size: 13px; }
+.ai-line .icon { width: 16px; height: 16px; color: var(--cyan); }
+.ai-line.failed { color: var(--amber); }
+@keyframes pulse { 50% { opacity: 0.35; } }
+@media (prefers-reduced-motion: reduce) { .ai.reading .icon, .ai-line.reading .icon { animation: none; } }

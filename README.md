@@ -10,13 +10,28 @@ Dark, pub-themed web app (Baren, Kranen, Glaset, Notan, Pantpåsen, Kassan, Stam
 
 - Accounts on the shared Swecial user base (sign up, sign in), one company per user.
 - **Baren:** money in and out over time with a forecast of unpaid invoices (Kranen), totals for the period, how long the money lasts (Glaset), unpaid invoices to tick off when paid (Notan), and a drop zone for receipts.
-- **Pantpåsen:** drop, pick or photograph receipts (several at once) without filling anything in; sort them later, one after the other, and they are booked.
+- **Pantpåsen:** drop, pick or photograph receipts (several at once) without filling anything in; sort them later, one after the other, and they are booked. Optionally read with AI, which fills in a suggestion to check.
 - **Invoices:** customers, invoice drafts, sending (numbered), a printable invoice (print to PDF from the browser), and registering the payment, which books the sale and VAT.
 - **Expenses:** what was bought, from whom and what it's for (plain categories like "Programvara och prenumerationer" or "Resor"), the amount and VAT (suggested), and the receipt as a photo or PDF. Purchases from abroad without Swedish VAT are handled (reverse charge).
 - **Bank:** everything in and out of the company account, other events (share capital, owner loans, the tax account, bank fees, interest, dividends), and a check against the bank's balance.
 - **Overview:** money in the account, what customers owe, this year's result and VAT, and a to-do list (overdue invoices, missing receipts).
 - **Reports:** trial balance, general ledger per account and the VAT return boxes.
 - **Avancerat:** the chart of accounts (a starter BAS chart) and all vouchers, with manual vouchers and reversals.
+
+## Receipt reading with AI (optional)
+
+Receipts in Pantpåsen can be read with AI through the [Antigravity CLI](https://antigravity.google) (`agy`) on the server. Liquid fills in a suggestion (supplier, date, amount, VAT, category, bought abroad) that the user checks before booking. Turn it on in the app's settings on the server, `SwecialServer/apps/liquid/settings/settings.json` locally or `D:\data\swecialserver\apps\liquid\settings\settings.json` in production (not in this repo):
+
+```json
+"receiptReaderCommand": "/Users/you/.local/bin/agy",
+"receiptReaderModel": "gemini-3.8-flash-low",
+"receiptReaderHome": "C:\\Users\\ander"
+```
+
+- `receiptReaderCommand`: full path to `agy` (the server's PATH may not include it). Without it the reader is off.
+- `receiptReaderModel`: optional, `agy models` lists them.
+- `receiptReaderHome`: optional, sets `HOME`/`USERPROFILE` for `agy`. Needed in production, where Swecial Server runs as a Windows service (LocalSystem) that isn't signed in to `agy`: point it at the profile of the user who is.
+- Settings are read when the server starts.
 
 ## Local development
 
