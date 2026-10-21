@@ -265,6 +265,22 @@ namespace com.swecial.code {
             }
         }
 
+        /// <summary>
+        /// Undoes a registered payment, e.g. one booked on the wrong date: the payment voucher is
+        /// reversed (dated like the original) and the invoice is unpaid again, ready to be paid anew.
+        /// </summary>
+        public static void unmarkPaid(SwecialObject invoice, string userId) {
+            lock (Db.Sync) {
+                if (Db.str(invoice, "status") != Paid) throw new LiquidException("Fakturan är inte betald.", "INVOICE IS NOT SETTLED.");
+                var voucher = Db.getOwned("voucher", Db.str(invoice, "paymentVoucherId"), Db.str(invoice, "companyId"));
+                if (voucher != null) Ledger.reverse(voucher, Db.str(voucher, "date"), userId, fromSource: true);
+                invoice.set("status", Sent);
+                invoice.set("paidDate", "");
+                invoice.set("paymentVoucherId", "");
+                Db.commit(invoice);
+            }
+        }
+
         /// <summary>The sale: the total on debitAccount (1930 when paid, 1510 when sent), sales and VAT per rate.</summary>
         static List<VoucherRow> saleRows(string debitAccount, InvoiceTotals t) {
             var rows = new List<VoucherRow> { new VoucherRow { account = debitAccount, debit = t.total } };

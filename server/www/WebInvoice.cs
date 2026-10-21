@@ -34,6 +34,11 @@ namespace com.swecial.web {
                     redirect(here() + "&ok=paid");
                     return;
                 }
+                if (action == "unpaid") {
+                    Invoicing.unmarkPaid(invoice, account.id);
+                    redirect(here() + "&ok=unpaid");
+                    return;
+                }
                 Invoicing.requireDraft(invoice);
                 if (action == "delete") {
                     invoice.delete();
@@ -107,6 +112,7 @@ namespace com.swecial.web {
             set("draft", draft);
             set("sent", status == Invoicing.Sent);
             set("paid", Db.str(invoice, "paidDate").Length > 0);
+            set("isPaid", status == Invoicing.Paid);
             val("invoiceDate", value("invoiceDate"));
             val("dueDate", value("dueDate"));
             val("ourReference", value("ourReference"));

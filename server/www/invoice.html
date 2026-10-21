@@ -79,6 +79,13 @@
     </form>
     <p class="hint"><%paymentHint%></p>
     </swe:condition>
+    <swe:condition source="isPaid">
+    <form method="post" class="inline">
+        <input type="hidden" name="id" value="<%id%>">
+        <button type="submit" name="action" value="unpaid" class="secondary" onclick="return confirm('<%t.invoice.undoPayment.confirm%>')"><%t.invoice.undoPayment.label%></button>
+    </form>
+    <p class="hint"><%t.invoice.undoPayment.hint%></p>
+    </swe:condition>
     </else>
     </swe:condition>
 </section>
