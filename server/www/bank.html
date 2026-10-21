@@ -1,24 +1,64 @@
 <% class=WebBank %>
-<!DOCTYPE html>
-<html lang="sv">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#070b12">
-    <title><%title%></title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@700&family=Manrope:wght@400;500;600;700;800&family=Share+Tech+Mono&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/liquid/style.css">
-</head>
-<body class="theme-<%theme%>">
-    <div class="app">
-        <aside class="side"><%nav%></aside>
-        <main>
-            <p class="error"><%error%></p>
-            <p class="message"><%message%></p>
-            <%content%>
-        </main>
-    </div>
-</body>
-</html>
+<% include=partials/top.part %>
+<div class="heading"><div><h1><%t.bank.title%></h1><p class="sub"><%t.bank.subtitle%></p></div></div>
+<section class="panel">
+    <div class="tiles"><div class="tile"><small><%t.bank.balance%></small><strong><%balance%> <%t.common.currency%></strong></div></div>
+    <h2><%t.bank.reconcile%></h2>
+    <form method="get" class="inline">
+        <label><%t.col.date%><input type="date" name="date" value="<%reconcileDate%>" required></label>
+        <label><%t.bank.bankBalance%><input type="text" name="bank" value="<%reconcileBank%>" inputmode="decimal" class="num" required></label>
+        <button type="submit" class="secondary"><%t.bank.compare%></button>
+    </form>
+    <swe:condition source="reconcile">
+        <if value="match"><p class="message"><%reconcileText%></p></if>
+        <if value="mismatch"><p class="error"><%reconcileText%></p></if>
+    </swe:condition>
+</section>
+<section class="panel">
+    <h2><%t.bank.other%></h2>
+    <p class="lead"><%t.bank.otherLead%> <a href="/liquid/expenses.html"><%t.nav.expenses%></a></p>
+    <form method="post" id="bankEvent">
+        <label><%t.expense.category%><select name="kind" required>
+            <option value=""><%t.common.choose%></option>
+            <swe:iterator source="kinds"><option value="<%current.value%>" data-hint="<%current.hint%>" <%current.selected%>><%current.text%></option></swe:iterator>
+        </select></label>
+        <p class="hint" id="kindHint"></p>
+        <div class="grid">
+            <label><%t.col.date%><input type="date" name="date" value="<%date%>" required></label>
+            <label><%t.bank.amount%><input type="text" name="amount" value="<%amount%>" inputmode="decimal" class="num" required></label>
+            <label><%t.expense.note%><input type="text" name="note" value="<%note%>"></label>
+        </div>
+        <div class="actions"><button type="submit"><%t.bank.add%></button></div>
+    </form>
+    <script>
+    (function () {
+      var k = document.getElementById('bankEvent').kind, h = document.getElementById('kindHint');
+      function show() { var o = k.options[k.selectedIndex]; h.textContent = o ? (o.getAttribute('data-hint') || '') : ''; h.style.display = h.textContent ? '' : 'none'; }
+      k.addEventListener('change', show); show();
+    })();
+    </script>
+</section>
+<section class="panel">
+    <h2><%t.bank.movements%></h2>
+    <swe:condition source="movementsAny">
+        <table>
+            <thead><tr><th><%t.col.date%></th><th><%t.bank.col.what%></th><th class="num"><%t.bar.in%></th><th class="num"><%t.bar.out%></th><th class="num"><%t.bank.col.balance%></th><th></th></tr></thead>
+            <tbody>
+                <swe:iterator source="movements">
+                <tr>
+                    <td><%current.date%></td>
+                    <td><a href="<%current.href%>"><%current.text%></a></td>
+                    <td class="num"><%current.in%></td>
+                    <td class="num"><%current.out%></td>
+                    <td class="num"><%current.balance%></td>
+                    <td><swe:condition source="current.removable"><form method="post" class="row-action"><input type="hidden" name="id" value="<%current.eventId%>"><button type="submit" name="action" value="remove" class="link danger"><%t.common.remove%></button></form></swe:condition></td>
+                </tr>
+                </swe:iterator>
+            </tbody>
+        </table>
+    <else>
+        <p class="empty"><%t.bank.empty%></p>
+    </else>
+    </swe:condition>
+</section>
+<% include=partials/bottom.part %>

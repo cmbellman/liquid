@@ -4,11 +4,38 @@ namespace com.swecial.web {
     /// 24×24, drawn with currentColor so they follow the link colour.
     /// </summary>
     public static class Icons {
+        /// <summary>An icon by the name themes use (Theme.icons), null if unknown.</summary>
+        public static string byName(string name) {
+            switch (name) {
+                case "bar": return Bar;
+                case "console": return Console;
+                case "invoice": return Invoice;
+                case "receipt": return Receipt;
+                case "bag": return Bag;
+                case "crate": return Crate;
+                case "wallet": return Wallet;
+                case "people": return People;
+                case "chart": return Chart;
+                case "book": return Book;
+                case "gear": return Gear;
+                case "building": return Building;
+                case "logout": return Logout;
+                case "upload": return Upload;
+                case "camera": return Camera;
+                case "sparkle": return Sparkle;
+                default: return null;
+            }
+        }
+
         const string Open = "<svg class='icon' viewBox='0 0 24 24' aria-hidden='true' fill='none' stroke='currentColor' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'>";
         const string Close = "</svg>";
 
         /// <summary>A beer mug.</summary>
         public const string Bar = Open + "<path d='M5 8h10v11a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2z'/><path d='M15 10h2.5a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H15'/><path d='M5 8a2.5 2.5 0 0 1 2.2-3.6A3 3 0 0 1 12.4 4a2.6 2.6 0 0 1 2.6 4'/><path d='M8.5 12v5M11.5 12v5'/>" + Close;
+        /// <summary>A console screen with a readout (a ship's bridge).</summary>
+        public const string Console = Open + "<rect x='3' y='4' width='18' height='12' rx='1'/><path d='M7 12l3-3 2 2 4-4'/><path d='M8 20h8M12 16v4'/>" + Close;
+        /// <summary>A cargo crate.</summary>
+        public const string Crate = Open + "<path d='M3 7.5L12 3l9 4.5v9L12 21l-9-4.5z'/><path d='M3 7.5l9 4.5 9-4.5M12 12v9'/><path d='M7.5 5.2l9 4.6'/>" + Close;
         public const string Invoice = Open + "<path d='M7 3h7l4 4v14H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z'/><path d='M14 3v4h4'/><path d='M9 12h6M9 16h4'/>" + Close;
         /// <summary>A receipt with a torn edge.</summary>
         public const string Receipt = Open + "<path d='M6 3h12v18l-2-1.4-2 1.4-2-1.4-2 1.4-2-1.4L6 21z'/><path d='M9 8h6M9 12h6M9 16h3'/>" + Close;

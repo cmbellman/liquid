@@ -1,15 +1,16 @@
 using com.swecial.code;
 using com.swecial.server;
 using System.Linq;
-using System.Text;
 
 namespace com.swecial.web {
     /// <summary>
     /// /liquid/invoice-print.html?id= : the invoice as a printable A4 page. The server has no PDF
-    /// library, so the browser's print dialog makes the PDF. Only sent invoices have one.
+    /// library, so the browser's print dialog makes the PDF. Only sent invoices have one. The
+    /// invoice is a document for the customer, so it is Swedish and neutral whatever the theme.
     /// </summary>
     public class WebInvoicePrint : LiquidPage {
         public override void processPage() {
+            set("found", false);
             if (!requireCompany()) return;
             var invoice = Db.getOwned("invoice", query("id"), companyId);
             if (invoice == null || Db.str(invoice, "status") == Invoicing.Draft) {
@@ -19,58 +20,40 @@ namespace com.swecial.web {
             long number = Db.num(invoice, "number");
             title("Faktura " + number);
             var customer = Db.getOwned("customer", Db.str(invoice, "customerId"), companyId);
-            var rows = Invoicing.rows(invoice);
-            var totals = Invoicing.totals(rows);
+            var lines = Invoicing.rows(invoice);
+            var totals = Invoicing.totals(lines);
 
-            var sb = new StringBuilder("<article class='invoice'>");
-            sb.Append("<header><div><h1>" + h(Db.str(company, "name")) + "</h1>" + lines(company, "address", "postalAddress") + "</div>");
-            sb.Append("<div class='doc'><h2>Faktura</h2><dl>");
-            sb.Append("<dt>Fakturanummer</dt><dd>" + number + "</dd>");
-            sb.Append("<dt>Fakturadatum</dt><dd>" + h(Db.str(invoice, "invoiceDate")) + "</dd>");
-            sb.Append("<dt>Förfallodatum</dt><dd>" + h(Db.str(invoice, "dueDate")) + "</dd>");
-            if (Db.str(invoice, "ourReference").Length > 0) sb.Append("<dt>Vår referens</dt><dd>" + h(Db.str(invoice, "ourReference")) + "</dd>");
-            if (Db.str(customer, "reference").Length > 0) sb.Append("<dt>Er referens</dt><dd>" + h(Db.str(customer, "reference")) + "</dd>");
-            sb.Append("</dl></div></header>");
+            set("found", true);
+            set("number", number.ToString());
+            val("companyName", Db.str(company, "name"));
+            set("companyAddress", spans(company, "address", "postalAddress"));
+            val("invoiceDate", Db.str(invoice, "invoiceDate"));
+            val("dueDate", Db.str(invoice, "dueDate"));
+            set("hasOurReference", Db.str(invoice, "ourReference").Length > 0);
+            val("ourReference", Db.str(invoice, "ourReference"));
+            set("hasYourReference", Db.str(customer, "reference").Length > 0);
+            val("yourReference", Db.str(customer, "reference"));
+            val("customerName", Db.str(invoice, "customerName"));
+            set("customerAddress", spans(customer, "address", "postalAddress"));
+            set("hasCustomerVat", Db.str(customer, "vatNumber").Length > 0);
+            val("customerVat", Db.str(customer, "vatNumber"));
 
-            sb.Append("<section class='to'><strong>" + h(Db.str(invoice, "customerName")) + "</strong>" + lines(customer, "address", "postalAddress"));
-            if (Db.str(customer, "vatNumber").Length > 0) sb.Append("<span>Momsreg.nr " + h(Db.str(customer, "vatNumber")) + "</span>");
-            sb.Append("</section>");
-
-            sb.Append("<table><thead><tr><th>Beskrivning</th><th class='num'>Antal</th><th class='num'>À-pris</th><th class='num'>Moms</th><th class='num'>Belopp</th></tr></thead><tbody>");
-            foreach (var row in rows) {
-                sb.Append("<tr><td>" + h(row.text) + "</td><td class='num'>" + Money.formatDecimal(row.quantity) + "</td>" + amountCell(row.unitPrice));
-                sb.Append("<td class='num'>" + row.vatRate + " %</td>" + amountCell(row.net) + "</tr>");
-            }
-            sb.Append("</tbody><tfoot><tr><td colspan='4'>Summa exkl. moms</td>" + amountCell(totals.net) + "</tr>");
-            foreach (var rate in totals.byRate.Reverse()) {
-                if (rate.Key > 0) sb.Append("<tr><td colspan='4'>Moms " + rate.Key + " %</td>" + amountCell(rate.Value.vat) + "</tr>");
-            }
-            sb.Append("<tr class='total'><td colspan='4'>Att betala (SEK)</td><td class='num'>" + Money.format(totals.total) + "</td></tr></tfoot></table>");
-
-            if (Db.str(invoice, "note").Length > 0) sb.Append("<p class='note'>" + h(Db.str(invoice, "note")) + "</p>");
-            if (Db.str(invoice, "status") == Invoicing.Paid) sb.Append("<p class='paid'>Betald " + h(Db.str(invoice, "paidDate")) + "</p>");
-
-            sb.Append("<footer>");
-            footerItem(sb, "Bankgiro", Db.str(company, "bankgiro"));
-            footerItem(sb, "Org.nr", Db.str(company, "orgNumber"));
-            footerItem(sb, "Momsreg.nr", Db.str(company, "vatNumber"));
-            footerItem(sb, "E-post", Db.str(company, "email"));
-            footerItem(sb, "Telefon", Db.str(company, "phone"));
-            sb.Append("</footer></article>");
-            sb.Append("<p class='noprint'><button onclick='window.print()'>Skriv ut / spara som PDF</button></p>");
-            render(sb.ToString());
+            rows("lines", lines.Select(l => row(("text", h(l.text)), ("qty", Money.formatDecimal(l.quantity)), ("price", Money.formatOrBlank(l.unitPrice)),
+                ("vat", l.vatRate.ToString()), ("net", Money.formatOrBlank(l.net)))));
+            set("net", Money.formatOrBlank(totals.net));
+            rows("vatLines", totals.byRate.Where(r => r.Key > 0).Reverse().Select(r => row(("rate", r.Key.ToString()), ("vat", Money.formatOrBlank(r.Value.vat)))));
+            set("total", Money.format(totals.total));
+            set("hasNote", Db.str(invoice, "note").Length > 0);
+            val("note", Db.str(invoice, "note"));
+            set("paid", Db.str(invoice, "status") == Invoicing.Paid);
+            val("paidDate", Db.str(invoice, "paidDate"));
+            rows("footer", new[] { ("Bankgiro", "bankgiro"), ("Org.nr", "orgNumber"), ("Momsreg.nr", "vatNumber"), ("E-post", "email"), ("Telefon", "phone") }
+                .Where(f => Db.str(company, f.Item2).Length > 0)
+                .Select(f => row(("label", f.Item1), ("value", h(Db.str(company, f.Item2))))));
         }
 
-        static string lines(SwecialObject o, params string[] keys) {
-            var sb = new StringBuilder();
-            foreach (var key in keys) {
-                if (Db.str(o, key).Length > 0) sb.Append("<span>" + h(Db.str(o, key)) + "</span>");
-            }
-            return sb.ToString();
-        }
-
-        static void footerItem(StringBuilder sb, string label, string value) {
-            if (value.Length > 0) sb.Append("<div><small>" + label + "</small>" + h(value) + "</div>");
+        static string spans(SwecialObject o, params string[] keys) {
+            return string.Concat(keys.Where(k => Db.str(o, k).Length > 0).Select(k => "<span>" + h(Db.str(o, k)) + "</span>"));
         }
     }
 }

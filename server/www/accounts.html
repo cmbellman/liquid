@@ -1,24 +1,20 @@
 <% class=WebAccounts %>
-<!DOCTYPE html>
-<html lang="sv">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#070b12">
-    <title><%title%></title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@700&family=Manrope:wght@400;500;600;700;800&family=Share+Tech+Mono&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/liquid/style.css">
-</head>
-<body class="theme-<%theme%>">
-    <div class="app">
-        <aside class="side"><%nav%></aside>
-        <main>
-            <p class="error"><%error%></p>
-            <p class="message"><%message%></p>
-            <%content%>
-        </main>
-    </div>
-</body>
-</html>
+<% include=partials/top.part %>
+<section class="panel">
+    <h1><%t.accounts.title%></h1>
+    <table>
+        <thead><tr><th><%t.reports.col.account%></th><th><%t.field.name%></th><th class="num"><%balanceTitle%></th></tr></thead>
+        <tbody>
+            <swe:iterator source="accounts"><tr><td><a href="/liquid/reports.html?report=ledger&amp;account=<%current.number%>"><%current.number%></a></td><td><%current.name%></td><td class="num"><%current.balance%></td></tr></swe:iterator>
+        </tbody>
+    </table>
+</section>
+<section class="panel">
+    <h2><%t.accounts.add%></h2>
+    <form method="post" class="grid">
+        <label><%t.accounts.number%><input type="text" name="number" value="<%number%>" inputmode="numeric" pattern="[1-8][0-9]{3}" required></label>
+        <label><%t.field.name%><input type="text" name="name" value="<%name%>" required></label>
+        <div class="actions"><button type="submit"><%t.common.save%></button></div>
+    </form>
+</section>
+<% include=partials/bottom.part %>

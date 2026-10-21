@@ -8,12 +8,14 @@ using System.Text;
 
 namespace com.swecial.web {
     /// <summary>
-    /// Base class for the Liquid pages: session cookie, the signed-in user's company, the shared
-    /// header and small HTML helpers. Everything set() into a template is inserted raw and re-scanned
-    /// for template tags, so all user text must go through h().
-    ///
-    /// A page's template is a shell with &lt;%title%&gt;, &lt;%nav%&gt;, &lt;%error%&gt;, &lt;%message%&gt; and
-    /// &lt;%content%&gt;; the page builds the content. A LiquidException from processPage is shown as the error.
+    /// Base class for the Liquid pages: session cookie, the signed-in user's company and theme, and
+    /// the values every page template uses. Pages are templates (www/*.html, with the shell in
+    /// partials/top.part and bottom.part) and a handler that only sets values:
+    /// - &lt;%t.key%&gt; is a text from the user's theme (Themes), &lt;%icons.name%&gt; an icon;
+    /// - lists are rows (row(), rows()) for &lt;swe:iterator&gt;, flags (bool) for &lt;swe:condition&gt;;
+    /// - values are inserted raw: user text goes through val()/h(), never set() directly.
+    /// A LiquidException from processPage is shown as the error, and renderAfterError() fills the
+    /// form again with what was typed.
     /// </summary>
     public abstract class LiquidPage : WebPage {
         public const string BasePath = "/liquid";
@@ -23,20 +25,28 @@ namespace com.swecial.web {
 
         protected SwecialUser account;
         protected SwecialObject company;
-        string content = "";
+        protected Theme theme;
+        /// <summary>The theme's texts for the templates (&lt;%t.key%&gt;), see Themes.tree.</summary>
+        protected SwecialObject texts;
         bool redirected;
 
         public override void process() {
             account = getSessionUser();
             company = account != null ? Companies.forUser(account.id) : null;
+            theme = Themes.get(Themes.of(account));
+            texts = Themes.tree(theme);
+            set("t", texts);
+            set("theme", theme.id);
+            string fonts = Themes.setting(theme, t => string.IsNullOrEmpty(t.fonts) ? null : t.fonts);
+            set("themeFonts", fonts == null ? "" : "<link href='" + h(fonts) + "' rel='stylesheet'>");
+            set("icons", iconSet());
             set("title", "Liquid");
-            set("theme", Themes.of(account));
             set("error", "");
             set("message", h(messageText(query("ok"))));
             try {
                 processPage();
             } catch (LiquidException ex) {
-                set("error", h(ex.Message));
+                set("error", h(ex.text(english)));
                 if (!redirected) {
                     try {
                         renderAfterError();
@@ -44,21 +54,95 @@ namespace com.swecial.web {
                     }
                 }
             }
-            set("content", content);
-            set("nav", nav());
+            setNav();
         }
 
         public abstract void processPage();
 
-        /// <summary>Renders the page again after a refused POST, so the form shows what was typed.</summary>
+        /// <summary>Sets the page's values again after a refused POST, so the form shows what was typed.</summary>
         protected virtual void renderAfterError() { }
 
         protected void title(string text) {
             set("title", h(text) + " · Liquid");
         }
 
-        protected void render(string html) {
-            content = html;
+        // --- Texts and values for the templates ---
+
+        /// <summary>The theme's language is English (for messages from the books, which come in sv/en).</summary>
+        protected bool english => Themes.setting(theme, t => t.language) == "en";
+
+        /// <summary>
+        /// The theme's text for a key, HTML-encoded. {0}, {1} … are filled with args, which are
+        /// inserted as given: encode user text with h() first.
+        /// </summary>
+        public string T(string key, params object[] args) {
+            string text = h(Themes.text(theme, key));
+            return args.Length == 0 ? text : string.Format(text, args);
+        }
+
+        /// <summary>The theme's text as plain text (for title() and other places that encode).</summary>
+        public string Tr(string key, params object[] args) {
+            string text = Themes.text(theme, key);
+            return args.Length == 0 ? text : string.Format(text, args);
+        }
+
+        /// <summary>A counted text: key.one for 1, key.many otherwise, with the count as {0} (and args after it).</summary>
+        public string Tn(string key, long count, params object[] args) {
+            var all = new object[args.Length + 1];
+            all[0] = count;
+            Array.Copy(args, 0, all, 1, args.Length);
+            return T(key + (count == 1 ? ".one" : ".many"), all);
+        }
+
+        /// <summary>An icon for a place, as the theme wants it (e.g. "nav.bar").</summary>
+        public string icon(string place, string fallback) {
+            return Themes.icon(theme, place, fallback);
+        }
+
+        /// <summary>Icons the templates use, as &lt;%icons.name%&gt;.</summary>
+        SwecialObject iconSet() {
+            var o = new SwecialObject();
+            o.set("drop", icon("pant.drop", "upload"));
+            o.set("camera", icon("pant.camera", "camera"));
+            o.set("ai", icon("ai", "sparkle"));
+            o.set("company", Icons.Building);
+            o.set("logout", icon("nav.logout", "logout"));
+            return o;
+        }
+
+        /// <summary>A user value for the template, HTML-encoded.</summary>
+        protected void val(string key, string text) {
+            set(key, h(text));
+        }
+
+        /// <summary>
+        /// A row for a &lt;swe:iterator&gt;. Inside the loop the page's values are visible too
+        /// (&lt;%t.key%&gt;), and the row's own as &lt;%current.key%&gt;. Values are inserted raw: h() user text.
+        /// </summary>
+        protected static SwecialObject row(params (string key, object value)[] values) {
+            var o = new SwecialObject();
+            foreach (var (key, value) in values) o.set(key, value ?? "");
+            return o;
+        }
+
+        /// <summary>Rows for &lt;swe:iterator source="key"&gt;, and the flag keyAny for a condition around it.</summary>
+        protected void rows(string key, IEnumerable<SwecialObject> items) {
+            var list = items.ToList();
+            set(key, list);
+            set(key + "Any", list.Count > 0);
+        }
+
+        /// <summary>Options for a &lt;select&gt;: value, text (both encoded) and selected ("selected" or "").</summary>
+        protected static List<SwecialObject> options(IEnumerable<(string value, string text)> items, string current) {
+            return items.Select(o => row(("value", h(o.value)), ("text", h(o.text)), ("selected", o.value == current ? "selected" : ""))).ToList();
+        }
+
+        protected static string selected(bool on) => on ? "selected" : "";
+        protected static string isChecked(bool on) => on ? "checked" : "";
+
+        /// <summary>The VAT rate options (25, 12, 6, 0 %).</summary>
+        protected static List<SwecialObject> vatOptions(string current) {
+            return options(Bas.VatRates.Select(r => (r.ToString(), r + " %")), current);
         }
 
         // --- Session ---
@@ -163,61 +247,44 @@ namespace com.swecial.web {
         }
 
         /// <summary>Messages shown after a redirect (?ok=key), so a reload doesn't repost a form.</summary>
-        static string messageText(string key) {
+        string messageText(string key) {
             switch (key) {
-                case "saved": return "Sparat.";
-                case "booked": return "Verifikationen är bokförd.";
-                case "reversed": return "Verifikationen är makulerad med en rättelse.";
-                case "sent": return "Fakturan har fått sitt nummer. Den bokförs när betalningen kommer in.";
-                case "paid": return "Betalningen är bokförd.";
-                case "deleted": return "Borttaget.";
-                case "bagged": return "I påsen. Sortera kvittona när det passar.";
-                case "sorted": return "Sorterat och bokfört.";
+                case "saved": case "booked": case "reversed": case "sent": case "paid": case "deleted": case "bagged": case "sorted":
+                    return Tr("message." + key);
                 default: return "";
             }
         }
 
-        // --- Markup ---
+        // --- Navigation (partials/top.part) ---
 
-        string nav() {
-            var sb = new StringBuilder();
-            sb.Append("<a class='brand' href='" + BasePath + "/'>liquid</a>");
-            // Shown by the Nostromo theme only: a terminal clock under the brand
-            sb.Append("<div class='clock' aria-hidden='true'><span id='clock'></span><script>(function(){function t(){var d=new Date(),e=document.getElementById('clock');if(e)e.textContent=('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);}t();setInterval(t,10000);})();</script></div>");
-            if (account == null) return sb.ToString();
+        void setNav() {
+            val("brand", Themes.setting(theme, t => t.brand) ?? "liquid");
+            set("clock", Themes.setting(theme, t => t.clock) == true);
+            set("signedIn", account != null);
+            set("hasCompany", company != null);
+            val("companyName", Db.str(company, "name"));
+            var items = new List<SwecialObject>();
             if (company != null) {
                 int bag = Expenses.inbox(companyId).Count;
-                sb.Append("<nav>");
-                sb.Append(link("/", "Baren", Icons.Bar, "", "/index.html"));
-                sb.Append(link("/invoices.html", "Fakturor", Icons.Invoice, "", "/invoice.html", "/invoice-print.html"));
-                sb.Append(link("/expenses.html", "Utgifter", Icons.Receipt, "", "/expense.html"));
-                sb.Append(link("/pant.html", "Pantpåsen", Icons.Bag, bag > 0 ? bag.ToString() : ""));
-                sb.Append(link("/bank.html", "Kassan", Icons.Wallet, ""));
-                sb.Append(link("/customers.html", "Stamgästerna", Icons.People, ""));
-                sb.Append(link("/reports.html", "Rapporter", Icons.Chart, ""));
+                items.Add(navItem("/", "nav.bar", "bar", 0, "/index.html"));
+                items.Add(navItem("/invoices.html", "nav.invoices", "invoice", 0, "/invoice.html", "/invoice-print.html"));
+                items.Add(navItem("/expenses.html", "nav.expenses", "receipt", 0, "/expense.html"));
+                items.Add(navItem("/pant.html", "nav.pant", "bag", bag));
+                items.Add(navItem("/bank.html", "nav.bank", "wallet", 0));
+                items.Add(navItem("/customers.html", "nav.customers", "people", 0));
+                items.Add(navItem("/reports.html", "nav.reports", "chart", 0));
                 // Accounts and vouchers are there for those who want them, not needed day to day
-                sb.Append(link("/vouchers.html", "Avancerat", Icons.Book, "", "/voucher.html", "/accounts.html"));
-                sb.Append(link("/company.html", "Inställningar", Icons.Gear, ""));
-                sb.Append("</nav>");
+                items.Add(navItem("/vouchers.html", "nav.advanced", "book", 0, "/voucher.html", "/accounts.html"));
+                items.Add(navItem("/company.html", "nav.settings", "gear", 0));
             }
-            sb.Append("<div class='who'>");
-            if (company != null) sb.Append("<span class='company'>" + Icons.Building + "<span>" + h(Db.str(company, "name")) + "</span></span>");
-            sb.Append("<a href='" + BasePath + "/login.html?logout=true'>" + Icons.Logout + "<span>Logga ut</span></a></div>");
-            return sb.ToString();
+            rows("navItems", items);
         }
 
-        /// <summary>A nav link with icon and an optional badge, active on its own page and the related pages.</summary>
-        string link(string path, string text, string icon, string badge, params string[] related) {
+        SwecialObject navItem(string path, string key, string iconName, int badge, params string[] related) {
             string href = BasePath + path;
             bool active = req.mappedPath == href || related.Any(r => req.mappedPath == BasePath + r);
-            return "<a href='" + href + "'" + (active ? " class='active'" : "") + ">" + icon + "<span>" + text + "</span>"
-                + (badge.Length > 0 ? "<b class='badge'>" + badge + "</b>" : "") + "</a>";
-        }
-
-        /// <summary>A page heading with the plain-words explanation under it.</summary>
-        protected static string heading(string title, string subtitle, string actions = "") {
-            return "<div class='heading'><div><h1>" + h(title) + "</h1>" + (subtitle.Length > 0 ? "<p class='sub'>" + h(subtitle) + "</p>" : "") + "</div>"
-                + (actions.Length > 0 ? "<div class='heading-actions'>" + actions + "</div>" : "") + "</div>";
+            return row(("href", href), ("text", T(key)), ("icon", icon(key, iconName)), ("active", active ? "active" : ""),
+                ("hasBadge", badge > 0), ("badge", badge.ToString()));
         }
 
         public static string h(string text) {
@@ -229,25 +296,8 @@ namespace com.swecial.web {
             return WebUtility.UrlEncode(text ?? "");
         }
 
-        protected static string input(string name, string value, string type = "text", string extra = "") {
-            return "<input type='" + type + "' name='" + name + "' value='" + h(value) + "'" + (extra.Length > 0 ? " " + extra : "") + ">";
-        }
-
-        protected static string field(string label, string control) {
-            return "<label>" + h(label) + control + "</label>";
-        }
-
-        protected static string select(string name, IEnumerable<(string value, string text)> options, string selected, string extra = "") {
-            var sb = new StringBuilder("<select name='" + name + "'" + (extra.Length > 0 ? " " + extra : "") + ">");
-            foreach (var (value, text) in options) {
-                sb.Append("<option value='" + h(value) + "'" + (value == selected ? " selected" : "") + ">" + h(text) + "</option>");
-            }
-            sb.Append("</select>");
-            return sb.ToString();
-        }
-
-        /// <summary>Account picker for voucher rows, "1930 Företagskonto".</summary>
-        protected IEnumerable<(string, string)> accountOptions() {
+        /// <summary>Account choices for voucher rows and reports, "1930 Företagskonto".</summary>
+        protected IEnumerable<(string, string)> accountChoices() {
             yield return ("", "");
             foreach (var a in Db.forCompany("account", companyId).OrderBy(a => Db.str(a, "number"))) {
                 yield return (Db.str(a, "number"), Db.str(a, "number") + " " + Db.str(a, "name"));
@@ -258,8 +308,5 @@ namespace com.swecial.web {
             return Db.str(Bas.find(companyId, number), "name");
         }
 
-        protected static string amountCell(long ore) {
-            return "<td class='num'>" + Money.formatOrBlank(ore) + "</td>";
-        }
     }
 }

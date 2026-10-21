@@ -15,7 +15,7 @@ namespace com.swecial.web {
         string email = "";
 
         public override void processPage() {
-            title("Skapa konto");
+            title(Tr("signup.title"));
             if (account != null) {
                 redirect(BasePath + "/");
                 return;
@@ -52,16 +52,9 @@ namespace com.swecial.web {
         }
 
         void renderForm() {
-            render(@"<section class='panel narrow'>
-<h1>Skapa konto</h1>
-<p class='lead'>Har du redan ett Swecial-konto? <a href='" + BasePath + @"/login.html'>Logga in</a> med det.</p>
-<form method='post'>"
-+ field("Namn", input("fullName", fullName, "text", "autocomplete='name' required autofocus"))
-+ field("E-post", input("email", email, "email", "autocomplete='username' required"))
-+ field("Lösenord (minst " + MinPasswordLength + " tecken)", input("password", "", "password", "autocomplete='new-password' required"))
-+ @"<button type='submit'>Skapa konto</button>
-</form>
-</section>");
+            val("fullName", fullName);
+            val("email", email);
+            set("passwordLabel", T("signup.password", MinPasswordLength));
         }
 
         // System.Net.Mail isn't referenced by the server's cloud code compiler, so a plain pattern

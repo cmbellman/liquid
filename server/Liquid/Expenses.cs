@@ -88,17 +88,17 @@ namespace com.swecial.code {
         public static SwecialObject save(string companyId, SwecialObject expense, Input input, string userId) {
             string date = Dates.clean(input.date);
             string supplier = (input.supplier ?? "").Trim();
-            var category = Categories.find(input.category) ?? throw new LiquidException("Välj vad utgiften gäller.");
-            if (supplier.Length == 0) throw new LiquidException("Fyll i var du handlade (leverantör).");
-            if (input.total <= 0) throw new LiquidException("Fyll i beloppet som drogs från kontot.");
-            if (!Bas.VatRates.Contains(input.vatRate)) throw new LiquidException("Ogiltig momssats.");
+            var category = Categories.find(input.category) ?? throw new LiquidException("Välj vad utgiften gäller.", "SELECT EXPENDITURE CLASS.");
+            if (supplier.Length == 0) throw new LiquidException("Fyll i var du handlade (leverantör).", "SUPPLIER REQUIRED.");
+            if (input.total <= 0) throw new LiquidException("Fyll i beloppet som drogs från kontot.", "ENTER THE AMOUNT DEBITED FROM THE ACCOUNT.");
+            if (!Bas.VatRates.Contains(input.vatRate)) throw new LiquidException("Ogiltig momssats.", "INVALID VAT RATE.");
             string foreign = input.foreign == ForeignEu || input.foreign == ForeignNonEu ? input.foreign : "";
             // 2614 is the 25 % account; services bought abroad are almost always 25 % in Sweden
-            if (foreign.Length > 0 && input.vatRate != 25) throw new LiquidException("Köp från utlandet räknas med 25 % moms i Liquid.");
+            if (foreign.Length > 0 && input.vatRate != 25) throw new LiquidException("Köp från utlandet räknas med 25 % moms i Liquid.", "FOREIGN PURCHASES ARE ASSESSED AT 25 % VAT.");
             // Bought abroad: the receipt has no Swedish VAT, the company calculates it on the total
             long vat = foreign.Length > 0 ? Money.percent(input.total, input.vatRate) : input.vat ?? vatIncluded(input.total, input.vatRate);
-            if (vat < 0 || (foreign.Length == 0 && vat >= input.total)) throw new LiquidException("Momsen kan inte vara större än beloppet.");
-            if (foreign.Length == 0 && input.vatRate == 0 && vat != 0) throw new LiquidException("Momsen ska vara 0 när momssatsen är 0 %.");
+            if (vat < 0 || (foreign.Length == 0 && vat >= input.total)) throw new LiquidException("Momsen kan inte vara större än beloppet.", "VAT CANNOT EXCEED THE AMOUNT.");
+            if (foreign.Length == 0 && input.vatRate == 0 && vat != 0) throw new LiquidException("Momsen ska vara 0 när momssatsen är 0 %.", "VAT MUST BE ZERO AT A 0 % RATE.");
 
             string text = supplier + ", " + category.name;
             var rows = foreign.Length > 0
@@ -116,7 +116,7 @@ namespace com.swecial.code {
             Ledger.validate(companyId, date, text, rows);
 
             lock (Db.Sync) {
-                if (expense != null && Db.str(expense, "status") == Removed) throw new LiquidException("Utgiften är borttagen.");
+                if (expense != null && Db.str(expense, "status") == Removed) throw new LiquidException("Utgiften är borttagen.", "EXPENDITURE RECORD HAS BEEN PURGED.");
                 if (expense == null) {
                     expense = Db.create("expense", companyId);
                     expense.set("createdBy", userId);
@@ -167,9 +167,9 @@ namespace com.swecial.code {
         /// <summary>Checks an uploaded receipt (null when none was chosen) and returns its file extension.</summary>
         public static string checkReceipt(HttpRequest.UploadedFile upload) {
             if (upload == null || upload.data == null || upload.data.Length == 0) return null;
-            if (upload.data.Length > MaxReceiptBytes) throw new LiquidException("Kvittot är för stort (högst 10 MB).");
+            if (upload.data.Length > MaxReceiptBytes) throw new LiquidException("Kvittot är för stort (högst 10 MB).", "DOCUMENT EXCEEDS 10 MB LIMIT.");
             if (!ReceiptTypes.TryGetValue(receiptType(upload), out string extension)) {
-                throw new LiquidException("Kvittot ska vara en bild (JPEG, PNG, WebP, HEIC) eller en PDF.");
+                throw new LiquidException("Kvittot ska vara en bild (JPEG, PNG, WebP, HEIC) eller en PDF.", "DOCUMENT FORMAT REJECTED. ACCEPTED: JPEG, PNG, WEBP, HEIC, PDF.");
             }
             return extension;
         }

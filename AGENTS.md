@@ -16,31 +16,15 @@ Liquid is a bookkeeping and invoicing system for Swedish companies. It is not a 
 - **`GEMINI.md`** is a symbolic link pointing directly to `AGENTS.md` for Gemini agents.
 - **Important:** Always and only edit `AGENTS.md` if you want to update the rules. Never delete or overwrite the symbolic links manually.
 
-## Branches
+## Branches and Workflow
 
-- `master` is the production branch. It must always be stable and deployable.
-- `develop` is the integration branch and the default branch for daily development.
-- Do not make changes directly to `master` or `develop`. Always use a short-lived branch and a pull request.
-- Create working branches from the latest `develop` and name them `feature/<short-name>`, `fix/<short-name>`, or `chore/<short-name>`.
-- Never force-push to `master` or `develop`.
-
-## Standard Workflow
-
-1. Fetch the latest changes with `git switch develop` and `git pull --ff-only`.
-2. Create a working branch from `develop`.
-3. Make atomic, scoped changes and keep commits small and self-explanatory.
-4. Verify the change on the local dev server (below).
-5. Push your working branch and open a pull request targeting `develop`.
-6. Describe what has changed, why, and how it was verified.
-7. Delete the working branch after merging.
-
-## Releases and Hotfixes
-
-- Create a release via a pull request from `develop` to `master`, then deploy `master` to production (see Deploy).
-- Create urgent hotfixes as `hotfix/<short-name>` from `master` and open a pull request targeting `master`. Port every merged hotfix back into `develop` immediately.
+- One developer: no pull requests. Commit straight to `develop` (the default branch) and push.
+- `master` is what runs in production. Release by fast-forwarding `master` to `develop` and deploying (see Deploy).
+- Keep commits small and self-explanatory, and verify on a local server before pushing (below). Never force-push.
 
 ## Environments
 
+- **Testing:** an agent tests on its own Swecial Server instance (a git worktree of swecial-server with its own data and port), never on the developer's local server or its data.
 - **Dev:** the local Swecial Server in `../../swecial/swecial-server` (`~/dev/swecial/swecial-server`). Link this repo once with `./link-app.sh liquid ~/dev/cmbellman/liquid` (it symlinks `server/` to `SwecialServer/apps/liquid/code`), then start it with `./start-server.sh`. The site is at `http://localhost/liquid/`. Local data is plain JSON under `swecial-server/SwecialServer/apps/liquid/classes/`; user accounts are in `SwecialServer/data/users/`.
 - **Prod:** `deepthought.swecial.se`, the same server as the games: `https://deepthought.swecial.se/liquid/`.
 - The file watcher doesn't follow symlinks: **restart the local server after changing a `.cs` file**. `.html` and `.css` changes show on reload. Compile errors only appear in the server console (`compiling liquid` … `CSxxxx`); the old code keeps running when compiling fails.
@@ -56,14 +40,19 @@ Liquid is a bookkeeping and invoicing system for Swedish companies. It is not a 
 - `server/Liquid/` – domain logic, `namespace com.swecial.code`:
   - `Db` data access, `Money`/`Dates`, `Bas` chart of accounts, `Ledger` vouchers, `Reports`, `Companies`.
   - `Invoicing` customer invoices, `Expenses` + `Categories` everyday purchases with receipts, `BankEvents` other money in and out of the company account.
-- `server/www/` – pages, `namespace com.swecial.web`. Each `x.html` starts with `<% class=WebX %>` and is a shell with `<%title%>`, `<%nav%>`, `<%error%>`, `<%message%>` and `<%content%>`; `WebX : LiquidPage` builds the content in `processPage()`.
+- `server/www/` – pages, `namespace com.swecial.web`: **markup lives in the templates, never in C#.**
+  - `x.html` starts with `<% class=WebX %>`, includes `partials/top.part` (head, sidebar, error and message) and `partials/bottom.part`, and holds the page's markup. Shared pieces are partials (`.part`, never served): `dropzone.part`, `expense-form.part`, `invoice-totals.part`.
+  - `WebX : LiquidPage` only sets values: `set`/`val` (val HTML-encodes), `rows(key, …)` of `row(…)` objects for `<swe:iterator source="key">` (plus the flag `keyAny`), bools for `<swe:condition>`, `options(…)` for selects. Template syntax is in swecial-server's AGENTS.md ("Templates").
+  - Generated graphics stay in C#: the chart and gauges (`FlowChart`) and icons (`Icons`).
+- `server/themes/<id>.json` – the themes (see Themes).
 
 ## Conventions and Rules
 
 - **Server naming:** class names are snake_case (`voucher`, `customer`), field names camelCase. Fields starting with `_` belong to the server.
 - **Company scope:** every class except `membership` has `companyId`. Pages read objects with `Db.getOwned(class, id, companyId)` / `Db.forCompany(...)`, never `Db.get` with an id from the request.
 - **Money** is whole öre in a `long` (`Money.parse`/`Money.format`), never `double`. Dates are `"yyyy-MM-dd"` strings, which compare as text.
-- **Names and look:** the app has a pub theme. Baren (overview: Kranen = money in/out over time, In/Ut, Glaset = how long the money lasts, Notan = unpaid customer invoices, ticked off when paid), Pantpåsen (receipts thrown in now, sorted and booked later), Kassan (the company account), Stamgästerna (customers), Avancerat (vouchers, chart of accounts). Every themed name has a plain subtitle under it (`heading(title, subtitle)`); Fakturor and Utgifter keep their plain names. Two looks, chosen per user under Inställningar (`Themes`, stored on the user as `liquidTheme`, set as `theme-neon`/`theme-nostromo` on `<body>`): Neon (default) and Nostromo (a green phosphor terminal: Share Tech Mono capitals, square outlined boxes, `TITLE // SUBTITLE` headings, scanlines). Themes only override the CSS tokens and typography, never the markup, so new pages get both for free; chart and glass colours come from the tokens too. Neon tokens are at the top of `style.css`, cyan = money in and the brand, amber = money out and things to act on. Charts and icons are inline SVG made on the server (`FlowChart`, `Icons`); the printable invoice stays light.
+- **Themes:** every user picks a theme (Inställningar → Utseende; stored on the user as `liquidTheme`). A theme is data: `server/themes/<id>.json` (name, description, `language` sv/en, `extends`, `gauge` beer/tank, `brand`, `clock`, `fonts`, `icons` per place, and **all UI texts by key**) plus `server/www/theme-<id>.css` (tokens and typography, scoped to `body.theme-<id>`). Texts missing in a theme come from the theme it extends, then from `neon`, so a new theme can override only what it wants. In templates a text is `<%t.bar.tab.title%>`; in C# `T("key", args…)` (encoded, `{0}` placeholders), `Tr` (plain) and `Tn` (`.one`/`.many`). A key can't be both a text and a group: use `x.label` for the text. Errors from the books are `LiquidException(swedish, english)`; the theme's `language` picks one. The printable invoice is always Swedish and neutral (a document for the customer). Adding a theme: copy a JSON file, change what you want, add its CSS file; it shows up under Utseende by itself.
+- **Names and look:** the app has a pub theme. Baren (overview: Kranen = money in/out over time, In/Ut, Glaset = how long the money lasts, Notan = unpaid customer invoices, ticked off when paid), Pantpåsen (receipts thrown in now, sorted and booked later), Kassan (the company account), Stamgästerna (customers), Avancerat (vouchers, chart of accounts). Every themed name has a plain subtitle under it (`heading(title, subtitle)`); Fakturor and Utgifter keep their plain names. Neon is the default (Swedish, pub names, beer glass); Nostromo is a green phosphor ship terminal in corporate English (tank gauge, clock, crate and console icons). Neon's tokens are the defaults at the top of `style.css`, cyan = money in and the brand, amber = money out and things to act on. Charts and icons are inline SVG made on the server (`FlowChart`, `Icons`); the printable invoice stays light.
 - **Users aren't bookkeepers:** the everyday pages (invoices, expenses, bank) never ask for accounts, debit or credit. The user picks what something is (an expense `Category`, a `BankEventKind`) and Liquid books it. Accounts and vouchers live under "Avancerat". Keep new features that way.
 - **Settings** (Inställningar, `company.html`, `Settings`), stored on the company: invoice numbering (`serial` 1, 2, 3 … with a settable next number, or `date` = invoice date + two-digit serial for the day, `2026102101`), accounting method (`cash` default, or `accrual`) and VAT period (`year` default, `quarter`, `month`; the VAT report defaults to the current one). Serial numbers stay below 1 000 000 000 so they never collide with date numbers, and a new next number must be above every serial already used.
 - **Accounting method:** with the cash method (kontantmetoden) a sent invoice gets its number and is booked when paid (1930 D / 300x K / 26x1 K). With the accrual method (faktureringsmetoden) it is booked when sent (1510 D / 300x K / 26x1 K, series F) and the payment clears the receivable (1930 D / 1510 K). Each invoice remembers how it was booked (`voucherId` set when booked at sending), so switching method never books an invoice twice. Expenses are always booked on the day they were paid. With the cash method, unpaid invoices at year end are booked in the closing (not built yet).
@@ -77,8 +66,8 @@ Liquid is a bookkeeping and invoicing system for Swedish companies. It is not a 
 - **Receipts** are `_file` objects with `companyId`, served only by `receipt.html` to the company's users (links carry `&v=<file id>` so a replaced receipt isn't cached). Uploads use `req.body.files`, which needs swecial-server with multipart support (Swecial/swecial-server PR "Parse multipart/form-data POST bodies"): deploy that before a Liquid version that has it.
 - **Bookkeeping rules:** a voucher must balance and use accounts in the chart (`Ledger.validate`). A booked voucher is never changed or deleted; mistakes are corrected with a reversing voucher (`Ledger.reverse`). Only invoice drafts can be edited or deleted. Vouchers booked from an invoice can't be reversed by hand.
 - **No transactions:** the server has none. Anything that numbers or books takes `Db.Sync` and writes with `Db.commit` (save + saveNow). Keep a business event in one object (rows are embedded as JSON in `rowsJson`) so it is written as a whole. Validate before taking a number, so numbers stay gap-free.
-- **HTML escaping:** template values are inserted raw. Pass all user text through `h()` (and `u()` inside URLs). Never put `<%` in generated markup.
-- **Errors:** throw `LiquidException` with a Swedish message for user mistakes; `LiquidPage` shows it and calls `renderAfterError()` so the form keeps what was typed. After a successful POST, redirect (with `?ok=<key>` for the message) so a reload doesn't post again.
+- **HTML escaping:** template values are inserted raw. User text goes through `val()`/`h()` (and `u()` inside URLs); theme texts are encoded already. Never put `<%` in a value.
+- **Errors:** throw `LiquidException(swedish, english)` for user mistakes; `LiquidPage` shows it and calls `renderAfterError()`, which sets the page's values again so the form keeps what was typed. After a successful POST, redirect (with `?ok=<key>` for the message) so a reload doesn't post again.
 - **Server limits to keep in mind:** only `.html`, `.css`, `.json` and `.ico` are served (put JavaScript inline), POST bodies are urlencoded or multipart (`enctype='multipart/form-data'` for uploads), there is no PDF library (invoices print from the browser), and the cloud code compiler only references what the server references (e.g. not `System.Net.Mail`).
 
 ## Known Gaps

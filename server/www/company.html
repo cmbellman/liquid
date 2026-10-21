@@ -1,24 +1,60 @@
 <% class=WebCompany %>
-<!DOCTYPE html>
-<html lang="sv">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#070b12">
-    <title><%title%></title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@700&family=Manrope:wght@400;500;600;700;800&family=Share+Tech+Mono&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/liquid/style.css">
-</head>
-<body class="theme-<%theme%>">
-    <div class="app">
-        <aside class="side"><%nav%></aside>
-        <main>
-            <p class="error"><%error%></p>
-            <p class="message"><%message%></p>
-            <%content%>
-        </main>
-    </div>
-</body>
-</html>
+<% include=partials/top.part %>
+<swe:condition source="creating">
+<div class="heading"><div><h1><%t.settings.create.title%></h1><p class="sub"><%t.settings.create.subtitle%></p></div></div>
+<section class="panel">
+    <form method="post" class="grid">
+        <swe:iterator source="fields"><label><%current.label%><input type="<%current.type%>" name="<%current.name%>" value="<%current.value%>" <%current.required%>></label></swe:iterator>
+        <div class="actions"><button type="submit"><%t.settings.create.button%></button></div>
+    </form>
+</section>
+<else>
+<div class="heading"><div><h1><%t.settings.title%></h1><p class="sub"><%subtitle%></p></div></div>
+<form method="post" id="settings">
+    <section class="panel">
+        <div class="heading"><div><h2><%t.settings.company.title%></h2><p class="sub"><%t.settings.company.subtitle%></p></div></div>
+        <div class="grid">
+            <swe:iterator source="fields"><label><%current.label%><input type="<%current.type%>" name="<%current.name%>" value="<%current.value%>" <%current.required%>><swe:condition source="current.vat"><button type="button" class="link" id="vatSuggest" data-label="<%t.settings.vatSuggest%>" hidden></button></swe:condition></label></swe:iterator>
+        </div>
+        <p class="hint"><%t.settings.vatHint%></p>
+    </section>
+    <section class="panel">
+        <div class="heading"><div><h2><%t.settings.invoices.title%></h2><p class="sub"><%t.settings.invoices.subtitle%></p></div></div>
+        <p class="label"><%t.settings.numbering.label%></p>
+        <div class="choices"><swe:iterator source="numbering"><label class="choice"><input type="radio" name="<%current.name%>" value="<%current.value%>" <%current.checked%>><b><%current.title%></b><span><%current.text%></span><swe:condition source="current.serial"><label><%t.settings.nextSerial%><input type="number" name="nextSerial" value="<%nextSerial%>" min="1" max="<%maxSerial%>"></label></swe:condition></label></swe:iterator></div>
+        <p class="hint"><%t.settings.numberingHint%></p>
+        <div class="grid"><label><%t.settings.paymentTerms%><input type="number" name="paymentTerms" value="<%paymentTerms%>" min="0" max="365"></label></div>
+    </section>
+    <section class="panel">
+        <div class="heading"><div><h2><%t.settings.bookkeeping.title%></h2><p class="sub"><%t.settings.bookkeeping.subtitle%></p></div></div>
+        <p class="label"><%t.settings.method.label%></p>
+        <div class="choices"><swe:iterator source="methods"><label class="choice"><input type="radio" name="<%current.name%>" value="<%current.value%>" <%current.checked%>><b><%current.title%></b><span><%current.text%></span><swe:condition source="current.serial"><label><%t.settings.nextSerial%><input type="number" name="nextSerial" value="<%nextSerial%>" min="1" max="<%maxSerial%>"></label></swe:condition></label></swe:iterator></div>
+        <p class="hint"><%t.settings.methodHint%></p>
+        <p class="label"><%t.settings.vatPeriod%></p>
+        <div class="choices three"><swe:iterator source="vatPeriods"><label class="choice"><input type="radio" name="<%current.name%>" value="<%current.value%>" <%current.checked%>><b><%current.title%></b><span><%current.text%></span><swe:condition source="current.serial"><label><%t.settings.nextSerial%><input type="number" name="nextSerial" value="<%nextSerial%>" min="1" max="<%maxSerial%>"></label></swe:condition></label></swe:iterator></div>
+        <p class="hint"><%t.settings.vatPeriodHint%></p>
+    </section>
+    <section class="panel">
+        <div class="heading"><div><h2><%t.settings.look.title%></h2><p class="sub"><%t.settings.look.subtitle%></p></div></div>
+        <div class="choices"><swe:iterator source="themes"><label class="choice"><input type="radio" name="<%current.name%>" value="<%current.value%>" <%current.checked%>><b><%current.title%></b><span><%current.text%></span><swe:condition source="current.serial"><label><%t.settings.nextSerial%><input type="number" name="nextSerial" value="<%nextSerial%>" min="1" max="<%maxSerial%>"></label></swe:condition></label></swe:iterator></div>
+    </section>
+    <div class="actions sticky"><button type="submit"><%t.settings.save%></button></div>
+</form>
+<script>
+(function () {
+  var f = document.getElementById('settings'), btn = document.getElementById('vatSuggest');
+  function suggest() {
+    var digits = (f.orgNumber.value || '').replace(/\D/g, '');
+    var ok = digits.length === 10 && !f.vatNumber.value.trim();
+    btn.hidden = !ok;
+    if (ok) { btn.dataset.value = 'SE' + digits + '01'; btn.textContent = btn.dataset.label + ' ' + btn.dataset.value; }
+  }
+  btn.addEventListener('click', function () { f.vatNumber.value = btn.dataset.value; suggest(); });
+  f.orgNumber.addEventListener('input', suggest); f.vatNumber.addEventListener('input', suggest); suggest();
+  function serial() { f.nextSerial.disabled = !f.querySelector('input[name=invoiceNumbering][value=serial]').checked; }
+  f.querySelectorAll('input[name=invoiceNumbering]').forEach(function (r) { r.addEventListener('change', serial); }); serial();
+})();
+</script>
+</else>
+</swe:condition>
+<% include=partials/bottom.part %>

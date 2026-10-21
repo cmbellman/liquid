@@ -14,7 +14,7 @@ namespace com.swecial.code {
 
         public static SwecialObject create(string userId, string name) {
             lock (Db.Sync) {
-                if (forUser(userId) != null) throw new LiquidException("Du har redan ett bolag.");
+                if (forUser(userId) != null) throw new LiquidException("Du har redan ett bolag.", "A COMPANY IS ALREADY REGISTERED TO THIS USER.");
                 var company = Db.create("company", null);
                 company.set("name", name);
                 company.set("paymentTerms", 30);

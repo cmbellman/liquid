@@ -36,15 +36,6 @@ namespace com.swecial.code {
         public const string Sent = "sent";
         public const string Paid = "paid";
 
-        public static string statusName(string status) {
-            switch (status) {
-                case Draft: return "Utkast";
-                case Sent: return "Skickad";
-                case Paid: return "Betald";
-                default: return status;
-            }
-        }
-
         public static List<InvoiceRow> rows(SwecialObject invoice) {
             string json = Db.str(invoice, "rowsJson");
             return json.Length == 0 ? new List<InvoiceRow>() : JsonConvert.DeserializeObject<List<InvoiceRow>>(json);
@@ -86,7 +77,7 @@ namespace com.swecial.code {
         }
 
         public static void requireDraft(SwecialObject invoice) {
-            if (Db.str(invoice, "status") != Draft) throw new LiquidException("Fakturan är redan skickad och kan inte ändras.");
+            if (Db.str(invoice, "status") != Draft) throw new LiquidException("Fakturan är redan skickad och kan inte ändras.", "INVOICE ALREADY ISSUED. RECORD IS LOCKED.");
         }
 
         /// <summary>
@@ -98,12 +89,12 @@ namespace com.swecial.code {
                 requireDraft(invoice);
                 string companyId = Db.str(invoice, "companyId");
                 var customer = Db.getOwned("customer", Db.str(invoice, "customerId"), companyId);
-                if (customer == null) throw new LiquidException("Välj en kund innan fakturan skickas.");
+                if (customer == null) throw new LiquidException("Välj en kund innan fakturan skickas.", "ASSIGN A CLIENT BEFORE ISSUING.");
                 var rows = Invoicing.rows(invoice);
-                if (rows.Count == 0) throw new LiquidException("Fakturan har inga rader.");
-                if (rows.Any(r => (r.text ?? "").Trim().Length == 0)) throw new LiquidException("Varje rad behöver en beskrivning.");
+                if (rows.Count == 0) throw new LiquidException("Fakturan har inga rader.", "INVOICE HAS NO LINES.");
+                if (rows.Any(r => (r.text ?? "").Trim().Length == 0)) throw new LiquidException("Varje rad behöver en beskrivning.", "EVERY LINE REQUIRES A DESCRIPTION.");
                 var t = totals(rows);
-                if (t.total <= 0) throw new LiquidException("Fakturans belopp måste vara större än noll (kreditfakturor kommer senare).");
+                if (t.total <= 0) throw new LiquidException("Fakturans belopp måste vara större än noll (kreditfakturor kommer senare).", "INVOICE TOTAL MUST BE ABOVE ZERO.");
                 Dates.parse(Db.str(invoice, "invoiceDate"));
                 Dates.parse(Db.str(invoice, "dueDate"));
                 var company = Db.get("company", companyId);
@@ -137,12 +128,12 @@ namespace com.swecial.code {
         public static long nextNumber(SwecialObject company, string invoiceDate) {
             if (Settings.invoiceNumbering(company) == Settings.SerialNumbers) {
                 long next = Db.nextNumber(company.id, Settings.SerialCounter);
-                if (next > Settings.MaxSerial) throw new LiquidException("Fakturanumren är slut i löpnummerserien. Byt till datumnummer under Inställningar.");
+                if (next > Settings.MaxSerial) throw new LiquidException("Fakturanumren är slut i löpnummerserien. Byt till datumnummer under Inställningar.", "SERIAL NUMBER RANGE EXHAUSTED. SWITCH TO DATE NUMBERING IN SYSTEM CONFIG.");
                 return next;
             }
             string day = Dates.parse(invoiceDate).ToString("yyyyMMdd");
             long serial = Db.nextNumber(company.id, "invoice-" + day);
-            if (serial > 99) throw new LiquidException("Högst 99 fakturor per fakturadag.");
+            if (serial > 99) throw new LiquidException("Högst 99 fakturor per fakturadag.", "MAXIMUM 99 INVOICES PER INVOICE DATE.");
             return long.Parse(day) * 100 + serial;
         }
 
@@ -152,7 +143,7 @@ namespace com.swecial.code {
         /// </summary>
         public static void markPaid(SwecialObject invoice, string paidDate, string userId) {
             lock (Db.Sync) {
-                if (Db.str(invoice, "status") != Sent) throw new LiquidException("Bara skickade, obetalda fakturor kan markeras som betalda.");
+                if (Db.str(invoice, "status") != Sent) throw new LiquidException("Bara skickade, obetalda fakturor kan markeras som betalda.", "ONLY ISSUED, OUTSTANDING INVOICES CAN BE SETTLED.");
                 paidDate = Dates.clean(paidDate);
                 var t = totals(rows(invoice));
                 bool bookedWhenSent = Db.str(invoice, "voucherId").Length > 0;

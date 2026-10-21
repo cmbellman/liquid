@@ -2,21 +2,20 @@ using com.swecial.code;
 using com.swecial.server;
 using System;
 using System.Linq;
-using System.Text;
 
 namespace com.swecial.web {
     /// <summary>
-    /// /liquid/ : Baren. Kranen (money in and out over time, ?period=), In/Ut for the period, Glaset
-    /// (how long the money lasts), Notan (unpaid invoices, ticked off when paid) and Pantpåsen (throw
-    /// receipts in, sort later). POST action=paid ticks off an invoice; action=bag puts receipts in the bag.
+    /// /liquid/ : Baren. Kranen (money in and out over time, ?period=), In/Ut for the period, the
+    /// gauge (how long the money lasts), Notan (unpaid invoices, ticked off when paid) and the
+    /// Pantpåsen drop zone. POST action=paid ticks off an invoice; action=bag puts receipts in the bag.
     /// </summary>
     public class WebDashboard : LiquidPage {
         public override void processPage() {
             if (!requireCompany()) return;
-            title("Baren");
+            title(Tr("bar.title"));
             if (isPost) {
                 if (form("action") == "paid") {
-                    var invoice = Db.getOwned("invoice", form("id"), companyId) ?? throw new LiquidException("Fakturan finns inte.");
+                    var invoice = Db.getOwned("invoice", form("id"), companyId) ?? throw new LiquidException("Fakturan finns inte.", "INVOICE NOT FOUND.");
                     Invoicing.markPaid(invoice, form("paidDate"), account.id);
                     redirect(BasePath + "/?ok=paid");
                     return;
@@ -27,114 +26,88 @@ namespace com.swecial.web {
                     return;
                 }
             }
-            renderPage();
+            setValues();
         }
 
         protected override void renderAfterError() {
-            renderPage();
+            setValues();
         }
 
-        void renderPage() {
+        void setValues() {
             DateTime today = DateTime.Today;
             string period = query("period");
             if (period != Flow.Quarter && period != Flow.Year) period = Flow.TwelveMonths;
-            var buckets = Flow.buckets(companyId, period, today);
+            var buckets = Flow.buckets(companyId, period, today, english ? "en" : "sv");
             var (moneyIn, moneyOut) = Flow.totals(buckets, companyId, today);
-            var runway = Flow.runway(companyId, today);
-            string periodText = period == Flow.Quarter ? "senaste 12 veckorna" : period == Flow.Year ? "i år" : "senaste 12 månaderna";
 
-            var sb = new StringBuilder();
-            sb.Append(heading(Db.str(company, "name"), "Baren: allt viktigt på ett ställe"));
-            sb.Append("<div class='bar-grid'><div>");
+            set("chipQuarter", period == Flow.Quarter ? "on" : "");
+            set("chip12m", period == Flow.TwelveMonths ? "on" : "");
+            set("chipYear", period == Flow.Year ? "on" : "");
+            set("chart", FlowChart.svg(buckets, Tr("bar.chart.label"), Tr("bar.chart.now"), Tr("bar.chart.expected"), Tr("bar.chart.in"), Tr("bar.chart.out"), Tr("common.currency")));
+            set("moneyIn", Money.formatWhole(moneyIn));
+            set("moneyOut", Money.formatWhole(moneyOut));
+            set("periodText", T("bar.amount.period", T("bar.period." + period)));
+            setGauge(Flow.runway(companyId, today));
+            setTab(today);
+            setTodo();
 
-            // Kranen
-            sb.Append("<section class='panel'><div class='tap-head'><div><h2>Kranen</h2><p class='sub'>Pengar in och ut på företagskontot</p></div>");
-            sb.Append("<div class='chips'>" + chip(Flow.Quarter, "Kvartal", period) + chip(Flow.TwelveMonths, "12 mån", period) + chip(Flow.Year, "I år", period) + "</div></div>");
-            sb.Append(FlowChart.svg(buckets));
-            sb.Append("<div class='legend'><span><i class='li'></i>In</span><span><i class='lo'></i>Ut</span><span><i class='lf'></i>Väntas in (obetalda fakturor)</span></div>");
-            sb.Append("<div class='inout'>");
-            sb.Append("<div class='big in'><small>In</small><strong>" + Money.formatWhole(moneyIn) + "</strong><span>kr " + periodText + "</span></div>");
-            sb.Append("<div class='big out'><small>Ut</small><strong>" + Money.formatWhole(moneyOut) + "</strong><span>kr " + periodText + "</span></div>");
-            sb.Append(glass(runway));
-            sb.Append("</div></section>");
-
-            sb.Append(todo());
-            sb.Append("</div><div>");
-            sb.Append(notan(today));
-            sb.Append(WebPant.dropZone(Expenses.inbox(companyId).Count, BasePath + "/", true));
-            sb.Append("</div></div>");
-            sb.Append(WebPant.DropScript);
-            render(sb.ToString());
+            int bag = Expenses.inbox(companyId).Count;
+            set("bagAny", bag > 0);
+            set("bagWaiting", T("pant.waiting", bag));
+            set("bagAction", BasePath + "/");
+            set("today", Dates.today());
         }
 
-        static string chip(string key, string text, string current) {
-            return "<a href='" + BasePath + "/?period=" + key + "'" + (key == current ? " class='on'" : "") + ">" + text + "</a>";
-        }
-
-        static string glass(Runway r) {
+        /// <summary>The gauge: how long the money lasts, drawn as the theme's gauge (beer glass, tank …).</summary>
+        void setGauge(Runway r) {
             string headline, note;
             bool low = false;
             if (r.balance <= 0) {
-                headline = "Glaset är tomt";
-                note = "Saldot är " + Money.format(r.balance) + " kr.";
+                headline = Tr("bar.gauge.empty");
+                note = Tr("bar.gauge.balance", Money.format(r.balance));
                 low = true;
             } else if (r.months == null) {
-                headline = "Fullt glas";
-                note = "Inget har gått ut de senaste tre månaderna.";
+                headline = Tr("bar.gauge.full");
+                note = Tr("bar.gauge.nothingOut");
             } else {
                 decimal m = r.months.Value;
-                headline = m >= 24 ? "Räcker i över två år" : m >= 1 ? "Räcker i ca " + Money.formatDecimal(Math.Round(m, 1)) + " mån" : "Räcker i ca " + Math.Max(1, (int)Math.Round(m * 30)) + " dagar";
-                note = Money.formatWhole(r.balance) + " kr på kontot, ut ca " + Money.formatWhole(r.monthlyOut) + " kr/mån.";
+                headline = m >= 24 ? Tr("bar.gauge.years")
+                    : m >= 1 ? Tr("bar.gauge.months", Money.formatDecimal(Math.Round(m, 1)))
+                    : Tr("bar.gauge.days", Math.Max(1, (int)Math.Round(m * 30)));
+                note = Tr("bar.gauge.pace", Money.formatWhole(r.balance), Money.formatWhole(r.monthlyOut));
                 low = m < 1;
             }
-            if (r.owedToYou > 0) note += " Plus " + Money.formatWhole(r.owedToYou) + " kr på notan.";
-            return "<div class='glass" + (low ? " low" : "") + "' title='Saldot delat med vad som gått ut per månad de senaste tre månaderna'>" + FlowChart.glass(r)
-                + "<div><small>Glaset</small><b>" + h(headline) + "</b><small>" + h(note) + "</small></div></div>";
+            if (r.owedToYou > 0) note += " " + Tr("bar.gauge.owed", Money.formatWhole(r.owedToYou));
+            set("gauge", FlowChart.gauge(r, Themes.setting(theme, t => t.gauge) ?? "beer"));
+            set("gaugeClass", low ? "low" : "");
+            val("gaugeHeadline", headline);
+            val("gaugeNote", note);
         }
 
         /// <summary>Notan: sent invoices not paid yet, each ticked off with the day the money came in.</summary>
-        string notan(DateTime today) {
+        void setTab(DateTime today) {
             var unpaid = Db.forCompany("invoice", companyId)
                 .Where(i => Db.str(i, "status") == Invoicing.Sent)
                 .OrderBy(i => Db.str(i, "dueDate"))
                 .ToList();
-            var sb = new StringBuilder("<section class='panel'><div class='heading'><div><h2>Notan</h2><p class='sub'>De är skyldiga dig</p></div></div>");
-            if (unpaid.Count == 0) {
-                sb.Append("<p class='empty'>Ingen står på notan. <a href='" + BasePath + "/invoices.html'>Skriv en faktura</a>.</p>");
-            } else {
-                sb.Append("<div class='tab-list'>");
-                foreach (var i in unpaid) {
-                    DateTime due = Dates.parse(Db.str(i, "dueDate"));
-                    int days = (int)(due - today).TotalDays;
-                    string dueText = days < 0 ? "Förföll för " + (-days) + (days == -1 ? " dag" : " dagar") + " sen"
-                        : days == 0 ? "Förfaller i dag" : "Förfaller om " + days + (days == 1 ? " dag" : " dagar");
-                    sb.Append("<div class='tab'>");
-                    sb.Append("<div class='who'><a href='" + BasePath + "/invoice.html?id=" + u(i.id) + "'>" + h(Db.str(i, "customerName")) + "</a></div>");
-                    sb.Append("<div class='amount'>" + Money.format(Db.num(i, "total")) + " kr</div>");
-                    sb.Append("<div class='due" + (days < 0 ? " late" : "") + "'>Faktura " + Db.num(i, "number") + " · " + dueText + "</div>");
-                    sb.Append("<details><summary><span class='chip-btn'>Pricka av</span></summary>");
-                    sb.Append("<form method='post'>" + input("id", i.id, "hidden") + input("action", "paid", "hidden"));
-                    sb.Append(field("Betald den", input("paidDate", Dates.today(), "date", "required")));
-                    sb.Append("<button type='submit'>Betald</button></form></details>");
-                    sb.Append("</div>");
-                }
-                sb.Append("</div><div class='tab-total'><span>Totalt på notan</span><b>" + Money.format(unpaid.Sum(i => Db.num(i, "total"))) + " kr</b></div>");
-            }
-            sb.Append("</section>");
-            return sb.ToString();
+            rows("tab", unpaid.Select(i => {
+                int days = (int)(Dates.parse(Db.str(i, "dueDate")) - today).TotalDays;
+                string due = days < 0 ? Tn("bar.tab.overdue", -days) : days == 0 ? T("bar.tab.dueToday") : Tn("bar.tab.dueIn", days);
+                return row(("id", u(i.id)), ("customer", h(Db.str(i, "customerName"))), ("amount", Money.format(Db.num(i, "total"))),
+                    ("number", T("bar.tab.invoice", Db.num(i, "number"))), ("due", due), ("late", days < 0 ? "late" : ""));
+            }));
+            set("tabTotal", Money.format(unpaid.Sum(i => Db.num(i, "total"))));
         }
 
-        string todo() {
-            var invoices = Db.forCompany("invoice", companyId);
-            int drafts = invoices.Count(i => Db.str(i, "status") == Invoicing.Draft);
+        void setTodo() {
+            int drafts = Db.forCompany("invoice", companyId).Count(i => Db.str(i, "status") == Invoicing.Draft);
             int missingReceipts = Expenses.list(companyId).Count(e => Db.str(e, "receiptFileId").Length == 0);
             int bag = Expenses.inbox(companyId).Count;
-            var items = new StringBuilder();
-            if (bag > 0) items.Append("<li><a href='" + BasePath + "/pant.html'>" + bag + (bag == 1 ? " kvitto" : " kvitton") + " i pantpåsen</a> väntar på att sorteras.</li>");
-            if (drafts > 0) items.Append("<li><a href='" + BasePath + "/invoices.html'>" + drafts + " fakturautkast</a> har inte skickats.</li>");
-            if (missingReceipts > 0) items.Append("<li><a href='" + BasePath + "/expenses.html'>" + missingReceipts + (missingReceipts == 1 ? " utgift saknar" : " utgifter saknar") + " kvitto.</a> Kvittot ska sparas i sju år.</li>");
-            if (items.Length == 0) return "";
-            return "<section class='panel'><h2>Att göra</h2><ul class='todo'>" + items + "</ul></section>";
+            var items = new System.Collections.Generic.List<SwecialObject>();
+            if (bag > 0) items.Add(row(("href", BasePath + "/pant.html"), ("link", Tn("bar.todo.bag", bag)), ("rest", T("bar.todo.bagRest"))));
+            if (drafts > 0) items.Add(row(("href", BasePath + "/invoices.html"), ("link", Tn("bar.todo.drafts", drafts)), ("rest", T("bar.todo.draftsRest"))));
+            if (missingReceipts > 0) items.Add(row(("href", BasePath + "/expenses.html"), ("link", Tn("bar.todo.receipts", missingReceipts)), ("rest", T("bar.todo.receiptsRest"))));
+            rows("todo", items);
         }
     }
 }

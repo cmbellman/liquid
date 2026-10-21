@@ -1,24 +1,60 @@
 <% class=WebReports %>
-<!DOCTYPE html>
-<html lang="sv">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#070b12">
-    <title><%title%></title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@700&family=Manrope:wght@400;500;600;700;800&family=Share+Tech+Mono&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/liquid/style.css">
-</head>
-<body class="theme-<%theme%>">
-    <div class="app">
-        <aside class="side"><%nav%></aside>
-        <main>
-            <p class="error"><%error%></p>
-            <p class="message"><%message%></p>
-            <%content%>
-        </main>
-    </div>
-</body>
-</html>
+<% include=partials/top.part %>
+<div class="heading"><div><h1><%t.reports.title%></h1><p class="sub"><%t.reports.subtitle%></p></div></div>
+<section class="panel">
+    <form method="get" class="grid">
+        <label><%t.reports.report%><select name="report"><swe:iterator source="reportOptions"><option value="<%current.value%>" <%current.selected%>><%current.text%></option></swe:iterator></select></label>
+        <label><%t.reports.from%><input type="date" name="from" value="<%from%>" required></label>
+        <label><%t.reports.to%><input type="date" name="to" value="<%to%>" required></label>
+        <swe:condition source="isLedger"><label><%t.reports.account%><select name="account"><swe:iterator source="accountOptions"><option value="<%current.value%>" <%current.selected%>><%current.text%></option></swe:iterator></select></label></swe:condition>
+        <div class="actions"><button type="submit"><%t.reports.show%></button></div>
+    </form>
+</section>
+<swe:condition source="shown">
+    <if value="balance">
+    <section class="panel">
+        <h2><%t.reports.balance%> <%from%> – <%to%></h2>
+        <table>
+            <thead><tr><th><%t.reports.col.account%></th><th><%t.field.name%></th><th class="num"><%t.reports.col.opening%></th><th class="num"><%t.reports.col.debit%></th><th class="num"><%t.reports.col.credit%></th><th class="num"><%t.reports.col.closing%></th></tr></thead>
+            <tbody>
+                <swe:iterator source="balances"><tr><td><a href="<%current.ledgerHref%>"><%current.account%></a></td><td><%current.name%></td><td class="num"><%current.opening%></td><td class="num"><%current.debit%></td><td class="num"><%current.credit%></td><td class="num"><%current.closing%></td></tr></swe:iterator>
+            </tbody>
+            <tfoot>
+                <tr class="total"><td colspan="3"><%t.reports.sum%></td><td class="num"><%sumDebit%></td><td class="num"><%sumCredit%></td><td class="num"><%sumClosing%></td></tr>
+                <tr><td colspan="5"><%t.reports.result%></td><td class="num"><%result%></td></tr>
+            </tfoot>
+        </table>
+    </section>
+    </if>
+    <if value="ledger">
+    <section class="panel">
+        <swe:condition source="hasAccount">
+        <h2><%t.reports.ledger%> <%account%> <%accountName%></h2>
+        <table>
+            <thead><tr><th><%t.reports.col.voucher%></th><th><%t.col.date%></th><th><%t.reports.col.text%></th><th class="num"><%t.reports.col.debit%></th><th class="num"><%t.reports.col.credit%></th><th class="num"><%t.bank.col.balance%></th></tr></thead>
+            <tbody>
+                <tr><td></td><td><%from%></td><td><%t.reports.openingBalance%></td><td></td><td></td><td class="num"><%opening%></td></tr>
+                <swe:iterator source="ledgerLines"><tr><td><a href="/liquid/voucher.html?id=<%current.id%>"><%current.label%></a></td><td><%current.date%></td><td><%current.text%></td><td class="num"><%current.debit%></td><td class="num"><%current.credit%></td><td class="num"><%current.balance%></td></tr></swe:iterator>
+            </tbody>
+            <tfoot><tr class="total"><td colspan="3"><%t.reports.closingBalance%></td><td class="num"><%sumDebit%></td><td class="num"><%sumCredit%></td><td class="num"><%closing%></td></tr></tfoot>
+        </table>
+        <else>
+        <p class="empty"><%t.reports.chooseAccount%></p>
+        </else>
+        </swe:condition>
+    </section>
+    </if>
+    <if value="vat">
+    <section class="panel">
+        <h2><%t.reports.vat%> <%from%> – <%to%></h2>
+        <table>
+            <thead><tr><th><%t.reports.col.box%></th><th><%t.invoice.col.description%></th><th class="num"><%t.col.amount%></th></tr></thead>
+            <tbody>
+                <swe:iterator source="boxes"><tr class="<%current.class%>"><td><%current.box%></td><td><%current.label%></td><td class="num"><%current.amount%></td></tr></swe:iterator>
+            </tbody>
+        </table>
+        <p class="hint"><%t.reports.vatHint%></p>
+    </section>
+    </if>
+</swe:condition>
+<% include=partials/bottom.part %>

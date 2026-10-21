@@ -1,24 +1,45 @@
 <% class=WebPant %>
-<!DOCTYPE html>
-<html lang="sv">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#070b12">
-    <title><%title%></title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@700&family=Manrope:wght@400;500;600;700;800&family=Share+Tech+Mono&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/liquid/style.css">
-</head>
-<body class="theme-<%theme%>">
-    <div class="app">
-        <aside class="side"><%nav%></aside>
-        <main>
-            <p class="error"><%error%></p>
-            <p class="message"><%message%></p>
-            <%content%>
-        </main>
-    </div>
-</body>
-</html>
+<% include=partials/top.part %>
+<div class="heading"><div><h1><%t.pant.title%></h1><p class="sub"><%t.pant.subtitle%></p></div></div>
+<section class="panel">
+    <% include=partials/dropzone.part %>
+</section>
+<section class="panel">
+    <swe:condition source="itemsAny">
+        <div class="heading">
+            <div><h2><%toSort%></h2><p class="sub"><%t.pant.toSortSub%></p></div>
+            <div class="heading-actions"><a class="button" href="/liquid/expense.html?id=<%firstId%>"><%t.pant.start%></a></div>
+        </div>
+        <div class="bag">
+            <swe:iterator source="items">
+            <div class="bag-item">
+                <a class="thumb" href="/liquid/expense.html?id=<%current.id%>">
+                    <swe:condition source="current.isImage"><img src="<%current.src%>" alt="<%t.pant.receipt%>" loading="lazy"><else><%current.type%></else></swe:condition>
+                </a>
+                <div class="meta">
+                    <swe:condition source="current.ai">
+                        <if value="reading"><span class="ai-line reading"><%icons.ai%><%t.ai.reading.short%></span></if>
+                        <if value="done"><span class="ai-line"><%icons.ai%><%current.found%></span></if>
+                        <if value="failed"><span class="ai-line failed"><%t.ai.failed.short%></span></if>
+                    </swe:condition>
+                    <span><%current.fileName%><br><%current.added%></span>
+                    <div class="actions">
+                        <a class="button" href="/liquid/expense.html?id=<%current.id%>"><%t.pant.sort%></a>
+                        <form method="post" class="row-action">
+                            <input type="hidden" name="id" value="<%current.id%>">
+                            <button type="submit" name="action" value="remove" class="link danger"><%t.pant.discard%></button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            </swe:iterator>
+        </div>
+    <else>
+        <p class="empty"><%t.pant.empty%></p>
+    </else>
+    </swe:condition>
+</section>
+<swe:condition source="reading">
+<script>(function(){var t=setTimeout(function(){location.reload();},4000);document.addEventListener('click',function(){clearTimeout(t);},true);})();</script>
+</swe:condition>
+<% include=partials/bottom.part %>

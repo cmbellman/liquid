@@ -1,24 +1,64 @@
 <% class=WebExpense %>
-<!DOCTYPE html>
-<html lang="sv">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#070b12">
-    <title><%title%></title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@700&family=Manrope:wght@400;500;600;700;800&family=Share+Tech+Mono&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/liquid/style.css">
-</head>
-<body class="theme-<%theme%>">
-    <div class="app">
-        <aside class="side"><%nav%></aside>
-        <main>
-            <p class="error"><%error%></p>
-            <p class="message"><%message%></p>
-            <%content%>
-        </main>
+<% include=partials/top.part %>
+<swe:condition source="sorting">
+<div class="heading">
+    <div><h1><%t.expense.sortTitle%></h1><p class="sub"><%sortLeft%></p></div>
+    <div class="heading-actions"><a href="/liquid/pant.html"><%t.expense.toBag%></a></div>
+</div>
+<div class="sort">
+    <div class="preview">
+        <swe:condition source="preview">
+            <if value="pdf"><iframe src="<%receiptSrc%>" title="<%t.expense.receipt%>"></iframe></if>
+            <if value="image"><img src="<%receiptSrc%>" alt="<%t.expense.receipt%>"></if>
+        </swe:condition>
+        <a href="<%receiptSrc%>" target="_blank"><%t.expense.openReceipt%></a>
     </div>
-</body>
-</html>
+    <section class="panel">
+        <swe:condition source="ai">
+            <if value="reading"><p class="ai reading"><%icons.ai%><%t.ai.reading.full%></p>
+                <script>document.addEventListener('DOMContentLoaded',function(){var t=setTimeout(function(){location.reload();},3000);document.getElementById('expense').addEventListener('input',function(){clearTimeout(t);});});</script></if>
+            <if value="done"><p class="ai"><%icons.ai%><span><%t.ai.done%> <%aiCurrency%> <%aiForeignKind%></span></p></if>
+            <if value="failed"><p class="ai failed"><%t.ai.failed.full%></p></if>
+        </swe:condition>
+        <% include=partials/expense-form.part %>
+    </section>
+</div>
+<else>
+<div class="heading"><div><h1><%heading%></h1><p class="sub"><%t.expense.subtitle%></p></div></div>
+<section class="panel">
+    <% include=partials/expense-form.part %>
+</section>
+</else>
+</swe:condition>
+<script>
+(function () {
+  var f = document.getElementById('expense'), cat = f.category, total = f.total, rate = f.vatRate, vat = f.vat, foreign = f.foreign;
+  var hint = document.getElementById('categoryHint'), foreignHint = document.getElementById('foreignHint');
+  var typed = vat.value !== '';
+  function n(v) { v = (v || '').replace(/[\s ]/g, '').replace(',', '.'); return Math.round((parseFloat(v) || 0) * 100); }
+  function fmt(ore) { return (ore / 100).toFixed(2).replace('.', ','); }
+  function computeVat() {
+    if (typed) return;
+    var t = n(total.value), r = parseInt(rate.value, 10) || 0;
+    vat.value = t ? fmt(Math.round(foreign.value ? t * r / 100 : t * r / (100 + r))) : '';
+  }
+  function showHints() {
+    var o = cat.options[cat.selectedIndex];
+    hint.textContent = o ? (o.getAttribute('data-hint') || '') : '';
+    hint.style.display = hint.textContent ? '' : 'none';
+    foreignHint.style.display = foreign.value ? '' : 'none';
+    vat.readOnly = !!foreign.value;
+  }
+  cat.addEventListener('change', function () {
+    var o = cat.options[cat.selectedIndex];
+    if (o && o.getAttribute('data-vat') !== null) rate.value = o.getAttribute('data-vat');
+    typed = false; computeVat(); showHints();
+  });
+  foreign.addEventListener('change', function () { if (foreign.value) rate.value = '25'; typed = false; computeVat(); showHints(); });
+  total.addEventListener('input', computeVat);
+  rate.addEventListener('change', function () { typed = false; computeVat(); });
+  vat.addEventListener('input', function () { typed = vat.value !== ''; });
+  showHints();
+})();
+</script>
+<% include=partials/bottom.part %>

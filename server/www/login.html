@@ -1,24 +1,13 @@
 <% class=WebLogin %>
-<!DOCTYPE html>
-<html lang="sv">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#070b12">
-    <title><%title%></title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@700&family=Manrope:wght@400;500;600;700;800&family=Share+Tech+Mono&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/liquid/style.css">
-</head>
-<body class="theme-<%theme%>">
-    <div class="app">
-        <aside class="side"><%nav%></aside>
-        <main>
-            <p class="error"><%error%></p>
-            <p class="message"><%message%></p>
-            <%content%>
-        </main>
-    </div>
-</body>
-</html>
+<% include=partials/top.part %>
+<section class="panel narrow">
+    <h1><%t.login.title%></h1>
+    <p class="lead"><%t.login.lead%></p>
+    <form method="post">
+        <label><%t.field.email%><input type="email" name="email" value="<%email%>" autocomplete="username" required autofocus></label>
+        <label><%t.login.password%><input type="password" name="password" autocomplete="current-password" required></label>
+        <button type="submit"><%t.login.title%></button>
+    </form>
+    <p class="links"><a href="/liquid/signup.html"><%t.signup.title%></a></p>
+</section>
+<% include=partials/bottom.part %>

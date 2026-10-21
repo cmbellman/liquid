@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="<%t.lang%>">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#070b12">
+    <title><%title%></title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <%themeFonts%>
+    <link rel="stylesheet" href="/liquid/style.css">
+    <link rel="stylesheet" href="/liquid/theme-<%theme%>.css">
+</head>
+<body class="theme-<%theme%>">
+    <div class="app">
+        <aside class="side">
+            <a class="brand" href="/liquid/"><%brand%></a>
+            <swe:condition source="clock"><div class="clock" aria-hidden="true"><span id="clock"></span><script>(function(){function t(){var d=new Date(),e=document.getElementById('clock');if(e)e.textContent=('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);}t();setInterval(t,10000);})();</script></div></swe:condition>
+            <swe:condition source="navItemsAny">
+            <nav>
+                <swe:iterator source="navItems"><a href="<%current.href%>" class="<%current.active%>"><%current.icon%><span><%current.text%></span><swe:condition source="current.hasBadge"><b class="badge"><%current.badge%></b></swe:condition></a></swe:iterator>
+            </nav>
+            </swe:condition>
+            <swe:condition source="signedIn">
+            <div class="who">
+                <swe:condition source="hasCompany"><span class="company"><%icons.company%><span><%companyName%></span></span></swe:condition>
+                <a href="/liquid/login.html?logout=true"><%icons.logout%><span><%t.nav.logout%></span></a>
+            </div>
+            </swe:condition>
+        </aside>
+        <main>
+            <p class="error"><%error%></p>
+            <p class="message"><%message%></p>

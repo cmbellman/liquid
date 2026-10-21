@@ -50,9 +50,9 @@ namespace com.swecial.code {
         /// <summary>Lets the serial series continue from a number (e.g. where an earlier system ended).</summary>
         public static void setNextSerial(string companyId, long next) {
             lock (Db.Sync) {
-                if (next < 1 || next > MaxSerial) throw new LiquidException("Nästa fakturanummer ska vara mellan 1 och " + MaxSerial + ".");
+                if (next < 1 || next > MaxSerial) throw new LiquidException("Nästa fakturanummer ska vara mellan 1 och " + MaxSerial + ".", "NEXT INVOICE NUMBER MUST BE BETWEEN 1 AND " + MaxSerial + ".");
                 long highest = highestSerial(companyId);
-                if (next <= highest) throw new LiquidException("Nästa fakturanummer måste vara större än " + highest + ", som redan är använt.");
+                if (next <= highest) throw new LiquidException("Nästa fakturanummer måste vara större än " + highest + ", som redan är använt.", "NEXT INVOICE NUMBER MUST EXCEED " + highest + ", ALREADY IN USE.");
                 var counter = Db.forCompany("counter", companyId).FirstOrDefault(c => Db.str(c, "key") == SerialCounter);
                 if (counter == null) {
                     counter = Db.create("counter", companyId);

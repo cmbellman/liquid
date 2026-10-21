@@ -1,0 +1,17 @@
+<form method="post" enctype="multipart/form-data" action="<%bagAction%>" class="bag-form">
+    <input type="hidden" name="action" value="bag">
+    <label class="drop"><%icons.drop%><div><strong><%t.pant.drop%></strong><span><%t.pant.dropHint%></span></div>
+        <input type="file" name="receipts" accept="image/*,application/pdf" multiple></label>
+    <label class="button secondary camera"><%icons.camera%><%t.pant.camera%><input type="file" name="photo" accept="image/*" capture="environment"></label>
+</form>
+<script>
+(function () {
+  document.querySelectorAll('.bag-form').forEach(function (f) {
+    var drop = f.querySelector('.drop'), input = drop.querySelector('input');
+    f.querySelectorAll('input[type=file]').forEach(function (i) { i.addEventListener('change', function () { if (i.files.length) f.submit(); }); });
+    ['dragenter', 'dragover'].forEach(function (e) { drop.addEventListener(e, function (ev) { ev.preventDefault(); drop.classList.add('over'); }); });
+    ['dragleave', 'drop'].forEach(function (e) { drop.addEventListener(e, function (ev) { ev.preventDefault(); drop.classList.remove('over'); }); });
+    drop.addEventListener('drop', function (ev) { if (ev.dataTransfer.files.length) { input.files = ev.dataTransfer.files; f.submit(); } });
+  });
+})();
+</script>

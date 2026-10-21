@@ -1,0 +1,5 @@
+<tfoot>
+    <tr><td colspan="4"><%t.invoice.net%></td><td class="num"><%net%></td></tr>
+    <swe:iterator source="vatLines"><tr><td colspan="4"><%current.label%></td><td class="num"><%current.vat%></td></tr></swe:iterator>
+    <tr class="total"><td colspan="4"><%t.invoice.toPay%></td><td class="num"><%totalDue%></td></tr>
+</tfoot>

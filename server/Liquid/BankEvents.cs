@@ -37,8 +37,8 @@ namespace com.swecial.code {
         }
 
         public static SwecialObject book(string companyId, string kindKey, string date, long amount, string note, string userId) {
-            var kind = find(kindKey) ?? throw new LiquidException("Välj vad det gäller.");
-            if (amount <= 0) throw new LiquidException("Fyll i beloppet.");
+            var kind = find(kindKey) ?? throw new LiquidException("Välj vad det gäller.", "SELECT TRANSACTION TYPE.");
+            if (amount <= 0) throw new LiquidException("Fyll i beloppet.", "AMOUNT REQUIRED.");
             date = Dates.clean(date);
             note = (note ?? "").Trim();
             string text = kind.name + (note.Length > 0 ? ": " + note : "");

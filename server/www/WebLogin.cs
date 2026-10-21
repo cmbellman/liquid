@@ -17,7 +17,7 @@ namespace com.swecial.web {
         string email = "";
 
         public override void processPage() {
-            title("Logga in");
+            title(Tr("login.title"));
             string target = safeRedirect(query("redirect"));
 
             if (query("logout").Length > 0) {
@@ -41,7 +41,7 @@ namespace com.swecial.web {
             string ipKey = "ip:" + (req.ip ?? "unknown");
             string emailKey = "email:" + email;
             if (isLocked(ipKey) || isLocked(emailKey)) {
-                set("error", "För många misslyckade försök. Försök igen om 15 minuter.");
+                set("error", T("login.locked"));
                 return;
             }
 
@@ -49,7 +49,7 @@ namespace com.swecial.web {
             if (user == null || !user.checkPassword(password)) {
                 fail(ipKey);
                 fail(emailKey);
-                set("error", "Fel e-post eller lösenord.");
+                set("error", T("login.wrong"));
                 return;
             }
 
@@ -60,16 +60,7 @@ namespace com.swecial.web {
         }
 
         void renderForm() {
-            render(@"<section class='panel narrow'>
-<h1>Logga in</h1>
-<p class='lead'>Använd e-post och lösenord för ditt Swecial-konto.</p>
-<form method='post'>"
-+ field("E-post", input("email", email, "email", "autocomplete='username' required autofocus"))
-+ field("Lösenord", input("password", "", "password", "autocomplete='current-password' required"))
-+ @"<button type='submit'>Logga in</button>
-</form>
-<p class='links'><a href='" + BasePath + @"/signup.html'>Skapa konto</a></p>
-</section>");
+            val("email", email);
         }
 
         static bool isLocked(string key) {

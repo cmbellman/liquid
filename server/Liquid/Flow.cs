@@ -33,7 +33,6 @@ namespace com.swecial.code {
     /// and would otherwise show up as both money in and out.
     /// </summary>
     public static class Flow {
-        static readonly CultureInfo Sv = CultureInfo.GetCultureInfo("sv-SE");
 
         public const string Quarter = "kvartal";
         public const string Year = "ar";
@@ -59,13 +58,14 @@ namespace com.swecial.code {
         /// this year, and "12m" (default) months from 11 back to 3 ahead. Future buckets are a forecast
         /// of the unpaid invoices by due date; overdue ones are expected in the current bucket.
         /// </summary>
-        public static List<FlowBucket> buckets(string companyId, string period, DateTime today) {
+        public static List<FlowBucket> buckets(string companyId, string period, DateTime today, string language = "sv") {
+            var culture = CultureInfo.GetCultureInfo(language == "en" ? "en-GB" : "sv-SE");
             var buckets = new List<FlowBucket>();
             if (period == Quarter) {
                 DateTime monday = today.AddDays(-(((int)today.DayOfWeek + 6) % 7));
                 for (int i = -12; i <= 4; i++) {
                     DateTime start = monday.AddDays(7 * i);
-                    buckets.Add(new FlowBucket { start = start, end = start.AddDays(7), label = "v" + ISOWeek.GetWeekOfYear(start) });
+                    buckets.Add(new FlowBucket { start = start, end = start.AddDays(7), label = (language == "en" ? "W" : "v") + ISOWeek.GetWeekOfYear(start) });
                 }
             } else {
                 DateTime month = new DateTime(today.Year, today.Month, 1);
@@ -73,7 +73,7 @@ namespace com.swecial.code {
                 int to = period == Year ? 12 - today.Month : 3;
                 for (int i = from; i <= to; i++) {
                     DateTime start = month.AddMonths(i);
-                    buckets.Add(new FlowBucket { start = start, end = start.AddMonths(1), label = start.ToString("MMM", Sv).TrimEnd('.') });
+                    buckets.Add(new FlowBucket { start = start, end = start.AddMonths(1), label = start.ToString("MMM", culture).TrimEnd('.') });
                 }
             }
             foreach (var b in buckets) b.forecast = b.start > today;

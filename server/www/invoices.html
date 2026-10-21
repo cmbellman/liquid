@@ -1,24 +1,29 @@
 <% class=WebInvoices %>
-<!DOCTYPE html>
-<html lang="sv">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#070b12">
-    <title><%title%></title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@700&family=Manrope:wght@400;500;600;700;800&family=Share+Tech+Mono&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/liquid/style.css">
-</head>
-<body class="theme-<%theme%>">
-    <div class="app">
-        <aside class="side"><%nav%></aside>
-        <main>
-            <p class="error"><%error%></p>
-            <p class="message"><%message%></p>
-            <%content%>
-        </main>
-    </div>
-</body>
-</html>
+<% include=partials/top.part %>
+<div class="heading">
+    <div><h1><%t.invoices.title%></h1><p class="sub"><%t.invoices.subtitle%></p></div>
+    <div class="heading-actions"><form method="post"><button type="submit"><%t.invoices.new%></button></form></div>
+</div>
+<section class="panel">
+    <swe:condition source="invoicesAny">
+        <table>
+            <thead><tr><th><%t.col.number%></th><th><%t.col.customer%></th><th><%t.col.invoiceDate%></th><th><%t.col.due%></th><th><%t.col.status%></th><th class="num"><%t.col.amount%></th></tr></thead>
+            <tbody>
+                <swe:iterator source="invoices">
+                <tr>
+                    <td><a href="/liquid/invoice.html?id=<%current.id%>"><%current.number%></a></td>
+                    <td><%current.customer%></td>
+                    <td><%current.invoiceDate%></td>
+                    <td><%current.dueDate%></td>
+                    <td><span class="status <%current.statusClass%>"><%current.status%></span></td>
+                    <td class="num"><%current.total%></td>
+                </tr>
+                </swe:iterator>
+            </tbody>
+        </table>
+    <else>
+        <p class="empty"><%t.invoices.empty%></p>
+    </else>
+    </swe:condition>
+</section>
+<% include=partials/bottom.part %>

@@ -1,24 +1,68 @@
 <% class=WebVoucher %>
-<!DOCTYPE html>
-<html lang="sv">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#070b12">
-    <title><%title%></title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@700&family=Manrope:wght@400;500;600;700;800&family=Share+Tech+Mono&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/liquid/style.css">
-</head>
-<body class="theme-<%theme%>">
-    <div class="app">
-        <aside class="side"><%nav%></aside>
-        <main>
-            <p class="error"><%error%></p>
-            <p class="message"><%message%></p>
-            <%content%>
-        </main>
-    </div>
-</body>
-</html>
+<% include=partials/top.part %>
+<swe:condition source="viewing">
+<section class="panel">
+    <div class="heading"><h1><%heading%></h1></div>
+    <dl class="facts">
+        <dt><%t.col.date%></dt><dd><%date%></dd>
+        <dt><%t.reports.col.text%></dt><dd><%text%></dd>
+        <swe:condition source="hasSource"><dt><%t.voucher.source%></dt><dd><%source%></dd></swe:condition>
+        <swe:condition source="hasReverses"><dt><%t.voucher.reverses%></dt><dd><%reverses%></dd></swe:condition>
+        <swe:condition source="hasReversedBy"><dt><%t.voucher.reversedBy%></dt><dd><%reversedBy%></dd></swe:condition>
+    </dl>
+    <table>
+        <thead><tr><th><%t.reports.col.account%></th><th><%t.field.name%></th><th class="num"><%t.reports.col.debit%></th><th class="num"><%t.reports.col.credit%></th></tr></thead>
+        <tbody>
+            <swe:iterator source="lines"><tr><td><%current.account%></td><td><%current.name%></td><td class="num"><%current.debit%></td><td class="num"><%current.credit%></td></tr></swe:iterator>
+        </tbody>
+        <tfoot><tr class="total"><td colspan="2"><%t.reports.sum%></td><td class="num"><%sumDebit%></td><td class="num"><%sumCredit%></td></tr></tfoot>
+    </table>
+    <swe:condition source="canReverse">
+    <form method="post" class="inline">
+        <input type="hidden" name="id" value="<%id%>">
+        <label><%t.voucher.reverseDate%><input type="date" name="date" value="<%reverseDate%>" required></label>
+        <button type="submit" name="action" value="reverse" class="danger"><%t.voucher.reverse%></button>
+    </form>
+    </swe:condition>
+</section>
+<else>
+<section class="panel">
+    <h1><%t.voucher.new%></h1>
+    <form method="post">
+        <div class="grid">
+            <label><%t.col.date%><input type="date" name="date" value="<%date%>" required></label>
+            <label><%t.reports.col.text%><input type="text" name="text" value="<%text%>" required></label>
+        </div>
+        <table class="rows">
+            <thead><tr><th><%t.reports.col.account%></th><th class="num"><%t.reports.col.debit%></th><th class="num"><%t.reports.col.credit%></th></tr></thead>
+            <tbody>
+                <swe:iterator source="formLines">
+                <tr>
+                    <td><select name="account<%current.i%>"><swe:iterator source="current.accounts"><option value="<%current.value%>" <%current.selected%>><%current.text%></option></swe:iterator></select></td>
+                    <td><input type="text" name="debit<%current.i%>" value="<%current.debit%>" inputmode="decimal" class="num"></td>
+                    <td><input type="text" name="credit<%current.i%>" value="<%current.credit%>" inputmode="decimal" class="num"></td>
+                </tr>
+                </swe:iterator>
+            </tbody>
+            <tfoot><tr><td><%t.voucher.difference%></td><td class="num" id="diff" colspan="2" data-ok="<%t.voucher.balances%>"></td></tr></tfoot>
+        </table>
+        <div class="actions"><button type="submit"><%t.voucher.book%></button><a href="/liquid/vouchers.html"><%t.common.cancel%></a></div>
+        <p class="hint"><%t.voucher.hint%></p>
+    </form>
+</section>
+<script>
+(function () {
+  var f = document.querySelector('form'), out = document.getElementById('diff');
+  function n(v) { v = (v || '').replace(/[\s ]/g, '').replace(',', '.'); return Math.round((parseFloat(v) || 0) * 100); }
+  function update() {
+    var d = 0;
+    for (var i = 0; f['debit' + i]; i++) d += n(f['debit' + i].value) - n(f['credit' + i].value);
+    out.textContent = d === 0 ? out.getAttribute('data-ok') : (d / 100).toLocaleString('sv-SE', { minimumFractionDigits: 2 });
+    out.className = 'num ' + (d === 0 ? 'ok' : 'off');
+  }
+  f.addEventListener('input', update); update();
+})();
+</script>
+</else>
+</swe:condition>
+<% include=partials/bottom.part %>

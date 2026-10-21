@@ -1,0 +1,34 @@
+<form method="post" enctype="multipart/form-data" id="expense">
+    <swe:condition source="exists"><input type="hidden" name="id" value="<%id%>"></swe:condition>
+    <div class="grid">
+        <label><%t.expense.date%><input type="date" name="date" value="<%date%>" required></label>
+        <label><%t.expense.supplier%><input type="text" name="supplier" value="<%supplier%>" required placeholder="<%t.expense.supplierPlaceholder%>" autocomplete="off"></label>
+    </div>
+    <label><%t.expense.category%><select name="category" required>
+        <option value=""><%t.common.choose%></option>
+        <swe:iterator source="categories"><option value="<%current.value%>" data-vat="<%current.vat%>" data-hint="<%current.hint%>" <%current.selected%>><%current.text%></option></swe:iterator>
+    </select></label>
+    <p class="hint" id="categoryHint"></p>
+    <div class="grid">
+        <label><%t.expense.total%><input type="text" name="total" value="<%total%>" inputmode="decimal" class="num" required></label>
+        <label><%t.expense.vatRate%><select name="vatRate"><swe:iterator source="vatRates"><option value="<%current.value%>" <%current.selected%>><%current.text%></option></swe:iterator></select></label>
+        <label><%t.expense.vat%><input type="text" name="vat" value="<%vat%>" inputmode="decimal" class="num"></label>
+        <label><%t.expense.foreign.label%><select name="foreign"><swe:iterator source="foreignOptions"><option value="<%current.value%>" <%current.selected%>><%current.text%></option></swe:iterator></select></label>
+    </div>
+    <p class="hint" id="foreignHint"><%t.expense.foreignHint%></p>
+    <label><swe:condition source="hasReceipt"><%t.expense.replaceReceipt%><else><%t.expense.receiptUpload%></else></swe:condition><input type="file" name="receipt" accept="image/*,application/pdf"></label>
+    <swe:condition source="showReceipt">
+    <p class="receipt">
+        <swe:condition source="receiptIsImage"><a href="<%receiptSrc%>" target="_blank"><img src="<%receiptSrc%>" alt="<%t.expense.receipt%>"></a><else><a href="<%receiptSrc%>" target="_blank"><%t.expense.showReceipt%></a></else></swe:condition>
+        <span class="hint"><%t.expense.replaceHint%></span>
+    </p>
+    </swe:condition>
+    <label><%t.expense.note%><input type="text" name="note" value="<%note%>" placeholder="<%t.expense.notePlaceholder%>"></label>
+    <div class="actions">
+        <button type="submit" name="action" value="save"><swe:condition source="sorting"><%t.expense.bookNext%><else><%t.common.save%></else></swe:condition></button>
+        <swe:condition source="exists"><else><button type="submit" name="action" value="another" class="secondary"><%t.expense.saveAnother%></button></else></swe:condition>
+        <a href="<%cancelHref%>"><%t.common.cancel%></a>
+        <swe:condition source="exists"><button type="submit" name="action" value="remove" class="danger" formnovalidate><swe:condition source="sorting"><%t.expense.discardReceipt%><else><%t.common.remove%></else></swe:condition></button></swe:condition>
+    </div>
+    <swe:condition source="showChangeHint"><p class="hint"><%t.expense.changeHint%></p></swe:condition>
+</form>

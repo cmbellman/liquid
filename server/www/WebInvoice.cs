@@ -25,7 +25,7 @@ namespace com.swecial.web {
                 return;
             }
             long number = Db.num(invoice, "number");
-            title(number > 0 ? "Faktura " + number : "Fakturautkast");
+            title(number > 0 ? Tr("invoice.title", number) : Tr("invoice.draft"));
 
             if (isPost) {
                 string action = form("action");
@@ -63,7 +63,7 @@ namespace com.swecial.web {
 
         void readForm() {
             string customerId = form("customerId");
-            if (customerId.Length > 0 && Db.getOwned("customer", customerId, companyId) == null) throw new LiquidException("Kunden finns inte.");
+            if (customerId.Length > 0 && Db.getOwned("customer", customerId, companyId) == null) throw new LiquidException("Kunden finns inte.", "CLIENT NOT FOUND.");
             invoice.set("customerId", customerId);
             invoice.set("invoiceDate", Dates.clean(form("invoiceDate")));
             invoice.set("dueDate", Dates.clean(form("dueDate")));
@@ -89,111 +89,63 @@ namespace com.swecial.web {
         void renderPage() {
             string status = Db.str(invoice, "status");
             bool draft = status == Invoicing.Draft;
-            var rows = Invoicing.rows(invoice);
-            var totals = Invoicing.totals(rows);
+            var lines = Invoicing.rows(invoice);
+            var totals = Invoicing.totals(lines);
             long number = Db.num(invoice, "number");
-
-            var sb = new StringBuilder();
-            sb.Append("<section class='panel'><div class='heading'><h1>" + (number > 0 ? "Faktura " + number : "Fakturautkast") + "</h1>");
-            sb.Append("<span class='status " + h(status) + "'>" + Invoicing.statusName(status) + "</span>");
-            if (!draft) sb.Append("<a class='button secondary' href='" + BasePath + "/invoice-print.html?id=" + u(invoice.id) + "' target='_blank'>Skriv ut / PDF</a>");
-            sb.Append("</div>");
-
-            if (draft) {
-                sb.Append(editForm(rows, totals));
-            } else {
-                sb.Append(summary(rows, totals));
-            }
-            sb.Append("</section>");
-            render(sb.ToString());
-        }
-
-        string editForm(List<InvoiceRow> rows, InvoiceTotals totals) {
-            var customers = Db.forCompany("customer", companyId).OrderBy(c => Db.str(c, "name"))
-                .Select(c => (c.id, Db.str(c, "name"))).Prepend(("", "Välj kund")).ToList();
             string value(string key) => isPost ? form(key) : Db.str(invoice, key);
 
-            var sb = new StringBuilder("<form method='post'>");
-            sb.Append(input("id", invoice.id, "hidden"));
-            sb.Append("<div class='grid'>");
-            sb.Append(field("Kund", select("customerId", customers, value("customerId"))));
-            sb.Append(field("Fakturadatum", input("invoiceDate", value("invoiceDate"), "date", "required")));
-            sb.Append(field("Förfallodatum", input("dueDate", value("dueDate"), "date", "required")));
-            sb.Append(field("Vår referens", input("ourReference", value("ourReference"))));
-            sb.Append("</div>");
-            if (customers.Count == 1) sb.Append("<p class='hint'>Lägg först upp en kund under <a href='" + BasePath + "/customers.html'>Kunder</a>.</p>");
+            set("id", u(invoice.id));
+            set("heading", number > 0 ? T("invoice.title", number) : T("invoice.draft"));
+            set("statusClass", h(status));
+            set("status", T("status." + status));
+            set("draft", draft);
+            set("sent", status == Invoicing.Sent);
+            set("paid", Db.str(invoice, "paidDate").Length > 0);
+            val("invoiceDate", value("invoiceDate"));
+            val("dueDate", value("dueDate"));
+            val("ourReference", value("ourReference"));
+            val("note", value("note"));
+            val("customerName", Db.str(invoice, "customerName"));
+            val("paidDate", Db.str(invoice, "paidDate"));
+            val("paidDateInput", isPost ? form("paidDate") : Dates.today());
 
-            sb.Append("<table class='rows'><thead><tr><th>Beskrivning</th><th class='num'>Antal</th><th class='num'>À-pris</th><th>Moms</th><th class='num'>Belopp</th></tr></thead><tbody>");
-            int count = isPost ? rowCount() : rows.Count + BlankRows;
-            for (int i = 0; i < count; i++) {
-                InvoiceRow row = !isPost && i < rows.Count ? rows[i] : null;
-                string text = isPost ? form("text" + i) : row?.text ?? "";
-                string qty = isPost ? form("qty" + i) : row != null ? Money.formatDecimal(row.quantity) : "";
-                string price = isPost ? form("price" + i) : row != null ? Money.input(row.unitPrice) : "";
-                string vat = isPost ? form("vat" + i) : (row?.vatRate ?? 25).ToString();
-                sb.Append("<tr><td>" + input("text" + i, text) + "</td>");
-                sb.Append("<td>" + input("qty" + i, qty, "text", "inputmode='decimal' class='num' placeholder='1'") + "</td>");
-                sb.Append("<td>" + input("price" + i, price, "text", "inputmode='decimal' class='num'") + "</td>");
-                sb.Append("<td>" + select("vat" + i, Bas.VatRates.Select(r => (r.ToString(), r + " %")), vat) + "</td>");
-                sb.Append(row != null ? amountCell(row.net) : "<td></td>");
-                sb.Append("</tr>");
+            // Totals for the table footer
+            set("net", Money.formatOrBlank(totals.net));
+            rows("vatLines", totals.byRate.Where(r => r.Key > 0).Reverse().Select(r =>
+                row(("label", T("invoice.vatOn", r.Key, Money.format(r.Value.net))), ("vat", Money.formatOrBlank(r.Value.vat)))));
+            set("totalDue", Money.format(totals.total));
+
+            if (draft) {
+                var customers = Db.forCompany("customer", companyId).OrderBy(c => Db.str(c, "name")).Select(c => (c.id, Db.str(c, "name"))).ToList();
+                set("noCustomers", customers.Count == 0);
+                set("customers", options(customers.Prepend(("", Tr("invoice.chooseCustomer"))), value("customerId")));
+                int count = isPost ? rowCount() : lines.Count + BlankRows;
+                set("rowCount", count.ToString());
+                rows("lines", Enumerable.Range(0, count).Select(i => {
+                    InvoiceRow line = !isPost && i < lines.Count ? lines[i] : null;
+                    return row(("i", i.ToString()),
+                        ("text", h(isPost ? form("text" + i) : line?.text ?? "")),
+                        ("qty", h(isPost ? form("qty" + i) : line != null ? Money.formatDecimal(line.quantity) : "")),
+                        ("price", h(isPost ? form("price" + i) : line != null ? Money.input(line.unitPrice) : "")),
+                        ("vatRates", vatOptions(isPost ? form("vat" + i) : (line?.vatRate ?? 25).ToString())),
+                        ("net", line != null ? Money.formatOrBlank(line.net) : ""));
+                }));
+                bool accrual = Settings.accountingMethod(company) == Settings.AccrualMethod;
+                set("sendHint", T(accrual ? "invoice.sendHint.accrual" : "invoice.sendHint.cash"));
+            } else {
+                rows("lines", lines.Select(line => row(("text", h(line.text)), ("qty", Money.formatDecimal(line.quantity)),
+                    ("price", Money.formatOrBlank(line.unitPrice)), ("vat", line.vatRate.ToString()), ("net", Money.formatOrBlank(line.net)))));
+                // Booked when sent (accrual method) and/or when paid
+                var links = new[] { voucherLink("voucherId"), voucherLink("paymentVoucherId") }.Where(l => l.Length > 0).ToList();
+                set("bookkeeping", links.Count > 0 ? string.Join(", ", links) : T("invoice.bookedWhenPaid"));
+                bool bookedWhenSent = Db.str(invoice, "voucherId").Length > 0;
+                set("paymentHint", T(bookedWhenSent ? "invoice.paymentHint.accrual" : "invoice.paymentHint.cash", Money.format(totals.total)));
             }
-            sb.Append("</tbody>" + totalsFooter(totals) + "</table>");
-            sb.Append(input("rowCount", count.ToString(), "hidden"));
-            sb.Append(field("Meddelande på fakturan", "<textarea name='note' rows='2'>" + h(value("note")) + "</textarea>"));
-            sb.Append("<div class='actions'>");
-            sb.Append("<button type='submit' name='action' value='save' class='secondary'>Spara</button>");
-            sb.Append("<button type='submit' name='action' value='send'>Spara och skicka</button>");
-            sb.Append("<button type='submit' name='action' value='delete' class='danger' formnovalidate>Ta bort utkast</button>");
-            sb.Append("</div><p class='hint'>När fakturan skickas får den sitt nummer och kan inte längre ändras. Den bokförs när betalningen kommer in (kontantmetoden).</p>");
-            sb.Append("</form>");
-            return sb.ToString();
-        }
-
-        string summary(List<InvoiceRow> rows, InvoiceTotals totals) {
-            var sb = new StringBuilder();
-            sb.Append("<dl class='facts'>");
-            sb.Append("<dt>Kund</dt><dd>" + h(Db.str(invoice, "customerName")) + "</dd>");
-            sb.Append("<dt>Fakturadatum</dt><dd>" + h(Db.str(invoice, "invoiceDate")) + "</dd>");
-            sb.Append("<dt>Förfallodatum</dt><dd>" + h(Db.str(invoice, "dueDate")) + "</dd>");
-            if (Db.str(invoice, "paidDate").Length > 0) sb.Append("<dt>Betald</dt><dd>" + h(Db.str(invoice, "paidDate")) + "</dd>");
-            sb.Append("<dt>Bokföring</dt><dd>");
-            // Invoices sent before the cash method were also booked when sent (voucherId)
-            if (Db.str(invoice, "voucherId").Length > 0) sb.Append(voucherLink("voucherId") + (Db.str(invoice, "paymentVoucherId").Length > 0 ? ", " : ""));
-            if (Db.str(invoice, "paymentVoucherId").Length > 0) sb.Append(voucherLink("paymentVoucherId"));
-            else if (Db.str(invoice, "voucherId").Length == 0) sb.Append("Bokförs när betalningen kommer in");
-            sb.Append("</dd></dl>");
-
-            sb.Append("<table class='rows'><thead><tr><th>Beskrivning</th><th class='num'>Antal</th><th class='num'>À-pris</th><th class='num'>Moms</th><th class='num'>Belopp</th></tr></thead><tbody>");
-            foreach (var row in rows) {
-                sb.Append("<tr><td>" + h(row.text) + "</td><td class='num'>" + Money.formatDecimal(row.quantity) + "</td>" + amountCell(row.unitPrice));
-                sb.Append("<td class='num'>" + row.vatRate + " %</td>" + amountCell(row.net) + "</tr>");
-            }
-            sb.Append("</tbody>" + totalsFooter(totals) + "</table>");
-
-            if (Db.str(invoice, "status") == Invoicing.Sent) {
-                sb.Append("<form method='post' class='inline'>" + input("id", invoice.id, "hidden"));
-                sb.Append(field("Betaldatum", input("paidDate", isPost ? form("paidDate") : Dates.today(), "date", "required")));
-                sb.Append("<button type='submit' name='action' value='paid'>Registrera betalning</button></form>");
-                sb.Append("<p class='hint'>Registrera när " + Money.format(totals.total) + " kr har kommit in på företagskontot. Då bokförs försäljningen och momsen.</p>");
-            }
-            return sb.ToString();
         }
 
         string voucherLink(string key) {
             var voucher = Db.getOwned("voucher", Db.str(invoice, key), companyId);
             return voucher == null ? "" : "<a href='" + BasePath + "/voucher.html?id=" + u(voucher.id) + "'>" + h(Ledger.label(voucher)) + "</a>";
-        }
-
-        static string totalsFooter(InvoiceTotals totals) {
-            var sb = new StringBuilder("<tfoot>");
-            sb.Append("<tr><td colspan='4'>Summa exkl. moms</td>" + amountCell(totals.net) + "</tr>");
-            foreach (var rate in totals.byRate.Where(r => r.Key > 0).Reverse()) {
-                sb.Append("<tr><td colspan='4'>Moms " + rate.Key + " % på " + Money.format(rate.Value.net) + "</td>" + amountCell(rate.Value.vat) + "</tr>");
-            }
-            sb.Append("<tr class='total'><td colspan='4'>Att betala</td><td class='num'>" + Money.format(totals.total) + "</td></tr>");
-            sb.Append("</tfoot>");
-            return sb.ToString();
         }
     }
 }

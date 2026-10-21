@@ -15,7 +15,8 @@ namespace com.swecial.code {
 
     /// <summary>
     /// What an expense is for, in plain words. The category decides the account, so users never
-    /// have to pick one. Keys are stored on expenses: never change a key, add a new category instead.
+    /// have to pick one. name and hint here are the Swedish defaults (used in voucher texts); the
+    /// pages show the theme's texts, category.&lt;key&gt;.name and .hint. Keys are stored on expenses: never change a key, add a new category instead.
     /// </summary>
     public static class Categories {
         public static readonly List<Category> All = new List<Category> {

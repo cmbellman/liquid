@@ -31,7 +31,7 @@ namespace com.swecial.code {
         public static long parse(string text) {
             decimal value = parseDecimal(text, "belopp");
             decimal ore = Math.Round(value * 100m, 0, MidpointRounding.AwayFromZero);
-            if (ore != value * 100m) throw new LiquidException("Belopp kan inte ha fler än två decimaler: " + text);
+            if (ore != value * 100m) throw new LiquidException("Belopp kan inte ha fler än två decimaler: " + text, "AMOUNTS ALLOW TWO DECIMALS: " + text);
             return (long)ore;
         }
 
@@ -39,7 +39,7 @@ namespace com.swecial.code {
             string s = (text ?? "").Trim().Replace(" ", "").Replace(" ", "").Replace(" ", "").Replace(',', '.');
             if (s.Length == 0) return 0;
             if (!decimal.TryParse(s, NumberStyles.AllowLeadingSign | NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out decimal value)) {
-                throw new LiquidException("Ogiltigt " + what + ": " + text);
+                throw new LiquidException("Ogiltigt " + what + ": " + text, "INVALID INPUT: " + text);
             }
             return value;
         }
@@ -68,7 +68,7 @@ namespace com.swecial.code {
 
         public static DateTime parse(string text) {
             if (!DateTime.TryParseExact((text ?? "").Trim(), Format, CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime date)) {
-                throw new LiquidException("Ogiltigt datum (ÅÅÅÅ-MM-DD): " + text);
+                throw new LiquidException("Ogiltigt datum (ÅÅÅÅ-MM-DD): " + text, "INVALID DATE (YYYY-MM-DD): " + text);
             }
             return date;
         }

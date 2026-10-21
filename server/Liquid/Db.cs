@@ -6,10 +6,19 @@ using System.Linq;
 namespace com.swecial.code {
     /// <summary>
     /// Thrown for anything the user did wrong (bad input, a rule of the ledger). The message is shown
-    /// on the page as is, so it is written in Swedish.
+    /// on the page as is: Swedish, plus the English text for the themes that speak English
+    /// (Nostromo). Without an English text the Swedish one is shown everywhere.
     /// </summary>
     public class LiquidException : Exception {
-        public LiquidException(string message) : base(message) { }
+        public readonly string english;
+
+        public LiquidException(string message, string english = null) : base(message) {
+            this.english = english;
+        }
+
+        public string text(bool inEnglish) {
+            return inEnglish && english != null ? english : Message;
+        }
     }
 
     /// <summary>

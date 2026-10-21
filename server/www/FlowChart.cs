@@ -17,7 +17,8 @@ namespace com.swecial.web {
 
         static string f(double v) => v.ToString("0.#", CultureInfo.InvariantCulture);
 
-        public static string svg(List<FlowBucket> buckets) {
+        /// <summary>The chart. The texts (aria label, "now", "expected", "in", "out") come from the theme.</summary>
+        public static string svg(List<FlowBucket> buckets, string label, string now, string expected, string inText, string outText, string currency) {
             int n = buckets.Count;
             if (n < 2) return "";
             long max = Math.Max(1, buckets.Max(b => Math.Max(b.moneyIn, b.moneyOut)));
@@ -31,7 +32,7 @@ namespace com.swecial.web {
             int lastPast = firstForecast < 0 ? n - 1 : Math.Max(0, firstForecast - 1);
 
             var sb = new StringBuilder();
-            sb.Append("<svg class='flow' viewBox='0 0 " + f(W) + " " + f(H) + "' role='img' aria-label='Pengar in och ut över tid'>");
+            sb.Append("<svg class='flow' viewBox='0 0 " + f(W) + " " + f(H) + "' role='img' aria-label='" + LiquidPage.h(label) + "'>");
             sb.Append("<defs>");
             sb.Append("<linearGradient id='gradIn' x1='0' y1='0' x2='0' y2='1'><stop class='s-in' offset='0' stop-opacity='0.28'/><stop class='s-in' offset='1' stop-opacity='0'/></linearGradient>");
             sb.Append("<linearGradient id='gradOut' x1='0' y1='0' x2='0' y2='1'><stop class='s-out' offset='0' stop-opacity='0.18'/><stop class='s-out' offset='1' stop-opacity='0'/></linearGradient>");
@@ -44,7 +45,7 @@ namespace com.swecial.web {
             if (firstForecast > 0) {
                 double nowX = (x(lastPast) + x(firstForecast)) / 2;
                 sb.Append("<line class='now' x1='" + f(nowX) + "' x2='" + f(nowX) + "' y1='" + f(Top - 8) + "' y2='" + f(baseY) + "'/>");
-                sb.Append("<text x='" + f(nowX + 6) + "' y='" + f(Top - 2) + "'>nu</text>");
+                sb.Append("<text x='" + f(nowX + 6) + "' y='" + f(Top - 2) + "'>" + LiquidPage.h(now) + "</text>");
             }
 
             // Areas and lines for what happened, dashed lines for the forecast
@@ -72,7 +73,7 @@ namespace com.swecial.web {
                     if (b.moneyOut > 0) sb.Append("<circle class='out' cx='" + f(x(i)) + "' cy='" + f(y(b.moneyOut)) + "' r='3.5'/>");
                 }
                 double hx = Math.Max(0, x(i) - step / 2);
-                string tip = b.label + (b.forecast ? " (väntas)" : "") + ": in " + Money.format(b.moneyIn) + " kr" + (b.forecast ? "" : ", ut " + Money.format(b.moneyOut) + " kr");
+                string tip = b.label + (b.forecast ? " (" + expected + ")" : "") + ": " + inText + " " + Money.format(b.moneyIn) + " " + currency + (b.forecast ? "" : ", " + outText + " " + Money.format(b.moneyOut) + " " + currency);
                 sb.Append("<rect class='hit' x='" + f(hx) + "' y='0' width='" + f(Math.Min(step, W - hx)) + "' height='" + f(H - Bottom) + "'><title>" + LiquidPage.h(tip) + "</title></rect>");
             }
             sb.Append("</svg>");
@@ -107,13 +108,43 @@ namespace com.swecial.web {
             return sb.ToString();
         }
 
+        /// <summary>Glaset in the theme's style: "beer" (default) or "tank".</summary>
+        public static string gauge(Runway r, string style) {
+            return style == "tank" ? tank(r) : glass(r);
+        }
+
+        /// <summary>How full the gauge is: full at six months of money or more.</summary>
+        static double fill(Runway r) {
+            return r.months == null ? (r.balance > 0 ? 1 : 0) : Math.Min(1, (double)r.months.Value / 6);
+        }
+
         /// <summary>
-        /// Glaset: a beer glass filled to how long the money lasts (full at six months or more), with
+        /// A reserve tank: ten segments lit from the bottom, in a frame with tick marks, like a ship's
+        /// fuel gauge. Lit segments use the theme's colour (currentColor via CSS).
+        /// </summary>
+        static string tank(Runway r) {
+            int lit = (int)Math.Round(fill(r) * 10);
+            var sb = new StringBuilder("<svg class='tank' viewBox='0 0 74 96' aria-hidden='true'>");
+            sb.Append("<rect class='tank-frame' x='18' y='4' width='38' height='88'/>");
+            for (int i = 0; i < 10; i++) {
+                double y = 84 - i * 8.2;
+                sb.Append("<rect class='tank-cell" + (i < lit ? " on" : "") + "' x='22' y='" + f(y) + "' width='30' height='6'/>");
+            }
+            for (int i = 0; i <= 4; i++) {
+                double y = 6 + i * 21;
+                sb.Append("<line class='tank-tick' x1='8' x2='15' y1='" + f(y) + "' y2='" + f(y) + "'/><line class='tank-tick' x1='59' x2='66' y1='" + f(y) + "' y2='" + f(y) + "'/>");
+            }
+            sb.Append("</svg>");
+            return sb.ToString();
+        }
+
+        /// <summary>
+        /// A beer glass filled to how long the money lasts (full at six months or more), with
         /// foam and a few rising bubbles.
         /// </summary>
-        public static string glass(Runway r) {
+        static string glass(Runway r) {
             // Full is a little below the rim, so the foam shows
-            double level = 0.88 * (r.months == null ? (r.balance > 0 ? 1 : 0) : Math.Min(1, (double)r.months.Value / 6));
+            double level = 0.88 * fill(r);
             const double top = 10, bottom = 90, height = bottom - top;
             double liquidTop = bottom - height * level;
             var sb = new StringBuilder("<svg viewBox='0 0 74 96' aria-hidden='true'>");

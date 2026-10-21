@@ -1,24 +1,28 @@
 <% class=WebCustomers %>
-<!DOCTYPE html>
-<html lang="sv">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#070b12">
-    <title><%title%></title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@700&family=Manrope:wght@400;500;600;700;800&family=Share+Tech+Mono&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/liquid/style.css">
-</head>
-<body class="theme-<%theme%>">
-    <div class="app">
-        <aside class="side"><%nav%></aside>
-        <main>
-            <p class="error"><%error%></p>
-            <p class="message"><%message%></p>
-            <%content%>
-        </main>
-    </div>
-</body>
-</html>
+<% include=partials/top.part %>
+<div class="heading"><div><h1><%t.customers.title%></h1><p class="sub"><%t.customers.subtitle%></p></div></div>
+<section class="panel">
+    <swe:condition source="customersAny">
+        <table>
+            <thead><tr><th><%t.field.name%></th><th><%t.field.orgNumberShort%></th><th><%t.field.email%></th><th></th></tr></thead>
+            <tbody>
+                <swe:iterator source="customers"><tr><td><%current.name%></td><td><%current.orgNumber%></td><td><%current.email%></td><td class="num"><a href="/liquid/customers.html?id=<%current.id%>"><%t.common.change%></a></td></tr></swe:iterator>
+            </tbody>
+        </table>
+    <else>
+        <p class="empty"><%t.customers.empty%></p>
+    </else>
+    </swe:condition>
+</section>
+<section class="panel">
+    <h2><%formTitle%></h2>
+    <form method="post" class="grid">
+        <swe:condition source="editing"><input type="hidden" name="id" value="<%id%>"></swe:condition>
+        <swe:iterator source="fields"><label><%current.label%><input type="<%current.type%>" name="<%current.name%>" value="<%current.value%>" <%current.required%>></label></swe:iterator>
+        <div class="actions">
+            <button type="submit"><%t.common.save%></button>
+            <swe:condition source="editing"><a href="/liquid/customers.html"><%t.common.cancel%></a></swe:condition>
+        </div>
+    </form>
+</section>
+<% include=partials/bottom.part %>

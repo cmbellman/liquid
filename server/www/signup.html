@@ -1,24 +1,13 @@
 <% class=WebSignup %>
-<!DOCTYPE html>
-<html lang="sv">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#070b12">
-    <title><%title%></title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@700&family=Manrope:wght@400;500;600;700;800&family=Share+Tech+Mono&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/liquid/style.css">
-</head>
-<body class="theme-<%theme%>">
-    <div class="app">
-        <aside class="side"><%nav%></aside>
-        <main>
-            <p class="error"><%error%></p>
-            <p class="message"><%message%></p>
-            <%content%>
-        </main>
-    </div>
-</body>
-</html>
+<% include=partials/top.part %>
+<section class="panel narrow">
+    <h1><%t.signup.title%></h1>
+    <p class="lead"><%t.signup.lead%> <a href="/liquid/login.html"><%t.login.title%></a></p>
+    <form method="post">
+        <label><%t.field.name%><input type="text" name="fullName" value="<%fullName%>" autocomplete="name" required autofocus></label>
+        <label><%t.field.email%><input type="email" name="email" value="<%email%>" autocomplete="username" required></label>
+        <label><%passwordLabel%><input type="password" name="password" autocomplete="new-password" required></label>
+        <button type="submit"><%t.signup.title%></button>
+    </form>
+</section>
+<% include=partials/bottom.part %>

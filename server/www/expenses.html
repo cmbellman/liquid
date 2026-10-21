@@ -1,24 +1,33 @@
 <% class=WebExpenses %>
-<!DOCTYPE html>
-<html lang="sv">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#070b12">
-    <title><%title%></title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@700&family=Manrope:wght@400;500;600;700;800&family=Share+Tech+Mono&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/liquid/style.css">
-</head>
-<body class="theme-<%theme%>">
-    <div class="app">
-        <aside class="side"><%nav%></aside>
-        <main>
-            <p class="error"><%error%></p>
-            <p class="message"><%message%></p>
-            <%content%>
-        </main>
+<% include=partials/top.part %>
+<div class="heading">
+    <div><h1><%t.expenses.title%></h1><p class="sub"><%t.expenses.subtitle%></p></div>
+    <div class="heading-actions">
+        <a class="button secondary" href="/liquid/pant.html"><%t.pant.title%></a>
+        <a class="button" href="/liquid/expense.html"><%t.expense.new%></a>
     </div>
-</body>
-</html>
+</div>
+<section class="panel">
+    <swe:condition source="expensesAny">
+        <p class="lead"><%summary%> <swe:condition source="missingAny"><span class="status overdue"><%missing%></span></swe:condition></p>
+        <table>
+            <thead><tr><th><%t.col.date%></th><th><%t.col.supplier%></th><th><%t.col.what%></th><th class="num"><%t.col.amount%></th><th class="num"><%t.col.vat%></th><th><%t.col.receipt%></th></tr></thead>
+            <tbody>
+                <swe:iterator source="expenses">
+                <tr>
+                    <td><%current.date%></td>
+                    <td><a href="/liquid/expense.html?id=<%current.id%>"><%current.supplier%></a></td>
+                    <td><%current.category%> <swe:condition source="current.foreign"><span class="status"><%t.expenses.abroad%></span></swe:condition></td>
+                    <td class="num"><%current.total%></td>
+                    <td class="num"><%current.vat%></td>
+                    <td><swe:condition source="current.hasReceipt"><a href="<%current.receipt%>" target="_blank"><%t.expenses.view%></a><else><a class="missing" href="/liquid/expense.html?id=<%current.id%>"><%t.expenses.missingOne%></a></else></swe:condition></td>
+                </tr>
+                </swe:iterator>
+            </tbody>
+        </table>
+    <else>
+        <p class="empty"><%t.expenses.empty%></p>
+    </else>
+    </swe:condition>
+</section>
+<% include=partials/bottom.part %>
