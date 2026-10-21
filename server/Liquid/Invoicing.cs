@@ -241,7 +241,9 @@ namespace com.swecial.code {
 
         /// <summary>
         /// Books the full payment: with the cash method the sale and its VAT against 1930; for an
-        /// invoice booked when it was sent (accrual method), 1930 against the receivable.
+        /// invoice booked when it was sent (accrual method), 1930 against the receivable. A cash method
+        /// invoice paid in a later year than its invoice date was unpaid at year end, so the sale belongs
+        /// to that year's closing (as a receivable): the payment only clears the receivable.
         /// </summary>
         public static void markPaid(SwecialObject invoice, string paidDate, string userId) {
             lock (Db.Sync) {
@@ -249,7 +251,7 @@ namespace com.swecial.code {
                 paidDate = Dates.clean(paidDate);
                 var t = totals(rows(invoice));
                 bool bookedWhenSent = Db.str(invoice, "voucherId").Length > 0;
-                var paymentRows = bookedWhenSent
+                var paymentRows = bookedWhenSent || inClosing(Db.str(invoice, "invoiceDate"), paidDate)
                     ? new List<VoucherRow> {
                         new VoucherRow { account = Bas.Bank, debit = t.total },
                         new VoucherRow { account = Bas.Receivables, credit = t.total },
@@ -279,6 +281,11 @@ namespace com.swecial.code {
                 invoice.set("paymentVoucherId", "");
                 Db.commit(invoice);
             }
+        }
+
+        /// <summary>True when an invoice dated invoiceDate and paid on paidDate was unpaid at a year end.</summary>
+        public static bool inClosing(string invoiceDate, string paidDate) {
+            return string.CompareOrdinal(Dates.clean(invoiceDate).Substring(0, 4), paidDate.Substring(0, 4)) < 0;
         }
 
         /// <summary>The sale: the total on debitAccount (1930 when paid, 1510 when sent), sales and VAT per rate.</summary>

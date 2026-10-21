@@ -160,7 +160,9 @@ namespace com.swecial.web {
                 var links = new[] { voucherLink("voucherId"), voucherLink("paymentVoucherId") }.Where(l => l.Length > 0).ToList();
                 set("bookkeeping", links.Count > 0 ? string.Join(", ", links) : T("invoice.bookedWhenPaid"));
                 bool bookedWhenSent = Db.str(invoice, "voucherId").Length > 0;
-                set("paymentHint", T(bookedWhenSent ? "invoice.paymentHint.accrual" : "invoice.paymentHint.cash", Money.format(totals.total)));
+                string hint = bookedWhenSent ? "invoice.paymentHint.accrual"
+                    : Invoicing.inClosing(Db.str(invoice, "invoiceDate"), Dates.today()) ? "invoice.paymentHint.closing" : "invoice.paymentHint.cash";
+                set("paymentHint", T(hint, Money.format(totals.total)));
             }
         }
 

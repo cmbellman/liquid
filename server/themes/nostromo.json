@@ -257,6 +257,7 @@
     "invoice.ourReference": "Our reference",
     "invoice.paymentHint.accrual": "Register when {0} SEK has been received. Payment is then cleared against the receivable.",
     "invoice.paymentHint.cash": "Register when {0} SEK has been received. Sale and VAT are then committed.",
+    "invoice.paymentHint.closing": "Register when {0} SEK has been received. Invoice predates this fiscal year and was outstanding at year end: sale and VAT belong to that year's closing. Payment is cleared against the receivable (1510).",
     "invoice.print": "Print / PDF",
     "invoice.registerPayment": "Register payment",
     "invoice.undoPayment.confirm": "Undo payment? The voucher will be voided with a reversal entry.",
