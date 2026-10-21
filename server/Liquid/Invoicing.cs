@@ -105,13 +105,25 @@ namespace com.swecial.code {
                 // The accounts the payment will be booked on must exist before the invoice goes out
                 Ledger.validate(companyId, Db.str(invoice, "invoiceDate"), "Kundfaktura", paymentRows(t));
 
-                invoice.set("number", Db.nextNumber(companyId, "invoice"));
+                invoice.set("number", nextNumber(companyId, Db.str(invoice, "invoiceDate")));
                 invoice.set("status", Sent);
                 invoice.set("sentBy", userId);
                 invoice.set("customerName", Db.str(customer, "name"));
                 invoice.set("total", t.total);
                 Db.commit(invoice);
             }
+        }
+
+        /// <summary>
+        /// Invoice numbers are the invoice date and a two-digit number for the day: the first invoice
+        /// dated 2026-10-21 is 2026102101, the second 2026102102. Unique and in sequence, as the VAT
+        /// rules require, and the date can be read from the number.
+        /// </summary>
+        public static long nextNumber(string companyId, string invoiceDate) {
+            string day = Dates.parse(invoiceDate).ToString("yyyyMMdd");
+            long serial = Db.nextNumber(companyId, "invoice-" + day);
+            if (serial > 99) throw new LiquidException("Högst 99 fakturor per fakturadag.");
+            return long.Parse(day) * 100 + serial;
         }
 
         /// <summary>Books the full payment: 1930 D, and the sale and its output VAT per rate.</summary>
