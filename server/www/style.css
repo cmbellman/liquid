@@ -372,7 +372,9 @@ ul.todo li { margin-bottom: 6px; }
         border-top: 1px solid var(--line);
         z-index: 10;
     }
-    .side .brand, .side .who { display: none; }
+    .side .brand, .side .who .company { display: none; }
+    .side .who { flex-direction: row; border: none; padding: 0; }
+    .side .who a { flex-direction: column; gap: 2px; font-size: 10px; padding: 6px 8px; min-width: 64px; }
     .side nav { flex-direction: row; overflow-x: auto; gap: 0; }
     .side nav a { flex-direction: column; gap: 2px; font-size: 10px; padding: 6px 8px; min-width: 64px; }
     .side nav a.active::before { display: none; }
@@ -439,3 +441,32 @@ article.invoice footer small { display: block; color: #677085; }
     @page { size: A4; margin: 16mm; }
 }
 
+
+/* Inställningar: options as cards */
+p.label { margin: 6px 0 8px; font-size: 13px; font-weight: 700; color: var(--muted); }
+.choices { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; margin-bottom: 4px; }
+.choices.three { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+.choice {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin: 0;
+    padding: 14px 16px 14px 44px;
+    border: 1px solid var(--line-2);
+    border-radius: 12px;
+    background: var(--bg-2);
+    cursor: pointer;
+    color: var(--text);
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+.choice input[type=radio] { position: absolute; left: 16px; top: 16px; width: 16px; height: 16px; margin: 0; accent-color: var(--cyan); }
+.choice b { font-size: 15px; }
+.choice > span { color: var(--muted); font-weight: 500; font-size: 13px; line-height: 1.45; }
+.choice label { margin: 8px 0 0; }
+.choice:has(input[type=radio]:checked) { border-color: var(--cyan); box-shadow: 0 0 0 1px var(--cyan), 0 0 22px rgba(47, 224, 255, 0.14); }
+.choice input:disabled { opacity: 0.4; }
+.actions.sticky { position: sticky; bottom: 16px; justify-content: flex-end; }
+#vatSuggest { align-self: flex-start; font-size: 13px; }
+.side .who .company { display: flex; align-items: center; gap: 12px; padding: 6px 10px; color: var(--faint); font-size: 13px; font-weight: 600; }
+.side .who .company span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

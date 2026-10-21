@@ -17,8 +17,12 @@ namespace com.swecial.web {
             string year = Dates.today().Substring(0, 4);
             report = query("report");
             if (report != "ledger" && report != "vat") report = "balance";
-            from = query("from").Length > 0 ? query("from") : year + "-01-01";
-            to = query("to").Length > 0 ? query("to") : year + "-12-31";
+            // The VAT return defaults to the company's VAT period (year, quarter or month) of today
+            var vatPeriod = Settings.vatPeriodOf(company, System.DateTime.Today);
+            string defaultFrom = report == "vat" ? Dates.format(vatPeriod.from) : year + "-01-01";
+            string defaultTo = report == "vat" ? Dates.format(vatPeriod.to) : year + "-12-31";
+            from = query("from").Length > 0 ? query("from") : defaultFrom;
+            to = query("to").Length > 0 ? query("to") : defaultTo;
             accountNumber = query("account");
 
             renderFilter();

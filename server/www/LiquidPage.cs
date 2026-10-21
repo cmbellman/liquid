@@ -193,11 +193,12 @@ namespace com.swecial.web {
                 sb.Append(link("/customers.html", "Stamgästerna", Icons.People, ""));
                 sb.Append(link("/reports.html", "Rapporter", Icons.Chart, ""));
                 // Accounts and vouchers are there for those who want them, not needed day to day
-                sb.Append(link("/vouchers.html", "Avancerat", Icons.Gear, "", "/voucher.html", "/accounts.html"));
+                sb.Append(link("/vouchers.html", "Avancerat", Icons.Book, "", "/voucher.html", "/accounts.html"));
+                sb.Append(link("/company.html", "Inställningar", Icons.Gear, ""));
                 sb.Append("</nav>");
             }
             sb.Append("<div class='who'>");
-            if (company != null) sb.Append("<a href='" + BasePath + "/company.html'>" + Icons.Building + "<span>" + h(Db.str(company, "name")) + "</span></a>");
+            if (company != null) sb.Append("<span class='company'>" + Icons.Building + "<span>" + h(Db.str(company, "name")) + "</span></span>");
             sb.Append("<a href='" + BasePath + "/login.html?logout=true'>" + Icons.Logout + "<span>Logga ut</span></a></div>");
             return sb.ToString();
         }

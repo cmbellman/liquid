@@ -16,9 +16,9 @@ namespace com.swecial.code {
     /// corrected with a reversing voucher (reverse), as the Swedish Bookkeeping Act requires. The
     /// rows live inside the voucher as JSON, so a voucher is always written as a whole.
     ///
-    /// Series: A manual vouchers, I customer payments, U expenses, B other bank events (F was customer
-    /// invoices booked when sent, before the cash method). Numbers run per series and calendar year
-    /// (the fiscal year is the calendar year for now).
+    /// Series: A manual vouchers, F customer invoices booked when sent (accrual method), I customer
+    /// payments, U expenses, B other bank events. Numbers run per series and calendar year (the
+    /// fiscal year is the calendar year for now).
     /// </summary>
     public static class Ledger {
         public const string Manual = "A";
