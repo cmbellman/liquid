@@ -1,6 +1,7 @@
 using com.swecial.server;
 using Newtonsoft.Json;
 using System;
+using System.Globalization;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -81,10 +82,105 @@ namespace com.swecial.code {
         }
 
         /// <summary>
+        /// A draft from a sales invoice that was issued outside Liquid and put in Pantpåsen: the
+        /// customer is found (organisation number, then name) or created, and the rows, dates,
+        /// references and the original document are filled in from what the receipt reader found.
+        /// The document leaves the bag (status converted). The draft keeps the document's number
+        /// (issuedNumber) for registerIssued.
+        /// </summary>
+        public static SwecialObject draftFromDocument(SwecialObject company, SwecialObject document, string userId) {
+            lock (Db.Sync) {
+                if (Db.str(document, "status") != Expenses.Inbox) throw new LiquidException("Dokumentet finns inte i påsen.", "DOCUMENT NOT FOUND IN INTAKE HOPPER.");
+                var sale = Db.str(document, "aiSaleJson").Length > 0 ? Newtonsoft.Json.Linq.JObject.Parse(Db.str(document, "aiSaleJson")) : new Newtonsoft.Json.Linq.JObject();
+                string text(string key) => ((string)sale[key] ?? "").Trim();
+
+                var invoice = createDraft(company);
+                string customerName = text("customerName");
+                if (customerName.Length > 0) {
+                    string digits(string s) => new string((s ?? "").Where(char.IsDigit).ToArray());
+                    string orgNumber = text("customerOrgNumber");
+                    var customers = Db.forCompany("customer", company.id);
+                    var customer = (digits(orgNumber).Length >= 10 ? customers.FirstOrDefault(c => digits(Db.str(c, "orgNumber")) == digits(orgNumber)) : null)
+                        ?? customers.FirstOrDefault(c => string.Equals(Db.str(c, "name").Trim(), customerName, StringComparison.OrdinalIgnoreCase));
+                    if (customer == null) {
+                        customer = Db.create("customer", company.id);
+                        customer.set("name", customerName);
+                        customer.set("orgNumber", orgNumber);
+                        customer.set("address", text("customerAddress"));
+                        customer.set("postalAddress", text("customerPostalAddress"));
+                        customer.set("reference", text("customerReference"));
+                        Db.commit(customer);
+                    }
+                    invoice.set("customerId", customer.id);
+                }
+                if (text("invoiceDate").Length > 0) invoice.set("invoiceDate", text("invoiceDate"));
+                if (text("dueDate").Length > 0) invoice.set("dueDate", text("dueDate"));
+                invoice.set("ourReference", text("ourReference"));
+                invoice.set("note", text("note"));
+                var lines = (sale["lines"] as Newtonsoft.Json.Linq.JArray)?.Select(l => new InvoiceRow {
+                    text = (string)l["text"], quantity = (decimal)l["quantity"], unitPrice = (long)l["unitPrice"], vatRate = (int)l["vatRate"],
+                }).ToList() ?? new List<InvoiceRow>();
+                setRows(invoice, lines);
+                invoice.set("issuedNumber", text("invoiceNumber"));
+                invoice.set("documentFileId", Db.str(document, "receiptFileId"));
+                invoice.set("documentTotal", sale["total"] != null ? (long)sale["total"] : 0L);
+                Db.commit(invoice);
+
+                document.set("status", Expenses.Converted);
+                document.set("invoiceId", invoice.id);
+                Db.commit(document);
+                return invoice;
+            }
+        }
+
+        /// <summary>
+        /// Registers an invoice that was already issued outside Liquid, with its own number: like
+        /// send, but the number is the document's. It must be new for the company, and Liquid's own
+        /// series move past it so they never give the same number later.
+        /// </summary>
+        public static void registerIssued(SwecialObject invoice, string numberText, string userId) {
+            lock (Db.Sync) {
+                if (!long.TryParse((numberText ?? "").Trim(), out long number) || number <= 0) {
+                    throw new LiquidException("Fakturanumret ska vara ett heltal, som på fakturan.", "INVOICE NUMBER MUST BE AN INTEGER, AS ON THE DOCUMENT.");
+                }
+                string companyId = Db.str(invoice, "companyId");
+                if (Db.forCompany("invoice", companyId).Any(i => i.id != invoice.id && Db.num(i, "number") == number)) {
+                    throw new LiquidException("Fakturanummer " + number + " finns redan.", "INVOICE NUMBER " + number + " ALREADY EXISTS.");
+                }
+                send(invoice, userId, number);
+                invoice.set("issuedOutside", true);
+                Db.commit(invoice);
+            }
+        }
+
+        /// <summary>Moves Liquid's own number series past a number used outside it.</summary>
+        static void reserveNumber(string companyId, long number) {
+            if (number <= Settings.MaxSerial) {
+                raiseCounter(companyId, Settings.SerialCounter, number);
+            } else {
+                string text = number.ToString();
+                if (text.Length == 10 && DateTime.TryParseExact(text.Substring(0, 8), "yyyyMMdd", CultureInfo.InvariantCulture, DateTimeStyles.None, out _)) {
+                    raiseCounter(companyId, "invoice-" + text.Substring(0, 8), long.Parse(text.Substring(8)));
+                }
+            }
+        }
+
+        static void raiseCounter(string companyId, string key, long atLeast) {
+            var counter = Db.forCompany("counter", companyId).FirstOrDefault(c => Db.str(c, "key") == key);
+            if (counter == null) {
+                counter = Db.create("counter", companyId);
+                counter.set("key", key);
+            }
+            if (Db.num(counter, "value") >= atLeast) return;
+            counter.set("value", atLeast);
+            Db.commit(counter);
+        }
+
+        /// <summary>
         /// Gives the invoice its number. Nothing is booked yet: with the cash method the sale is booked
         /// when the money comes in (markPaid). Invoices still unpaid at year end are booked in the closing.
         /// </summary>
-        public static void send(SwecialObject invoice, string userId) {
+        public static void send(SwecialObject invoice, string userId, long? issuedNumber = null) {
             lock (Db.Sync) {
                 requireDraft(invoice);
                 string companyId = Db.str(invoice, "companyId");
@@ -104,7 +200,13 @@ namespace com.swecial.code {
                 Ledger.validate(companyId, date, "Kundfaktura", saleRows(Bas.Bank, t));
                 if (accrual) Ledger.validate(companyId, date, "Kundfaktura", saleRows(Bas.Receivables, t));
 
-                long number = nextNumber(company, date);
+                long number;
+                if (issuedNumber.HasValue) {
+                    number = issuedNumber.Value;
+                    reserveNumber(companyId, number);
+                } else {
+                    number = nextNumber(company, date);
+                }
                 invoice.set("number", number);
                 if (accrual) {
                     var voucher = Ledger.book(companyId, Ledger.Invoices, date,

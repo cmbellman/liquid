@@ -17,10 +17,26 @@
         <swe:condition source="ai">
             <if value="reading"><p class="ai reading"><%icons.ai%><%t.ai.reading.full%></p>
                 <script>document.addEventListener('DOMContentLoaded',function(){var t=setTimeout(function(){location.reload();},3000);document.getElementById('expense').addEventListener('input',function(){clearTimeout(t);});});</script></if>
-            <if value="done"><p class="ai"><%icons.ai%><span><%t.ai.done%> <%aiCurrency%> <%aiForeignKind%></span></p></if>
+            <if value="done"><swe:condition source="isSale"><p class="ai sale"><%icons.ai%><span><%t.ai.sale%></span></p><else><p class="ai"><%icons.ai%><span><%t.ai.done%> <%aiCurrency%> <%aiForeignKind%></span></p></else></swe:condition></if>
             <if value="failed"><p class="ai failed"><%t.ai.failed.full%></p></if>
         </swe:condition>
-        <% include=partials/expense-form.part %>
+        <form method="post" class="sale-choice">
+            <input type="hidden" name="id" value="<%id%>">
+            <swe:condition source="isSale">
+                <button type="submit" name="action" value="toInvoice"><%t.expense.toInvoice%></button>
+                <span class="hint"><%t.expense.toInvoiceHint%></span>
+            <else>
+                <button type="submit" name="action" value="toInvoice" class="link"><%t.expense.isOurInvoice%></button>
+            </else>
+            </swe:condition>
+            <swe:condition source="canReread"><button type="submit" name="action" value="reread" class="link"><%t.expense.reread%></button></swe:condition>
+        </form>
+        <swe:condition source="isSale">
+            <details class="purchase-anyway"><summary><%t.expense.purchaseAnyway%></summary><% include=partials/expense-form.part %></details>
+        <else>
+            <% include=partials/expense-form.part %>
+        </else>
+        </swe:condition>
     </section>
 </div>
 <else>

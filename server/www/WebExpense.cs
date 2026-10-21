@@ -29,6 +29,17 @@ namespace com.swecial.web {
             title(Tr(expense == null ? "expense.new" : sorting ? "expense.sortTitle" : "expense.title"));
 
             if (isPost) {
+                if (sorting && form("action") == "toInvoice") {
+                    // Our own sales invoice, not a purchase: it becomes an invoice draft to confirm
+                    var invoice = Invoicing.draftFromDocument(company, expense, account.id);
+                    redirect(BasePath + "/invoice.html?id=" + u(invoice.id) + "&ok=imported");
+                    return;
+                }
+                if (sorting && form("action") == "reread") {
+                    ReceiptReader.queue(expense);
+                    redirect(BasePath + "/expense.html?id=" + u(expense.id));
+                    return;
+                }
                 if (form("action") == "remove") {
                     bool removedFromBag = sorting;
                     Expenses.remove(expense, account.id);
@@ -109,6 +120,8 @@ namespace com.swecial.web {
                 int left = Expenses.inbox(companyId).Count;
                 set("sortLeft", Tn("expense.sortLeft", left));
                 set("ai", Db.str(expense, "aiStatus"));
+                set("isSale", Db.str(expense, "aiKind") == "sales");
+                set("canReread", ReceiptReader.enabled && Db.str(expense, "aiStatus") != ReceiptReader.Reading);
                 string currency = Db.str(expense, "aiCurrency");
                 set("aiCurrency", currency.Length > 0 && currency != "SEK" && currency != "KR" ? T("ai.currency", h(currency)) : "");
                 set("aiForeignKind", expense.get<bool>("aiForeignNoKind") ? T("ai.foreignKind") : "");

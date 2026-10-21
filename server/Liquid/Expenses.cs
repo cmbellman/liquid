@@ -44,6 +44,8 @@ namespace com.swecial.code {
         public const string Inbox = "inbox";
         public const string Booked = "booked";
         public const string Removed = "removed";
+        /// <summary>The document in the bag was our own sales invoice: it became an invoice (invoiceId).</summary>
+        public const string Converted = "converted";
 
         /// <summary>Booked expenses, newest first (not the receipts still in the bag, not removed ones).</summary>
         public static List<SwecialObject> list(string companyId) {

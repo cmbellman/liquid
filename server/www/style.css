@@ -496,3 +496,8 @@ p.label { margin: 6px 0 8px; font-size: 13px; font-weight: 700; color: var(--mut
 .tank-cell.on { fill: var(--cyan); stroke: none; filter: drop-shadow(0 0 3px var(--cyan)); }
 .glass.low .tank-cell.on { fill: var(--red); filter: drop-shadow(0 0 3px var(--red)); }
 .tank-tick { stroke: var(--line-2); stroke-width: 1.2; }
+.sale-choice { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin: 0 0 16px; }
+.sale-choice .hint { margin: 0; }
+details.purchase-anyway > summary { cursor: pointer; color: var(--muted); margin-bottom: 12px; }
+.issued { border-top: 1px solid var(--line); margin-top: 16px; padding-top: 12px; }
+.issued label { max-width: 320px; }

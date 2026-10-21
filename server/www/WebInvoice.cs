@@ -47,6 +47,11 @@ namespace com.swecial.web {
                     redirect(here() + "&ok=sent");
                     return;
                 }
+                if (action == "registerIssued") {
+                    Invoicing.registerIssued(invoice, form("issuedNumber"), account.id);
+                    redirect(here() + "&ok=registered");
+                    return;
+                }
                 redirect(here() + "&ok=saved");
                 return;
             }
@@ -69,6 +74,7 @@ namespace com.swecial.web {
             invoice.set("dueDate", Dates.clean(form("dueDate")));
             invoice.set("ourReference", form("ourReference").Trim());
             invoice.set("note", form("note").Trim());
+            if (Db.str(invoice, "documentFileId").Length > 0) invoice.set("issuedNumber", form("issuedNumber").Trim());
 
             var rows = new List<InvoiceRow>();
             for (int i = 0; i < rowCount(); i++) {
@@ -108,6 +114,15 @@ namespace com.swecial.web {
             val("customerName", Db.str(invoice, "customerName"));
             val("paidDate", Db.str(invoice, "paidDate"));
             val("paidDateInput", isPost ? form("paidDate") : Dates.today());
+            string documentId = Db.str(invoice, "documentFileId");
+            set("hasDocument", documentId.Length > 0);
+            set("documentSrc", BasePath + "/receipt.html?invoice=" + u(invoice.id) + "&amp;v=" + u(documentId));
+            // Issued outside Liquid (from Pantpåsen): registered with the document's own number
+            set("issued", draft && documentId.Length > 0);
+            val("issuedNumber", isPost ? form("issuedNumber") : Db.str(invoice, "issuedNumber"));
+            long documentTotal = Db.num(invoice, "documentTotal");
+            bool mismatch = draft && documentId.Length > 0 && documentTotal > 0 && documentTotal != totals.total;
+            set("totalMismatch", mismatch ? T("invoice.issued.mismatch", Money.format(documentTotal), Money.format(totals.total)) : "");
 
             // Totals for the table footer
             set("net", Money.formatOrBlank(totals.net));

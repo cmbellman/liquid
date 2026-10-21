@@ -6,7 +6,9 @@
         <span class="status <%statusClass%>"><%status%></span>
         <swe:condition source="draft"><else><a class="button secondary" href="/liquid/invoice-print.html?id=<%id%>" target="_blank"><%t.invoice.print%></a></else></swe:condition>
     </div>
+    <swe:condition source="hasDocument"><p class="hint"><a href="<%documentSrc%>" target="_blank"><%t.invoice.original%></a></p></swe:condition>
     <swe:condition source="draft">
+    <swe:condition source="totalMismatch"><p class="error"><%totalMismatch%></p></swe:condition>
     <form method="post">
         <input type="hidden" name="id" value="<%id%>">
         <div class="grid">
@@ -33,11 +35,25 @@
         </table>
         <input type="hidden" name="rowCount" value="<%rowCount%>">
         <label><%t.invoice.note%><textarea name="note" rows="2"><%note%></textarea></label>
+        <swe:condition source="issued">
+        <div class="issued">
+            <h2><%t.invoice.issued.title%></h2>
+            <p class="hint"><%t.invoice.issued.hint%></p>
+            <label><%t.invoice.issued.number%><input type="text" name="issuedNumber" value="<%issuedNumber%>" inputmode="numeric" required></label>
+        </div>
+        <div class="actions">
+            <button type="submit" name="action" value="save" class="secondary"><%t.common.save%></button>
+            <button type="submit" name="action" value="registerIssued"><%t.invoice.issued.register%></button>
+            <button type="submit" name="action" value="delete" class="danger" formnovalidate><%t.invoice.deleteDraft%></button>
+        </div>
+        <else>
         <div class="actions">
             <button type="submit" name="action" value="save" class="secondary"><%t.common.save%></button>
             <button type="submit" name="action" value="send"><%t.invoice.send%></button>
             <button type="submit" name="action" value="delete" class="danger" formnovalidate><%t.invoice.deleteDraft%></button>
         </div>
+        </else>
+        </swe:condition>
         <p class="hint"><%sendHint%></p>
     </form>
     <else>

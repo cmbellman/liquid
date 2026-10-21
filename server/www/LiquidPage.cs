@@ -249,7 +249,7 @@ namespace com.swecial.web {
         /// <summary>Messages shown after a redirect (?ok=key), so a reload doesn't repost a form.</summary>
         string messageText(string key) {
             switch (key) {
-                case "saved": case "booked": case "reversed": case "sent": case "paid": case "deleted": case "bagged": case "sorted":
+                case "saved": case "booked": case "reversed": case "sent": case "paid": case "deleted": case "bagged": case "sorted": case "imported": case "registered":
                     return Tr("message." + key);
                 default: return "";
             }
