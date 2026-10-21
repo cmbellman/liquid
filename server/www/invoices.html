@@ -10,7 +10,7 @@
             <thead><tr><th><%t.col.number%></th><th><%t.col.customer%></th><th><%t.col.invoiceDate%></th><th><%t.col.due%></th><th><%t.col.status%></th><th class="num"><%t.col.amount%></th></tr></thead>
             <tbody>
                 <swe:iterator source="invoices">
-                <tr>
+                <tr class="link" data-href="/liquid/invoice.html?id=<%current.id%>">
                     <td><a href="/liquid/invoice.html?id=<%current.id%>"><%current.number%></a></td>
                     <td><%current.customer%></td>
                     <td><%current.invoiceDate%></td>

@@ -5,7 +5,7 @@
     <table>
         <thead><tr><th><%t.reports.col.account%></th><th><%t.field.name%></th><th class="num"><%balanceTitle%></th></tr></thead>
         <tbody>
-            <swe:iterator source="accounts"><tr><td><a href="/liquid/reports.html?report=ledger&amp;account=<%current.number%>"><%current.number%></a></td><td><%current.name%></td><td class="num"><%current.balance%></td></tr></swe:iterator>
+            <swe:iterator source="accounts"><tr class="link" data-href="/liquid/reports.html?report=ledger&amp;account=<%current.number%>"><td><a href="/liquid/reports.html?report=ledger&amp;account=<%current.number%>"><%current.number%></a></td><td><%current.name%></td><td class="num"><%current.balance%></td></tr></swe:iterator>
         </tbody>
     </table>
 </section>

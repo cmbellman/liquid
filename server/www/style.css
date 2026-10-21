@@ -187,6 +187,7 @@ table { width: 100%; border-collapse: collapse; margin-bottom: 6px; }
 th, td { padding: 9px 8px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: middle; }
 th { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--faint); font-weight: 700; }
 tbody tr:hover td { background: rgba(47, 224, 255, 0.03); }
+tr.link { cursor: pointer; }
 .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
 tfoot td { border-bottom: none; color: var(--muted); }
 tfoot tr.total td, tbody tr.total td { color: var(--text); font-weight: 800; border-top: 1px solid var(--line-2); }

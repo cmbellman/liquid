@@ -45,7 +45,7 @@
             <thead><tr><th><%t.col.date%></th><th><%t.bank.col.what%></th><th class="num"><%t.bar.in%></th><th class="num"><%t.bar.out%></th><th class="num"><%t.bank.col.balance%></th><th></th></tr></thead>
             <tbody>
                 <swe:iterator source="movements">
-                <tr>
+                <tr class="link" data-href="<%current.href%>">
                     <td><%current.date%></td>
                     <td><a href="<%current.href%>"><%current.text%></a></td>
                     <td class="num"><%current.in%></td>

@@ -14,7 +14,7 @@
             <thead><tr><th><%t.col.date%></th><th><%t.col.supplier%></th><th><%t.col.what%></th><th class="num"><%t.col.amount%></th><th class="num"><%t.col.vat%></th><th><%t.col.receipt%></th></tr></thead>
             <tbody>
                 <swe:iterator source="expenses">
-                <tr>
+                <tr class="link" data-href="/liquid/expense.html?id=<%current.id%>">
                     <td><%current.date%></td>
                     <td><a href="/liquid/expense.html?id=<%current.id%>"><%current.supplier%></a></td>
                     <td><%current.category%> <swe:condition source="current.foreign"><span class="status"><%t.expenses.abroad%></span></swe:condition></td>

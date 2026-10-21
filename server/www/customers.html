@@ -6,7 +6,7 @@
         <table>
             <thead><tr><th><%t.field.name%></th><th><%t.field.orgNumberShort%></th><th><%t.field.email%></th><th></th></tr></thead>
             <tbody>
-                <swe:iterator source="customers"><tr><td><%current.name%></td><td><%current.orgNumber%></td><td><%current.email%></td><td class="num"><a href="/liquid/customers.html?id=<%current.id%>"><%t.common.change%></a></td></tr></swe:iterator>
+                <swe:iterator source="customers"><tr class="link" data-href="/liquid/customers.html?id=<%current.id%>"><td><%current.name%></td><td><%current.orgNumber%></td><td><%current.email%></td><td class="num"><a href="/liquid/customers.html?id=<%current.id%>"><%t.common.change%></a></td></tr></swe:iterator>
             </tbody>
         </table>
     <else>
