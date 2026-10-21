@@ -1,0 +1,15 @@
+# Build output from local .NET tools
+bin/
+obj/
+*.csproj
+*.sln
+*.user
+
+# IDE and operating-system files
+.vs/
+.vscode/
+.idea/
+.DS_Store
+
+# Local agent notes
+AGENTS_LOCAL.md
