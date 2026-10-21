@@ -16,8 +16,9 @@ namespace com.swecial.code {
     ///
     /// Off unless the app's settings.json (apps/liquid/settings/settings.json on the server, not in
     /// this repo) has "receiptReaderCommand" (e.g. "agy" or a full path to it). Optional:
-    /// "receiptReaderModel" (default gemini-3.8-flash-low) and "receiptReaderHome", which sets HOME and
-    /// USERPROFILE for agy, needed when the server runs as a service account that isn't signed in to agy.
+    /// "receiptReaderModel" (default gemini-3.8-flash-low) and "receiptReaderHome", which sets HOME,
+    /// USERPROFILE (and APPDATA/LOCALAPPDATA on Windows) for agy, for a server that runs as a service
+    /// account that isn't signed in to agy.
     ///
     /// Each receipt is read in its own empty temp folder with --sandbox, and the receipt's text is
     /// treated as data: the answer must match a JSON schema and every value is checked here before
@@ -128,8 +129,13 @@ namespace com.swecial.code {
             }
             string home = settings?.get<string>("receiptReaderHome");
             if (!string.IsNullOrEmpty(home)) {
+                // A Windows service runs as LocalSystem: point agy at the profile that is signed in
                 start.Environment["HOME"] = home;
                 start.Environment["USERPROFILE"] = home;
+                if (OperatingSystem.IsWindows()) {
+                    start.Environment["APPDATA"] = Path.Combine(home, "AppData", "Roaming");
+                    start.Environment["LOCALAPPDATA"] = Path.Combine(home, "AppData", "Local");
+                }
             }
             using (var process = Process.Start(start)) {
                 var stdout = process.StandardOutput.ReadToEndAsync();

@@ -23,14 +23,16 @@ Dark, pub-themed web app (Baren, Kranen, Glaset, Notan, Pantpåsen, Kassan, Stam
 Receipts in Pantpåsen can be read with AI through the [Antigravity CLI](https://antigravity.google) (`agy`) on the server. Liquid fills in a suggestion (supplier, date, amount, VAT, category, bought abroad) that the user checks before booking. Turn it on in the app's settings on the server, `SwecialServer/apps/liquid/settings/settings.json` locally or `D:\data\swecialserver\apps\liquid\settings\settings.json` in production (not in this repo):
 
 ```json
-"receiptReaderCommand": "/Users/you/.local/bin/agy",
+"receiptReaderCommand": "C:\\Users\\ander\\AppData\\Local\\agy\\bin\\agy.exe",
 "receiptReaderModel": "gemini-3.8-flash-low",
 "receiptReaderHome": "C:\\Users\\ander"
 ```
 
+(Locally on the Mac: `"receiptReaderCommand": "/Users/aad01/.local/bin/agy"` and no home.)
+
 - `receiptReaderCommand`: full path to `agy` (the server's PATH may not include it). Without it the reader is off.
 - `receiptReaderModel`: optional, `agy models` lists them.
-- `receiptReaderHome`: optional, sets `HOME`/`USERPROFILE` for `agy`. Needed in production, where Swecial Server runs as a Windows service (LocalSystem) that isn't signed in to `agy`: point it at the profile of the user who is.
+- `receiptReaderHome`: optional, sets `HOME`, `USERPROFILE`, `APPDATA` and `LOCALAPPDATA` for `agy`. In production Swecial Server runs as a Windows service under LocalSystem, while `agy` is signed in as `ander` (`C:\Users\ander\.gemini`), so point it there. Not verified yet: if `agy` keeps its sign-in in the Windows Credential Manager, LocalSystem can't reach it, and the service would have to run as `ander` instead. A failed reading only shows "Kunde inte läsas" and is logged; nothing else is affected.
 - Settings are read when the server starts.
 
 ## Local development
