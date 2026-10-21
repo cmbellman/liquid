@@ -54,7 +54,8 @@ Liquid is a bookkeeping and invoicing system for Swedish companies. It is not a 
 
 - `server/Cloud.cs` – the app's `Cloud` hooks. There is no SDK client, so `beforeSave` turns any SDK save into a harmless object.
 - `server/Liquid/` – domain logic, `namespace com.swecial.code`:
-  - `Db` data access, `Money`/`Dates`, `Bas` chart of accounts, `Ledger` vouchers, `Invoicing`, `Reports`, `Companies`.
+  - `Db` data access, `Money`/`Dates`, `Bas` chart of accounts, `Ledger` vouchers, `Reports`, `Companies`.
+  - `Invoicing` customer invoices, `Expenses` + `Categories` everyday purchases with receipts, `BankEvents` other money in and out of the company account.
 - `server/www/` – pages, `namespace com.swecial.web`. Each `x.html` starts with `<% class=WebX %>` and is a shell with `<%title%>`, `<%nav%>`, `<%error%>`, `<%message%>` and `<%content%>`; `WebX : LiquidPage` builds the content in `processPage()`.
 
 ## Conventions and Rules
@@ -62,13 +63,20 @@ Liquid is a bookkeeping and invoicing system for Swedish companies. It is not a 
 - **Server naming:** class names are snake_case (`voucher`, `customer`), field names camelCase. Fields starting with `_` belong to the server.
 - **Company scope:** every class except `membership` has `companyId`. Pages read objects with `Db.getOwned(class, id, companyId)` / `Db.forCompany(...)`, never `Db.get` with an id from the request.
 - **Money** is whole öre in a `long` (`Money.parse`/`Money.format`), never `double`. Dates are `"yyyy-MM-dd"` strings, which compare as text.
+- **Users aren't bookkeepers:** the everyday pages (invoices, expenses, bank) never ask for accounts, debit or credit. The user picks what something is (an expense `Category`, a `BankEventKind`) and Liquid books it. Accounts and vouchers live under "Avancerat". Keep new features that way.
+- **Cash method (kontantmetoden):** things are booked when money moves. A sent invoice gets its number but is booked when it's paid (1930 D / 300x K / 26x1 K); an expense is booked on the day it was paid. Unpaid invoices at year end are booked in the closing (not built yet). The VAT return is yearly for now.
+- **Voucher series:** A manual, I invoice payments, U expenses, B bank events (F: invoices booked when sent, only in data from before the cash method).
+- **Source objects own their vouchers:** an expense or bank event that changes or is removed reverses its voucher (dated like the original) and books a new one (`Ledger.reverse(..., fromSource: true)`); its voucher can't be reversed from the voucher page. An edit that changes nothing booked (only the note or receipt) keeps the voucher.
+- **Purchases from abroad without Swedish VAT** (reverse charge, `Expenses.ForeignEu/ForeignNonEu`): cost D total, 1930 K total, plus 2645 D / 2614 K at 25 %. They show in VAT return boxes 21/22 (from the expenses), 30 and 48.
+- **Receipts** are `_file` objects with `companyId`, served only by `receipt.html` to the company's users (links carry `&v=<file id>` so a replaced receipt isn't cached). Uploads use `req.body.files`, which needs swecial-server with multipart support (Swecial/swecial-server PR "Parse multipart/form-data POST bodies"): deploy that before a Liquid version that has it.
 - **Bookkeeping rules:** a voucher must balance and use accounts in the chart (`Ledger.validate`). A booked voucher is never changed or deleted; mistakes are corrected with a reversing voucher (`Ledger.reverse`). Only invoice drafts can be edited or deleted. Vouchers booked from an invoice can't be reversed by hand.
 - **No transactions:** the server has none. Anything that numbers or books takes `Db.Sync` and writes with `Db.commit` (save + saveNow). Keep a business event in one object (rows are embedded as JSON in `rowsJson`) so it is written as a whole. Validate before taking a number, so numbers stay gap-free.
 - **HTML escaping:** template values are inserted raw. Pass all user text through `h()` (and `u()` inside URLs). Never put `<%` in generated markup.
 - **Errors:** throw `LiquidException` with a Swedish message for user mistakes; `LiquidPage` shows it and calls `renderAfterError()` so the form keeps what was typed. After a successful POST, redirect (with `?ok=<key>` for the message) so a reload doesn't post again.
-- **Server limits to keep in mind:** only `.html`, `.css`, `.json` and `.ico` are served (put JavaScript inline), POST bodies are urlencoded only (no file uploads yet), there is no PDF library (invoices print from the browser), and the cloud code compiler only references what the server references (e.g. not `System.Net.Mail`).
+- **Server limits to keep in mind:** only `.html`, `.css`, `.json` and `.ico` are served (put JavaScript inline), POST bodies are urlencoded or multipart (`enctype='multipart/form-data'` for uploads), there is no PDF library (invoices print from the browser), and the cloud code compiler only references what the server references (e.g. not `System.Net.Mail`).
 
 ## Known Gaps
 
 - The SDK `list` command has no access control in Swecial Server, so a client with the app's key could read Liquid data. Liquid has no SDK client and its key must never be shipped. A server-side "web only" switch for an app is the proper fix.
-- One company per user, the fiscal year is the calendar year, no credit notes, partial payments, supplier invoices, SIE export or year-end closing yet.
+- One company per user, the fiscal year is the calendar year, no credit notes, partial payments, SIE export yet.
+- Next steps: income statement and balance sheet (K2 layout), the year-end closing (unpaid invoices, VAT to the tax account, corporate tax, result to equity, locking the year), then the annual report (K2) and INK2 figures.

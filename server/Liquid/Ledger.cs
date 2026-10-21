@@ -16,13 +16,16 @@ namespace com.swecial.code {
     /// corrected with a reversing voucher (reverse), as the Swedish Bookkeeping Act requires. The
     /// rows live inside the voucher as JSON, so a voucher is always written as a whole.
     ///
-    /// Series: A manual vouchers, F customer invoices, I customer payments. Numbers run per series
-    /// and calendar year (the fiscal year is the calendar year for now).
+    /// Series: A manual vouchers, I customer payments, U expenses, B other bank events (F was customer
+    /// invoices booked when sent, before the cash method). Numbers run per series and calendar year
+    /// (the fiscal year is the calendar year for now).
     /// </summary>
     public static class Ledger {
         public const string Manual = "A";
         public const string Invoices = "F";
         public const string Payments = "I";
+        public const string Expenses = "U";
+        public const string BankEvents = "B";
 
         public static List<VoucherRow> rows(SwecialObject voucher) {
             string json = Db.str(voucher, "rowsJson");
@@ -95,13 +98,17 @@ namespace com.swecial.code {
             }
         }
 
-        /// <summary>Books the opposite of a voucher and links the two. A voucher can be reversed once.</summary>
-        public static SwecialObject reverse(SwecialObject original, string date, string userId) {
+        /// <summary>
+        /// Books the opposite of a voucher and links the two. A voucher can be reversed once. Vouchers
+        /// booked from an expense or bank event are reversed by that object (fromSource), so the two
+        /// stay in step; from the voucher page they can't be.
+        /// </summary>
+        public static SwecialObject reverse(SwecialObject original, string date, string userId, bool fromSource = false) {
             lock (Db.Sync) {
                 if (Db.str(original, "reversedById").Length > 0) throw new LiquidException("Verifikationen är redan makulerad.");
                 if (Db.str(original, "reversesId").Length > 0) throw new LiquidException("En rättelse kan inte makuleras.");
                 // The invoice's status would no longer match its vouchers (credit notes come later)
-                if (Db.str(original, "sourceType").Length > 0) throw new LiquidException("Verifikationen är bokförd från en faktura och kan inte makuleras här.");
+                if (!fromSource && Db.str(original, "sourceType").Length > 0) throw new LiquidException("Verifikationen är bokförd från en faktura, utgift eller bankhändelse. Ändra eller ta bort den där i stället.");
                 var swapped = rows(original).Select(r => new VoucherRow { account = r.account, debit = r.credit, credit = r.debit }).ToList();
                 var reversal = book(Db.str(original, "companyId"), Db.str(original, "series"), date,
                     "Rättelse av " + label(original) + ": " + Db.str(original, "text"), swapped, userId);

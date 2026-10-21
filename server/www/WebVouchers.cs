@@ -14,7 +14,9 @@ namespace com.swecial.web {
 
             var sb = new StringBuilder();
             sb.Append("<section class='panel'><div class='heading'><h1>Verifikationer</h1>");
+            sb.Append("<a href='" + BasePath + "/accounts.html'>Kontoplan</a>");
             sb.Append("<a class='button' href='" + BasePath + "/voucher.html'>Ny verifikation</a></div>");
+            sb.Append("<p class='lead'>Allt Liquid har bokfört, med konton, debet och kredit. Fakturor, utgifter och bankhändelser bokförs automatiskt; en egen verifikation behövs bara för det som inte passar där.</p>");
             if (vouchers.Count == 0) {
                 sb.Append("<p class='empty'>Inga verifikationer än.</p>");
             } else {

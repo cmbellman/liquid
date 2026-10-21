@@ -145,7 +145,7 @@ namespace com.swecial.web {
             sb.Append("<button type='submit' name='action' value='save' class='secondary'>Spara</button>");
             sb.Append("<button type='submit' name='action' value='send'>Spara och skicka</button>");
             sb.Append("<button type='submit' name='action' value='delete' class='danger' formnovalidate>Ta bort utkast</button>");
-            sb.Append("</div><p class='hint'>När fakturan skickas får den nummer och bokförs (1510 mot försäljning och utgående moms). Därefter kan den inte ändras.</p>");
+            sb.Append("</div><p class='hint'>När fakturan skickas får den sitt nummer och kan inte längre ändras. Den bokförs när betalningen kommer in (kontantmetoden).</p>");
             sb.Append("</form>");
             return sb.ToString();
         }
@@ -157,8 +157,11 @@ namespace com.swecial.web {
             sb.Append("<dt>Fakturadatum</dt><dd>" + h(Db.str(invoice, "invoiceDate")) + "</dd>");
             sb.Append("<dt>Förfallodatum</dt><dd>" + h(Db.str(invoice, "dueDate")) + "</dd>");
             if (Db.str(invoice, "paidDate").Length > 0) sb.Append("<dt>Betald</dt><dd>" + h(Db.str(invoice, "paidDate")) + "</dd>");
-            sb.Append("<dt>Bokföring</dt><dd>" + voucherLink("voucherId"));
-            if (Db.str(invoice, "paymentVoucherId").Length > 0) sb.Append(", " + voucherLink("paymentVoucherId"));
+            sb.Append("<dt>Bokföring</dt><dd>");
+            // Invoices sent before the cash method were also booked when sent (voucherId)
+            if (Db.str(invoice, "voucherId").Length > 0) sb.Append(voucherLink("voucherId") + (Db.str(invoice, "paymentVoucherId").Length > 0 ? ", " : ""));
+            if (Db.str(invoice, "paymentVoucherId").Length > 0) sb.Append(voucherLink("paymentVoucherId"));
+            else if (Db.str(invoice, "voucherId").Length == 0) sb.Append("Bokförs när betalningen kommer in");
             sb.Append("</dd></dl>");
 
             sb.Append("<table class='rows'><thead><tr><th>Beskrivning</th><th class='num'>Antal</th><th class='num'>À-pris</th><th class='num'>Moms</th><th class='num'>Belopp</th></tr></thead><tbody>");
@@ -172,7 +175,7 @@ namespace com.swecial.web {
                 sb.Append("<form method='post' class='inline'>" + input("id", invoice.id, "hidden"));
                 sb.Append(field("Betaldatum", input("paidDate", isPost ? form("paidDate") : Dates.today(), "date", "required")));
                 sb.Append("<button type='submit' name='action' value='paid'>Registrera betalning</button></form>");
-                sb.Append("<p class='hint'>Bokför hela beloppet " + Money.format(totals.total) + " kr som inbetalt till 1930.</p>");
+                sb.Append("<p class='hint'>Registrera när " + Money.format(totals.total) + " kr har kommit in på företagskontot. Då bokförs försäljningen och momsen.</p>");
             }
             return sb.ToString();
         }

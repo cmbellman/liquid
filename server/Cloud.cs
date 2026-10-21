@@ -18,7 +18,11 @@ namespace com.swecial.code {
             req.o.set("_className", "refused_sdk_save");
         }
 
+        /// <summary>Gives every company the accounts added to the starter chart since it was created.</summary>
         public override void onStartUp() {
+            foreach (var company in Db.all("company")) {
+                Bas.seed(company.id);
+            }
             log.write("liquid: started");
         }
     }

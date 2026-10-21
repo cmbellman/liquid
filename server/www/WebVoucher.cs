@@ -82,9 +82,15 @@ namespace com.swecial.web {
             var sb = new StringBuilder("<section class='panel'><div class='heading'><h1>Verifikation " + h(Ledger.label(voucher)) + "</h1></div>");
             sb.Append("<dl class='facts'><dt>Datum</dt><dd>" + h(Db.str(voucher, "date")) + "</dd><dt>Text</dt><dd>" + h(Db.str(voucher, "text")) + "</dd>");
             string sourceType = Db.str(voucher, "sourceType");
-            if (sourceType.Length > 0) {
-                var invoice = Db.getOwned("invoice", Db.str(voucher, "sourceId"), companyId);
-                if (invoice != null) sb.Append("<dt>Underlag</dt><dd><a href='" + BasePath + "/invoice.html?id=" + u(invoice.id) + "'>Faktura " + Db.num(invoice, "number") + "</a></dd>");
+            string sourceId = Db.str(voucher, "sourceId");
+            if (sourceType == "invoice" && Db.getOwned("invoice", sourceId, companyId) is SwecialObject invoice) {
+                sb.Append("<dt>Underlag</dt><dd><a href='" + BasePath + "/invoice.html?id=" + u(invoice.id) + "'>Faktura " + Db.num(invoice, "number") + "</a></dd>");
+            } else if (sourceType == "expense" && Db.getOwned("expense", sourceId, companyId) is SwecialObject expense) {
+                sb.Append("<dt>Underlag</dt><dd><a href='" + BasePath + "/expense.html?id=" + u(expense.id) + "'>Utgift</a>");
+                if (Db.str(expense, "receiptFileId").Length > 0) sb.Append(" (<a href='" + BasePath + "/receipt.html?id=" + u(expense.id) + "&v=" + u(Db.str(expense, "receiptFileId")) + "' target='_blank'>kvitto</a>)");
+                sb.Append("</dd>");
+            } else if (sourceType == "bank_event") {
+                sb.Append("<dt>Underlag</dt><dd><a href='" + BasePath + "/bank.html'>Bankhändelse</a></dd>");
             }
             sb.Append(linked("reversesId", "Rättar"));
             sb.Append(linked("reversedById", "Makulerad av"));

@@ -10,6 +10,14 @@ namespace com.swecial.code {
         public const string Receivables = "1510";
         public const string Bank = "1930";
         public const string InputVat = "2641";
+        public const string ReverseChargeOutputVat = "2614";
+        public const string ReverseChargeInputVat = "2645";
+        public const string TaxAccount = "1630";
+        public const string ShareCapital = "2081";
+        public const string RetainedEarnings = "2091";
+        public const string OwnerLoans = "2893";
+        public const string BankFees = "6570";
+        public const string InterestIncome = "8310";
         public const string VatSettlement = "2650";
 
         /// <summary>The VAT rates an invoice row can have.</summary>
@@ -48,7 +56,9 @@ namespace com.swecial.code {
             ("2611", "Utgående moms på försäljning inom Sverige, 25 %"),
             ("2621", "Utgående moms på försäljning inom Sverige, 12 %"),
             ("2631", "Utgående moms på försäljning inom Sverige, 6 %"),
+            ("2614", "Utgående moms omvänd skattskyldighet, 25 %"),
             ("2641", "Debiterad ingående moms"),
+            ("2645", "Beräknad ingående moms på förvärv från utlandet"),
             ("2650", "Redovisningskonto för moms"),
             ("2710", "Personalskatt"),
             ("2731", "Avräkning lagstadgade sociala avgifter"),
@@ -63,11 +73,22 @@ namespace com.swecial.code {
             ("5410", "Förbrukningsinventarier"),
             ("5420", "Programvaror"),
             ("5800", "Resekostnader"),
+            ("5831", "Kost och logi i Sverige"),
+            ("5910", "Annonsering"),
             ("6071", "Representation, avdragsgill"),
+            ("6072", "Representation, ej avdragsgill"),
             ("6110", "Kontorsmateriel"),
             ("6212", "Mobiltelefon"),
             ("6230", "Datakommunikation"),
+            ("6250", "Postbefordran"),
+            ("6310", "Företagsförsäkringar"),
+            ("6530", "Redovisningstjänster"),
+            ("6550", "Konsultarvoden"),
             ("6570", "Bankkostnader"),
+            ("6970", "Tidningar, tidskrifter och facklitteratur"),
+            ("6981", "Föreningsavgifter, avdragsgilla"),
+            ("6990", "Övriga externa kostnader, avdragsgilla"),
+            ("7610", "Utbildning"),
             ("7010", "Löner till kollektivanställda"),
             ("7210", "Löner till tjänstemän"),
             ("7510", "Arbetsgivaravgifter"),
@@ -76,7 +97,10 @@ namespace com.swecial.code {
             ("8910", "Skatt som belastar årets resultat"),
         };
 
-        /// <summary>Adds the starter accounts the company doesn't have yet.</summary>
+        /// <summary>
+        /// Adds the starter accounts the company doesn't have yet. Runs for every company at startup
+        /// (Cloud.onStartUp), so accounts added to this list reach existing companies too.
+        /// </summary>
         public static void seed(string companyId) {
             var existing = Db.forCompany("account", companyId).Select(a => Db.str(a, "number")).ToHashSet();
             foreach (var (number, name) in Starter) {

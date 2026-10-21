@@ -167,7 +167,7 @@ namespace com.swecial.web {
                 case "saved": return "Sparat.";
                 case "booked": return "Verifikationen är bokförd.";
                 case "reversed": return "Verifikationen är makulerad med en rättelse.";
-                case "sent": return "Fakturan är skickad och bokförd.";
+                case "sent": return "Fakturan har fått sitt nummer. Den bokförs när betalningen kommer in.";
                 case "paid": return "Betalningen är bokförd.";
                 case "deleted": return "Borttaget.";
                 default: return "";
@@ -183,11 +183,13 @@ namespace com.swecial.web {
                 sb.Append("<nav>");
                 if (company != null) {
                     sb.Append(link("/", "Översikt"));
-                    sb.Append(link("/invoices.html", "Fakturor"));
+                    sb.Append(link("/invoices.html", "Fakturor", "/invoice.html"));
+                    sb.Append(link("/expenses.html", "Utgifter", "/expense.html"));
+                    sb.Append(link("/bank.html", "Bank"));
                     sb.Append(link("/customers.html", "Kunder"));
-                    sb.Append(link("/vouchers.html", "Verifikationer"));
-                    sb.Append(link("/accounts.html", "Kontoplan"));
                     sb.Append(link("/reports.html", "Rapporter"));
+                    // Accounts and vouchers are there for those who want them, not needed day to day
+                    sb.Append(link("/vouchers.html", "Avancerat", "/voucher.html", "/accounts.html"));
                 }
                 sb.Append("</nav><div class='who'>");
                 if (company != null) sb.Append("<a href='" + BasePath + "/company.html'>" + h(Db.str(company, "name")) + "</a>");
@@ -196,9 +198,11 @@ namespace com.swecial.web {
             return sb.ToString();
         }
 
-        string link(string path, string text) {
+        /// <summary>A nav link, marked active on its own page and on the related pages.</summary>
+        string link(string path, string text, params string[] related) {
             string href = BasePath + path;
-            bool active = req.mappedPath == href || (path == "/" && req.mappedPath == BasePath + "/index.html");
+            bool active = req.mappedPath == href || (path == "/" && req.mappedPath == BasePath + "/index.html")
+                || related.Any(r => req.mappedPath == BasePath + r);
             return "<a href='" + href + "'" + (active ? " class='active'" : "") + ">" + text + "</a>";
         }
 

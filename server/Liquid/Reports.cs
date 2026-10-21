@@ -74,8 +74,10 @@ namespace com.swecial.code {
         }
 
         /// <summary>
-        /// The VAT return boxes for the period, from the booked accounts. Sales are credit-positive.
-        /// Box 05 is taxable sales (3001–3003), 10–12 output VAT, 48 input VAT, 49 the VAT to pay.
+        /// The VAT return boxes for the period, from the booked accounts (sales are credit-positive).
+        /// 05 taxable sales (3001–3003), 10–12 output VAT, 21/22 services bought from the EU / outside
+        /// the EU (from the expenses), 30 the VAT calculated on those (2614), 48 deductible input VAT
+        /// (2641 + 2645), 49 the VAT to pay.
         /// </summary>
         public static List<(string box, string label, long amount)> vatReturn(string companyId, string from, string to) {
             var balances = trialBalance(companyId, from, to).ToDictionary(b => b.account);
@@ -85,14 +87,18 @@ namespace com.swecial.code {
             long vat25 = period("2611");
             long vat12 = period("2621");
             long vat6 = period("2631");
-            long input = -period(Bas.InputVat);
+            long reverseCharge = period(Bas.ReverseChargeOutputVat);
+            long input = -period(Bas.InputVat) - period(Bas.ReverseChargeInputVat);
             return new List<(string, string, long)> {
                 ("05", "Momspliktig försäljning", sales),
                 ("10", "Utgående moms 25 %", vat25),
                 ("11", "Utgående moms 12 %", vat12),
                 ("12", "Utgående moms 6 %", vat6),
+                ("21", "Inköp av tjänster från ett annat EU-land", Expenses.foreignPurchases(companyId, Expenses.ForeignEu, from, to)),
+                ("22", "Inköp av tjänster från ett land utanför EU", Expenses.foreignPurchases(companyId, Expenses.ForeignNonEu, from, to)),
+                ("30", "Utgående moms 25 % på inköpen i ruta 21–22", reverseCharge),
                 ("48", "Ingående moms att dra av", input),
-                ("49", "Moms att betala (+) eller få tillbaka (−)", vat25 + vat12 + vat6 - input),
+                ("49", "Moms att betala (+) eller få tillbaka (−)", vat25 + vat12 + vat6 + reverseCharge - input),
             };
         }
     }
