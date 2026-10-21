@@ -241,17 +241,17 @@ namespace com.swecial.code {
 
         /// <summary>
         /// Books the full payment: with the cash method the sale and its VAT against 1930; for an
-        /// invoice booked when it was sent (accrual method), 1930 against the receivable. A cash method
-        /// invoice paid in a later year than its invoice date was unpaid at year end, so the sale belongs
-        /// to that year's closing (as a receivable): the payment only clears the receivable.
+        /// invoice already booked as a receivable, when sent (accrual method) or in the closing of the year
+        /// it was unpaid at (closingVoucherId, set by the closing), 1930 against the receivable. A cash
+        /// method invoice from an earlier year that no closing booked is booked as a sale when paid.
         /// </summary>
         public static void markPaid(SwecialObject invoice, string paidDate, string userId) {
             lock (Db.Sync) {
                 if (Db.str(invoice, "status") != Sent) throw new LiquidException("Bara skickade, obetalda fakturor kan markeras som betalda.", "ONLY ISSUED, OUTSTANDING INVOICES CAN BE SETTLED.");
                 paidDate = Dates.clean(paidDate);
                 var t = totals(rows(invoice));
-                bool bookedWhenSent = Db.str(invoice, "voucherId").Length > 0;
-                var paymentRows = bookedWhenSent || inClosing(Db.str(invoice, "invoiceDate"), paidDate)
+                bool bookedWhenSent = Db.str(invoice, "voucherId").Length > 0 || Db.str(invoice, "closingVoucherId").Length > 0;
+                var paymentRows = bookedWhenSent
                     ? new List<VoucherRow> {
                         new VoucherRow { account = Bas.Bank, debit = t.total },
                         new VoucherRow { account = Bas.Receivables, credit = t.total },
@@ -284,7 +284,7 @@ namespace com.swecial.code {
         }
 
         /// <summary>True when an invoice dated invoiceDate and paid on paidDate was unpaid at a year end.</summary>
-        public static bool inClosing(string invoiceDate, string paidDate) {
+        public static bool overYearEnd(string invoiceDate, string paidDate) {
             return string.CompareOrdinal(Dates.clean(invoiceDate).Substring(0, 4), paidDate.Substring(0, 4)) < 0;
         }
 

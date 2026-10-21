@@ -159,9 +159,9 @@ namespace com.swecial.web {
                 // Booked when sent (accrual method) and/or when paid
                 var links = new[] { voucherLink("voucherId"), voucherLink("paymentVoucherId") }.Where(l => l.Length > 0).ToList();
                 set("bookkeeping", links.Count > 0 ? string.Join(", ", links) : T("invoice.bookedWhenPaid"));
-                bool bookedWhenSent = Db.str(invoice, "voucherId").Length > 0;
+                bool bookedWhenSent = Db.str(invoice, "voucherId").Length > 0 || Db.str(invoice, "closingVoucherId").Length > 0;
                 string hint = bookedWhenSent ? "invoice.paymentHint.accrual"
-                    : Invoicing.inClosing(Db.str(invoice, "invoiceDate"), Dates.today()) ? "invoice.paymentHint.closing" : "invoice.paymentHint.cash";
+                    : Invoicing.overYearEnd(Db.str(invoice, "invoiceDate"), Dates.today()) ? "invoice.paymentHint.closing" : "invoice.paymentHint.cash";
                 set("paymentHint", T(hint, Money.format(totals.total)));
             }
         }

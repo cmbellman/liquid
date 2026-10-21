@@ -254,7 +254,7 @@
     "invoice.ourReference": "Vår referens",
     "invoice.paymentHint.accrual": "Registrera när {0} kr har kommit in på företagskontot. Då bokförs betalningen mot kundfordran.",
     "invoice.paymentHint.cash": "Registrera när {0} kr har kommit in på företagskontot. Då bokförs försäljningen och momsen.",
-    "invoice.paymentHint.closing": "Registrera när {0} kr har kommit in på företagskontot. Fakturan är från ett tidigare år och var obetald vid årsskiftet, så försäljningen och momsen hör till det årets bokslut. Betalningen bokförs mot kundfordran (1510).",
+    "invoice.paymentHint.closing": "Registrera när {0} kr har kommit in på företagskontot. Fakturan är från ett tidigare år men bokfördes inte som kundfordran i det årets bokslut, så försäljningen och momsen bokförs nu, i år.",
     "invoice.print": "Skriv ut / PDF",
     "invoice.registerPayment": "Registrera betalning",
     "invoice.undoPayment.confirm": "Ångra betalningen? Verifikationen makuleras med en rättelse.",
