@@ -14,27 +14,21 @@ namespace com.swecial.code {
         public const string Internal = "internal";
         public const string External = "external";
 
-        /// <summary>The VAT base allowed per person and occasion, in öre.</summary>
-        public const long BasePerPerson = 300_00;
+        // The figures (food VAT, the 300 kr base, the schablon) come from Rules, by date
 
-        /// <summary>Food VAT is 6 % from 1 April 2026 to 31 December 2027, otherwise 12 %.</summary>
         public static int foodRate(string date) {
-            return string.CompareOrdinal(date, "2026-04-01") >= 0 && string.CompareOrdinal(date, "2028-01-01") < 0 ? 6 : 12;
-        }
-
-        /// <summary>Skatteverket's schablon per person for a meal with alcohol, in öre.</summary>
-        public static long alcoholSchablon(string date) {
-            return foodRate(date) == 6 ? 33_00 : 46_00;
+            return (int)Rules.value(Rules.FoodVat, date.Length > 0 ? date : Dates.today());
         }
 
         /// <summary>The VAT that may be deducted, from the receipt's total and VAT.</summary>
         public static long deductibleVat(string date, long total, long receiptVat, int participants, bool alcohol) {
             if (participants < 1 || receiptVat <= 0) return 0;
             long net = total - receiptVat;
-            if (net <= BasePerPerson * participants) return receiptVat;
+            long basePerPerson = Rules.value(Rules.RepresentationBase, date);
+            if (net <= basePerPerson * participants) return receiptVat;
             long cap = alcohol
-                ? alcoholSchablon(date) * participants
-                : (long)Math.Round(BasePerPerson * participants * foodRate(date) / 100m, 0, MidpointRounding.AwayFromZero);
+                ? Rules.value(Rules.AlcoholSchablon, date) * participants
+                : (long)Math.Round(basePerPerson * participants * foodRate(date) / 100m, 0, MidpointRounding.AwayFromZero);
             return Math.Min(receiptVat, cap);
         }
     }

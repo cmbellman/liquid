@@ -147,7 +147,7 @@ namespace com.swecial.web {
             val("note", value("note"));
             string category = value("category");
             rows("categories", Categories.All.Select(c => {
-                string hint = Tr("category." + c.key + ".hint");
+                string hint = Tr("category." + c.key + ".hint", Money.whole(Rules.value(Rules.PriceBaseAmount, date.Length > 0 ? date : Dates.today()) / 2));
                 // Food VAT depends on the date (6 % from April 2026)
                 int suggested = c.key == Representation.CategoryKey ? Representation.foodRate(date) : c.vatRate;
                 return row(("value", c.key), ("vat", suggested.ToString()), ("hint", h(hint)), ("abroad", c.consumedAbroad ? "1" : ""),
@@ -156,6 +156,10 @@ namespace com.swecial.web {
             string rate = value("vatRate");
             if (rate.Length == 0) rate = (Categories.find(category)?.vatRate ?? 25).ToString();
             set("vatRates", vatOptions(rate));
+            // The representation rules by date, for the page script (same table as the server)
+            val("rulesFood", Rules.json(Rules.FoodVat));
+            val("rulesBase", Rules.json(Rules.RepresentationBase));
+            val("rulesSchablon", Rules.json(Rules.AlcoholSchablon));
             val("participants", value("participants"));
             val("attendees", value("attendees"));
             val("purpose", value("purpose"));

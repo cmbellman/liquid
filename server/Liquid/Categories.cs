@@ -25,7 +25,7 @@ namespace com.swecial.code {
             new Category { key = "software", name = "Programvara och prenumerationer", account = "5420", vatRate = 25,
                 hint = "Står det ingen svensk moms på kvittot (t.ex. Google, Microsoft, Adobe)? Markera att det är köpt från utlandet." },
             new Category { key = "equipment", name = "Datorer och utrustning", account = "5410", vatRate = 25,
-                hint = "För saker som kostar mindre än ett halvt prisbasbelopp (knappt 30 000 kr) och inte är en del av en större anskaffning." },
+                hint = "För saker som kostar mindre än ett halvt prisbasbelopp och inte är en del av en större anskaffning." },
             new Category { key = "phone", name = "Telefon och mobilabonnemang", account = "6212", vatRate = 25 },
             new Category { key = "internet", name = "Internet, webbhotell och domäner", account = "6230", vatRate = 25 },
             new Category { key = "office", name = "Kontorsmaterial", account = "6110", vatRate = 25 },

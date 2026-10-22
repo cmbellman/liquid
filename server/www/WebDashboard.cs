@@ -109,6 +109,9 @@ namespace com.swecial.web {
             if (bag > 0) items.Add(row(("href", BasePath + "/pant.html"), ("link", Tn("bar.todo.bag", bag)), ("rest", T("bar.todo.bagRest"))));
             if (drafts > 0) items.Add(row(("href", BasePath + "/invoices.html"), ("link", Tn("bar.todo.drafts", drafts)), ("rest", T("bar.todo.draftsRest"))));
             if (missingReceipts > 0) items.Add(row(("href", BasePath + "/expenses.html"), ("link", Tn("bar.todo.receipts", missingReceipts)), ("rest", T("bar.todo.receiptsRest"))));
+            // Figures from laws and Skatteverket that haven't been checked for this year
+            int rules = Rules.notChecked().Count;
+            if (rules > 0) items.Add(row(("href", BasePath + "/rules.html"), ("link", Tn("bar.todo.rules", rules)), ("rest", T("bar.todo.rulesRest"))));
             rows("todo", items);
         }
     }

@@ -1,0 +1,19 @@
+<% class=WebRules %>
+<% include=partials/top.part %>
+<div class="heading"><div><h1><%t.rules.title%></h1><p class="sub"><%t.rules.subtitle%></p></div></div>
+<section class="panel">
+    <p class="lead"><%t.rules.lead%></p>
+</section>
+<swe:iterator source="rules">
+<section class="panel">
+    <h2><%current.name%> <swe:condition source="current.ok"><else><span class="status draft"><%t.rules.notChecked%></span></else></swe:condition></h2>
+    <table>
+        <thead><tr><th><%t.rules.col.period%></th><th class="num"><%t.rules.col.value%></th><th><%t.rules.col.checked%></th></tr></thead>
+        <tbody>
+            <swe:iterator source="current.values"><tr class="<%current.class%>"><td><%current.period%></td><td class="num"><%current.value%></td><td><%current.checked%></td></tr></swe:iterator>
+        </tbody>
+    </table>
+    <p class="hint"><%t.rules.source%>: <swe:condition source="current.link"><a href="<%current.source%>" target="_blank" rel="noopener"><%current.source%></a><else><%current.source%></else></swe:condition></p>
+</section>
+</swe:iterator>
+<% include=partials/bottom.part %>

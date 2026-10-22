@@ -100,12 +100,12 @@ namespace com.swecial.web {
                 ("options", options(new[] { (Settings.CashMethod, Tr("settings.method.cashShort")), (Settings.AccrualMethod, Tr("settings.method.accrualShort")) },
                     isPost ? Settings.clean(form("method" + y)) : Settings.accountingMethod(company, y))))));
             rows("methods", new[] {
-                choice("accountingMethod", Settings.CashMethod, method, T("settings.method.cash"), T("settings.method.cashText")),
+                choice("accountingMethod", Settings.CashMethod, method, T("settings.method.cash"), T("settings.method.cashText", Money.whole(Rules.value(Rules.CashMethodLimit)))),
                 choice("accountingMethod", Settings.AccrualMethod, method, T("settings.method.accrual"), T("settings.method.accrualText")),
             });
             string vat = isPost ? form("vatPeriod") : Settings.vatPeriod(company);
             rows("vatPeriods", new[] { Settings.VatYear, Settings.VatQuarter, Settings.VatMonth }.Select(p =>
-                choice("vatPeriod", p, vat, T("settings.vat." + p), T("settings.vat." + p + "Text"))));
+                choice("vatPeriod", p, vat, T("settings.vat." + p), T("settings.vat." + p + "Text", Money.whole(Rules.value(p == Settings.VatMonth ? Rules.MonthlyVatLimit : Rules.YearlyVatLimit))))));
 
             // Every theme in server/themes describes itself
             string current = isPost ? form("theme") : theme.id;

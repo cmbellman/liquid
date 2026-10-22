@@ -200,6 +200,8 @@ table.rows td:first-child { width: 50%; }
 tr.reversed td { color: var(--faint); }
 td.ok { color: var(--green); }
 td.off { color: var(--red); }
+tr.current td { color: var(--text); font-weight: 700; }
+tr.off td:last-child { color: var(--amber); }
 
 .status {
     display: inline-block;

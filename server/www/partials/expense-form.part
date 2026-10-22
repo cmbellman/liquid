@@ -26,7 +26,7 @@
         <label><%t.expense.representation.attendees%><input type="text" name="attendees" value="<%attendees%>" placeholder="<%t.expense.representation.attendeesPlaceholder%>"></label>
         <label><%t.expense.representation.purpose%><input type="text" name="purpose" value="<%purpose%>" placeholder="<%t.expense.representation.purposePlaceholder%>"></label>
         <label class="check"><input type="checkbox" name="alcohol" value="1" <%alcoholChecked%>> <%t.expense.representation.alcohol%></label>
-        <p class="hint" id="deductible" data-text="<%t.expense.representation.deductible%>"></p>
+        <p class="hint" id="deductible" data-text="<%t.expense.representation.deductible%>" data-food="<%rulesFood%>" data-base="<%rulesBase%>" data-schablon="<%rulesSchablon%>"></p>
     </fieldset>
     <label><swe:condition source="hasReceipt"><%t.expense.replaceReceipt%><else><%t.expense.receiptUpload%></else></swe:condition><input type="file" name="receipt" accept="image/*,application/pdf"></label>
     <swe:condition source="showReceipt">

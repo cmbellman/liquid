@@ -274,7 +274,7 @@ namespace com.swecial.web {
                 items.Add(navItem("/customers.html", "nav.customers", "people", 0));
                 items.Add(navItem("/reports.html", "nav.reports", "chart", 0));
                 // Accounts and vouchers are there for those who want them, not needed day to day
-                items.Add(navItem("/vouchers.html", "nav.advanced", "book", 0, "/voucher.html", "/accounts.html"));
+                items.Add(navItem("/vouchers.html", "nav.advanced", "book", 0, "/voucher.html", "/accounts.html", "/rules.html"));
                 items.Add(navItem("/company.html", "nav.settings", "gear", 0));
             }
             rows("navItems", items);

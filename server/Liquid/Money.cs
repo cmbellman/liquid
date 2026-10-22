@@ -8,6 +8,12 @@ namespace com.swecial.code {
     public static class Money {
         static readonly CultureInfo Sv = CultureInfo.GetCultureInfo("sv-SE");
 
+        /// <summary>Whole kronor with thousands separators, for limits in texts: 3 000 000.</summary>
+        public static string whole(long ore) {
+            string s = format(ore);
+            return s.EndsWith(",00") ? s.Substring(0, s.Length - 3) : s;
+        }
+
         public static string format(long ore) {
             return (ore / 100m).ToString("#,##0.00", Sv);
         }
