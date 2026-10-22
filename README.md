@@ -65,7 +65,7 @@ Open `http://localhost/liquid/`, create an account and a company.
 
 ## Deploy
 
-Production is `https://deepthought.swecial.se/liquid/`. Deploy from swecial-server's GitHub Actions (**CD (Deploy Liquid Cloud Code)**), or:
+Production is `https://m.swecial.se/liquid/`. Deploy from swecial-server's GitHub Actions (**CD (Deploy Liquid Cloud Code)**), or:
 
 ```bash
 gh workflow run deploy-liquid.yml -R Swecial/swecial-server -f branch=master

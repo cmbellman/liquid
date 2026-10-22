@@ -1,0 +1,275 @@
+/* ============================================================
+   Theme: Skynet. Autonomous financial intelligence: crimson-orange tactical CRT,
+   coordinate grid, angular display headers, target matrix and assimilation port.
+   ============================================================ */
+body.theme-skynet {
+    --bg: #070202;
+    --bg-2: #0d0403;
+    --panel: #0a0302;
+    --panel-2: #130504;
+    --line: #4f150d;
+    --line-2: #8c2416;
+    --text: #ff734f;
+    --muted: #c94629;
+    --faint: #7d2716;
+    --cyan: #ff3b1f;
+    --cyan-2: #d92810;
+    --cyan-ink: #090100;
+    --amber: #ff8826;
+    --amber-ink: #120400;
+    --red: #ff1f1f;
+    --green: #ff5e36;
+    --beer-top: #ff8826;
+    --beer-bottom: #c41e0e;
+    --radius: 0px;
+    --glow: inset 0 0 28px rgba(255, 59, 31, 0.05), 0 0 14px rgba(255, 45, 20, 0.08);
+    background:
+        radial-gradient(1100px 680px at 55% 35%, rgba(255, 59, 31, 0.09), transparent 70%),
+        linear-gradient(rgba(255, 59, 31, 0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 59, 31, 0.025) 1px, transparent 1px),
+        var(--bg);
+    background-size: auto, 28px 28px, 28px 28px, auto;
+    font-family: "Share Tech Mono", ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 15px;
+    letter-spacing: 0.03em;
+    text-shadow: 0 0 6px rgba(255, 59, 31, 0.38);
+}
+
+/* CRT scanlines and dark tactical vignette */
+body.theme-skynet::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 100;
+    background:
+        radial-gradient(circle at 50% 50%, transparent 58%, rgba(0, 0, 0, 0.55) 100%),
+        repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.22) 0 1px, transparent 1px 3px);
+}
+
+.theme-skynet h1, .theme-skynet h2, .theme-skynet h3,
+.theme-skynet .sub, .theme-skynet label, .theme-skynet th,
+.theme-skynet button, .theme-skynet .button, .theme-skynet .side nav a,
+.theme-skynet .side .who a, .theme-skynet .chips a, .theme-skynet .status,
+.theme-skynet .chip-btn, .theme-skynet p.label, .theme-skynet .legend,
+.theme-skynet .big small, .theme-skynet .glass small, .theme-skynet .tab .who {
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+.theme-skynet h1, .theme-skynet h2 {
+    font-family: "Orbitron", "Share Tech Mono", monospace;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+}
+.theme-skynet h1 { font-size: 24px; color: var(--cyan); text-shadow: 0 0 12px rgba(255, 59, 31, 0.65); }
+.theme-skynet h2 { font-size: 15px; color: var(--text); }
+.theme-skynet strong, .theme-skynet b { font-weight: 400; }
+
+/* Sidebar: Command Core column */
+.theme-skynet .side {
+    background: rgba(8, 2, 2, 0.94);
+    border-right: 1px solid var(--line-2);
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.6);
+}
+.theme-skynet .brand {
+    font-family: "Orbitron", "Share Tech Mono", monospace;
+    font-weight: 900;
+    font-style: italic;
+    font-size: 24px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--cyan);
+    text-shadow: 0 0 14px rgba(255, 59, 31, 0.9), 0 0 3px #ff9e80;
+}
+.theme-skynet .brand::after {
+    content: "FINANCIAL INTELLIGENCE SYSTEM";
+    display: block;
+    margin-top: 5px;
+    font-family: "Share Tech Mono", monospace;
+    font-style: normal;
+    font-weight: 400;
+    font-size: 9px;
+    letter-spacing: 0.14em;
+    color: var(--muted);
+    text-shadow: none;
+}
+.theme-skynet .clock {
+    display: block;
+    padding: 4px 10px;
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    font-size: 36px;
+    line-height: 1.1;
+    color: var(--cyan);
+    text-shadow: 0 0 14px rgba(255, 59, 31, 0.75);
+}
+.theme-skynet .side nav a, .theme-skynet .side .who a {
+    border-radius: 0;
+    font-weight: 400;
+    font-size: 13px;
+    padding: 8px 10px;
+    border: 1px solid transparent;
+}
+.theme-skynet .side nav a:hover, .theme-skynet .side .who a:hover {
+    background: rgba(255, 59, 31, 0.06);
+    border-color: var(--line);
+    color: var(--text);
+}
+.theme-skynet .side nav a.active {
+    background: rgba(255, 59, 31, 0.14);
+    border-color: var(--cyan);
+    color: var(--cyan);
+    box-shadow: inset 0 0 12px rgba(255, 59, 31, 0.2);
+}
+.theme-skynet .side nav a.active::before { display: none; }
+.theme-skynet .side nav a.active::after { content: "◄"; margin-left: auto; font-size: 10px; }
+.theme-skynet .badge {
+    border-radius: 0;
+    background: var(--cyan);
+    color: var(--cyan-ink);
+    font-weight: 700;
+    text-shadow: none;
+}
+.theme-skynet .icon { stroke-width: 1.5; }
+
+/* Top status bar and tactical panels */
+.theme-skynet main > .heading {
+    padding: 10px 14px;
+    border: 1px solid var(--line-2);
+    background: rgba(255, 59, 31, 0.05);
+    margin-bottom: 18px;
+}
+.theme-skynet main > .heading .sub {
+    color: var(--text);
+    font-size: 13px;
+    letter-spacing: 0.12em;
+}
+.theme-skynet .panel {
+    background:
+        linear-gradient(rgba(255, 59, 31, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 59, 31, 0.03) 1px, transparent 1px),
+        rgba(10, 3, 2, 0.9);
+    background-size: 20px 20px, 20px 20px, auto;
+    border: 1px solid var(--line-2);
+    box-shadow: var(--glow);
+    padding: 18px 20px;
+}
+.theme-skynet .heading > div:first-child, .theme-skynet .tap-head > div {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 10px;
+}
+.theme-skynet .panel .heading .sub::before, .theme-skynet .tap-head .sub::before { content: "// "; }
+.theme-skynet .panel .heading .sub, .theme-skynet .tap-head .sub {
+    margin: 0;
+    color: var(--muted);
+    font-size: 13px;
+}
+.theme-skynet .panel .heading, .theme-skynet .tap-head {
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--line-2);
+    margin-bottom: 14px;
+}
+
+/* Controls & tactical buttons */
+.theme-skynet input, .theme-skynet select, .theme-skynet textarea {
+    border-radius: 0;
+    background: #050101;
+    border-color: var(--line-2);
+    color: var(--text);
+    font-family: inherit;
+    font-weight: 400;
+}
+.theme-skynet input:focus, .theme-skynet select:focus, .theme-skynet textarea:focus {
+    box-shadow: 0 0 0 1px var(--cyan), 0 0 14px rgba(255, 59, 31, 0.35);
+}
+.theme-skynet button, .theme-skynet .button {
+    border-radius: 0;
+    background: rgba(255, 59, 31, 0.16);
+    color: var(--text);
+    border: 1px solid var(--cyan);
+    box-shadow: 0 0 12px rgba(255, 59, 31, 0.2);
+    font-weight: 400;
+    padding: 9px 18px;
+}
+.theme-skynet button:hover, .theme-skynet .button:hover {
+    background: var(--cyan);
+    color: var(--cyan-ink);
+    text-shadow: none;
+    filter: none;
+}
+.theme-skynet button.amber, .theme-skynet .button.amber {
+    border-color: var(--amber);
+    color: var(--amber);
+    background: rgba(255, 136, 38, 0.14);
+}
+.theme-skynet button.link { border: none; background: none; box-shadow: none; padding: 0; color: var(--cyan); }
+.theme-skynet .chip-btn {
+    border-radius: 0;
+    background: rgba(255, 59, 31, 0.18);
+    border: 1px solid var(--cyan);
+    color: var(--text);
+    box-shadow: 0 0 10px rgba(255, 59, 31, 0.25);
+    font-weight: 400;
+    padding: 4px 12px;
+}
+.theme-skynet .chip-btn:hover { background: var(--cyan); color: var(--cyan-ink); text-shadow: none; }
+.theme-skynet .chips, .theme-skynet .chips a, .theme-skynet .status,
+.theme-skynet .error, .theme-skynet .message, .theme-skynet .ai,
+.theme-skynet .tile, .theme-skynet .tab, .theme-skynet .bag-item,
+.theme-skynet .choice, .theme-skynet .drop {
+    border-radius: 0;
+    background: rgba(12, 3, 2, 0.75);
+}
+.theme-skynet .tab { border-color: var(--line-2); }
+.theme-skynet .choice:has(input[type=radio]:checked) {
+    box-shadow: 0 0 0 1px var(--cyan), inset 0 0 16px rgba(255, 59, 31, 0.15);
+}
+.theme-skynet .drop {
+    border: 1px solid var(--line-2);
+    background: rgba(255, 59, 31, 0.05);
+}
+.theme-skynet .drop:hover, .theme-skynet .drop.over {
+    border-color: var(--cyan);
+    background: rgba(255, 59, 31, 0.12);
+    box-shadow: inset 0 0 18px rgba(255, 59, 31, 0.18);
+}
+.theme-skynet th { color: var(--muted); font-weight: 400; border-bottom-color: var(--line-2); }
+.theme-skynet tbody tr:hover td { background: rgba(255, 59, 31, 0.06); }
+
+/* Readouts & The Flow */
+.theme-skynet .big strong {
+    font-family: "Orbitron", "Share Tech Mono", monospace;
+    font-weight: 800;
+    font-size: clamp(30px, 4.4vw, 50px);
+    letter-spacing: 0.02em;
+}
+.theme-skynet .big.in strong::before { content: "+"; }
+.theme-skynet .big.out strong::before { content: "-"; }
+.theme-skynet .big.in strong {
+    color: var(--cyan);
+    text-shadow: 0 0 20px rgba(255, 59, 31, 0.8), 0 0 4px rgba(255, 180, 150, 0.6);
+}
+.theme-skynet .big.out strong {
+    color: var(--amber);
+    text-shadow: 0 0 20px rgba(255, 136, 38, 0.75), 0 0 4px rgba(255, 200, 150, 0.5);
+}
+.theme-skynet .flow text {
+    font-family: "Share Tech Mono", monospace;
+    font-weight: 400;
+    text-transform: uppercase;
+    fill: var(--muted);
+}
+.theme-skynet .flow .in { filter: drop-shadow(0 0 6px rgba(255, 59, 31, 0.9)); }
+.theme-skynet .flow .out { filter: drop-shadow(0 0 6px rgba(255, 136, 38, 0.8)); }
+
+@media (prefers-reduced-motion: no-preference) {
+    .theme-skynet .clock { animation: skynet-pulse 3.2s ease-in-out infinite; }
+    @keyframes skynet-pulse { 50% { opacity: 0.82; text-shadow: 0 0 22px rgba(255, 59, 31, 1); } }
+}
+@media (max-width: 760px) {
+    .theme-skynet .side nav a, .theme-skynet .side .who a { font-size: 9px; border: none; }
+    .theme-skynet .side nav a.active::after { display: none; }
+    .theme-skynet .clock { display: none; }
+}
