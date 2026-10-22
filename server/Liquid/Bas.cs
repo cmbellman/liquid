@@ -19,6 +19,8 @@ namespace com.swecial.code {
         public const string BankFees = "6570";
         public const string InterestIncome = "8310";
         public const string VatSettlement = "2650";
+        public const string Securities = "1350";
+        public const string SecuritiesResult = "8220";
 
         /// <summary>The VAT rates an invoice row can have.</summary>
         public static readonly int[] VatRates = { 25, 12, 6, 0 };
@@ -60,6 +62,7 @@ namespace com.swecial.code {
         }
 
         static readonly (string number, string name)[] Starter = {
+            ("1350", "Andelar och värdepapper i andra företag"),
             ("1510", "Kundfordringar"),
             ("1630", "Avräkning för skatter och avgifter (skattekonto)"),
             ("1910", "Kassa"),
@@ -118,6 +121,7 @@ namespace com.swecial.code {
             ("7010", "Löner till kollektivanställda"),
             ("7210", "Löner till tjänstemän"),
             ("7510", "Arbetsgivaravgifter"),
+            ("8220", "Resultat vid försäljning av värdepapper"),
             ("8310", "Ränteintäkter från omsättningstillgångar"),
             ("8410", "Räntekostnader för långfristiga skulder"),
             ("8910", "Skatt som belastar årets resultat"),

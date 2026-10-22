@@ -38,9 +38,12 @@ namespace com.swecial.code {
         public const string Year = "ar";
         public const string TwelveMonths = "12m";
 
-        /// <summary>Money in (debit) and out (credit) on 1930 per voucher date, without reversal pairs.</summary>
-        static List<(DateTime date, long moneyIn, long moneyOut)> movements(string companyId) {
-            var result = new List<(DateTime, long, long)>();
+        /// <summary>
+        /// Money in (debit) and out (credit) on 1930 per voucher date, without reversal pairs. saving
+        /// marks money moved to or from funds (series V): it isn't spent, so Glaset's pace leaves it out.
+        /// </summary>
+        static List<(DateTime date, long moneyIn, long moneyOut, bool saving)> movements(string companyId) {
+            var result = new List<(DateTime, long, long, bool)>();
             foreach (var voucher in Ledger.vouchers(companyId)) {
                 if (Db.str(voucher, "reversedById").Length > 0 || Db.str(voucher, "reversesId").Length > 0) continue;
                 long moneyIn = 0, moneyOut = 0;
@@ -48,7 +51,7 @@ namespace com.swecial.code {
                     moneyIn += row.debit;
                     moneyOut += row.credit;
                 }
-                if (moneyIn != 0 || moneyOut != 0) result.Add((Dates.parse(Db.str(voucher, "date")), moneyIn, moneyOut));
+                if (moneyIn != 0 || moneyOut != 0) result.Add((Dates.parse(Db.str(voucher, "date")), moneyIn, moneyOut, Db.str(voucher, "series") == Ledger.Securities));
             }
             return result;
         }
@@ -78,7 +81,7 @@ namespace com.swecial.code {
             }
             foreach (var b in buckets) b.forecast = b.start > today;
 
-            foreach (var (date, moneyIn, moneyOut) in movements(companyId)) {
+            foreach (var (date, moneyIn, moneyOut, _) in movements(companyId)) {
                 var b = buckets.FirstOrDefault(x => date >= x.start && date < x.end);
                 if (b == null || b.forecast) continue;
                 b.moneyIn += moneyIn;
@@ -109,7 +112,7 @@ namespace com.swecial.code {
                 balance = all.Where(m => m.date <= today).Sum(m => m.moneyIn - m.moneyOut),
                 owedToYou = Db.forCompany("invoice", companyId).Where(i => Db.str(i, "status") == Invoicing.Sent).Sum(i => Db.num(i, "total")),
             };
-            long out90 = all.Where(m => m.date > today.AddDays(-90) && m.date <= today).Sum(m => m.moneyOut);
+            long out90 = all.Where(m => !m.saving && m.date > today.AddDays(-90) && m.date <= today).Sum(m => m.moneyOut);
             r.monthlyOut = out90 / 3;
             if (r.monthlyOut > 0) r.months = Math.Max(0, (decimal)r.balance / r.monthlyOut);
             return r;

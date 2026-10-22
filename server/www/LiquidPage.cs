@@ -281,6 +281,7 @@ namespace com.swecial.web {
                 items.Add(navItem("/expenses.html", "nav.expenses", "receipt", 0, "/expense.html"));
                 items.Add(navItem("/pant.html", "nav.pant", "bag", bag));
                 items.Add(navItem("/bank.html", "nav.bank", "wallet", 0));
+                items.Add(navItem("/securities.html", "nav.securities", "barrel", 0));
                 items.Add(navItem("/customers.html", "nav.customers", "people", 0));
                 items.Add(navItem("/reports.html", "nav.reports", "chart", 0));
                 // Accounts and vouchers are there for those who want them, not needed day to day

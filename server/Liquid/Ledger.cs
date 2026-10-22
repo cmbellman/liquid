@@ -17,7 +17,7 @@ namespace com.swecial.code {
     /// rows live inside the voucher as JSON, so a voucher is always written as a whole.
     ///
     /// Series: A manual vouchers, F customer invoices booked when sent (accrual method), I customer
-    /// payments, U expenses, B other bank events. Numbers run per series and calendar year (the
+    /// payments, U expenses, B other bank events, V funds and other securities. Numbers run per series and calendar year (the
     /// fiscal year is the calendar year for now).
     /// </summary>
     public static class Ledger {
@@ -26,6 +26,7 @@ namespace com.swecial.code {
         public const string Payments = "I";
         public const string Expenses = "U";
         public const string BankEvents = "B";
+        public const string Securities = "V";
 
         public static List<VoucherRow> rows(SwecialObject voucher) {
             string json = Db.str(voucher, "rowsJson");
@@ -108,7 +109,7 @@ namespace com.swecial.code {
                 if (Db.str(original, "reversedById").Length > 0) throw new LiquidException("Verifikationen är redan makulerad.", "VOUCHER ALREADY VOIDED.");
                 if (Db.str(original, "reversesId").Length > 0) throw new LiquidException("En rättelse kan inte makuleras.", "A REVERSAL ENTRY CANNOT BE VOIDED.");
                 // The invoice's status would no longer match its vouchers (credit notes come later)
-                if (!fromSource && Db.str(original, "sourceType").Length > 0) throw new LiquidException("Verifikationen är bokförd från en faktura, utgift eller bankhändelse. Ändra eller ta bort den där i stället.", "VOUCHER ORIGINATES FROM AN INVOICE, EXPENDITURE OR TREASURY EVENT. AMEND IT AT THE SOURCE.");
+                if (!fromSource && Db.str(original, "sourceType").Length > 0) throw new LiquidException("Verifikationen är bokförd från en faktura, utgift, bankhändelse eller fondhändelse. Ändra eller ta bort den där i stället.", "VOUCHER ORIGINATES FROM AN INVOICE, EXPENDITURE, TREASURY OR SECURITIES EVENT. AMEND IT AT THE SOURCE.");
                 var swapped = rows(original).Select(r => new VoucherRow { account = r.account, debit = r.credit, credit = r.debit }).ToList();
                 var reversal = book(Db.str(original, "companyId"), Db.str(original, "series"), date,
                     "Rättelse av " + label(original) + ": " + Db.str(original, "text"), swapped, userId);

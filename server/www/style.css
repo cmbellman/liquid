@@ -158,8 +158,10 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--c
 input.num { text-align: right; }
 input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.8); }
 input[readonly] { color: var(--muted); }
-fieldset.representation { border: 1px solid var(--line-2); border-radius: 12px; padding: 12px 16px 4px; margin: 0 0 16px; }
-fieldset.representation legend { padding: 0 6px; font-size: 13px; font-weight: 700; color: var(--text); }
+fieldset.representation, fieldset.group { border: 1px solid var(--line-2); border-radius: 12px; padding: 12px 16px 4px; margin: 0 0 16px; }
+fieldset.representation legend, fieldset.group legend { padding: 0 6px; font-size: 13px; font-weight: 700; color: var(--text); }
+.shares { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 0; }
+.shares button { padding: 5px 12px; font-size: 13px; }
 label.check { flex-direction: row; align-items: center; gap: 8px; color: var(--text); }
 label.check input { width: 18px; height: 18px; margin: 0; padding: 0; flex: none; accent-color: var(--cyan); }
 
@@ -203,6 +205,7 @@ table.rows td:first-child { width: 50%; }
 tr.reversed td { color: var(--faint); }
 td.ok { color: var(--green); }
 td.off { color: var(--red); }
+td.loss { color: var(--red); }
 tr.current td { color: var(--text); font-weight: 700; }
 tr.off td:last-child { color: var(--amber); }
 

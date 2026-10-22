@@ -72,12 +72,13 @@ namespace com.swecial.web {
                 }));
         }
 
-        /// <summary>Where a bank movement came from: the invoice, expense or voucher.</summary>
+        /// <summary>Where a bank movement came from: the invoice, expense, fund event or voucher.</summary>
         static string source(SwecialObject voucher) {
             string sourceId = Db.str(voucher, "sourceId");
             switch (Db.str(voucher, "sourceType")) {
                 case "invoice": return BasePath + "/invoice.html?id=" + u(sourceId);
                 case "expense": return BasePath + "/expense.html?id=" + u(sourceId);
+                case "security_event": return BasePath + "/securities.html";
                 default: return BasePath + "/voucher.html?id=" + u(voucher.id);
             }
         }

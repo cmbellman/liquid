@@ -1,0 +1,119 @@
+<% class=WebSecurities %>
+<% include=partials/top.part %>
+<div class="heading"><div><h1><%t.securities.title%></h1><p class="sub"><%t.securities.subtitle%></p></div></div>
+<section class="panel">
+    <h2><%t.securities.holdings%></h2>
+    <swe:condition source="holdingsAny">
+        <table>
+            <thead><tr><th><%t.securities.col.fund%></th><th class="num"><%t.securities.col.units%></th><th class="num"><%t.securities.col.cost%></th><th class="num"><%t.securities.col.value%></th></tr></thead>
+            <tbody>
+                <swe:iterator source="holdings">
+                <tr><td><%current.name%></td><td class="num"><%current.units%></td><td class="num"><%current.cost%></td><td class="num"><%current.value%> <span class="hint">(<%current.valueDate%>)</span></td></tr>
+                </swe:iterator>
+                <tr class="current"><td><%t.securities.total%></td><td></td><td class="num"><%holdingsCost%></td><td class="num"><%holdingsValue%></td></tr>
+            </tbody>
+        </table>
+        <p class="hint"><%t.securities.valueHint%></p>
+    <else>
+        <p class="empty"><%t.securities.empty%></p>
+    </else>
+    </swe:condition>
+    <swe:condition source="realisedAny"><p><%realised%></p><p class="hint"><%t.securities.taxHint%></p></swe:condition>
+</section>
+<section class="panel">
+    <h2><%t.securities.register%></h2>
+    <form method="post" id="security">
+        <label><%t.securities.kind.label%><select name="kind" required>
+            <swe:iterator source="kinds"><option value="<%current.value%>" data-hint="<%current.hint%>" data-amount="<%current.amountLabel%>" <%current.selected%>><%current.text%></option></swe:iterator>
+        </select></label>
+        <p class="hint" id="kindHint"></p>
+        <fieldset class="group" id="fromPart">
+            <legend><%t.securities.from%></legend>
+            <div class="grid">
+                <label><%t.securities.col.fund%><select name="fromFund">
+                    <option value=""><%t.common.choose%></option>
+                    <swe:iterator source="fromFunds"><option value="<%current.name%>" data-units="<%current.units%>" data-cost="<%current.cost%>" <%current.selected%>><%current.name%></option></swe:iterator>
+                </select></label>
+                <label><%t.securities.fromUnits%><input type="text" name="fromUnits" value="<%fromUnits%>" inputmode="decimal" class="num"></label>
+            </div>
+            <p class="shares"><button type="button" class="secondary" data-share="0.25">25 %</button> <button type="button" class="secondary" data-share="0.5">50 %</button> <button type="button" class="secondary" data-share="1"><%t.securities.allUnits%></button></p>
+            <p class="hint" id="held" data-text="<%t.securities.held%>"></p>
+        </fieldset>
+        <fieldset class="group" id="toPart">
+            <legend><%t.securities.to%></legend>
+            <div class="grid">
+                <label><%t.securities.col.fund%><input type="text" name="toFund" value="<%toFund%>" list="fundNames" autocomplete="off"></label>
+                <label><%t.securities.toUnits%><input type="text" name="toUnits" value="<%toUnits%>" inputmode="decimal" class="num"></label>
+            </div>
+            <datalist id="fundNames"><swe:iterator source="fundNames"><option value="<%current.name%>"></option></swe:iterator></datalist>
+        </fieldset>
+        <div class="grid">
+            <label><span id="amountLabel"><%t.securities.amount.switch%></span><input type="text" name="amount" value="<%amount%>" inputmode="decimal" class="num" required></label>
+            <label><%t.col.date%><input type="date" name="date" value="<%date%>" required></label>
+            <label><%t.expense.note%><input type="text" name="note" value="<%note%>"></label>
+        </div>
+        <p class="hint" id="result" data-gain="<%t.securities.gain%>" data-loss="<%t.securities.loss%>"></p>
+        <div class="actions"><button type="submit"><%t.securities.add%></button></div>
+    </form>
+    <script>
+    (function () {
+      var f = document.getElementById('security'), hint = document.getElementById('kindHint'), held = document.getElementById('held'), result = document.getElementById('result');
+      function num(s) { var v = parseFloat(String(s || '').replace(/[\s  ]/g, '').replace(',', '.')); return isNaN(v) ? 0 : v; }
+      function kr(ore) { return (ore / 100).toLocaleString('sv-SE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+      function fill(text, a) { return text.replace(/\{(\d)\}/g, function (m, i) { return a[i]; }); }
+      function fund() { var o = f.fromFund.options[f.fromFund.selectedIndex]; return o && o.value ? { units: num(o.getAttribute('data-units')), cost: num(o.getAttribute('data-cost')) } : null; }
+      // The cost of the units sold: their share of the holding's cost (genomsnittsmetoden)
+      function costOf(h, units) { return units >= h.units ? h.cost : Math.round(h.cost * units / h.units); }
+      function show() {
+        var o = f.kind.options[f.kind.selectedIndex], k = o.value, sells = k === 'sell' || k === 'switch';
+        hint.textContent = o.getAttribute('data-hint') || ''; hint.style.display = hint.textContent ? '' : 'none';
+        document.getElementById('amountLabel').textContent = o.getAttribute('data-amount');
+        document.getElementById('fromPart').style.display = sells ? '' : 'none';
+        document.getElementById('toPart').style.display = k === 'sell' ? 'none' : '';
+        var h = sells ? fund() : null, units = num(f.fromUnits.value);
+        held.textContent = h ? fill(held.getAttribute('data-text'), [h.units.toLocaleString('sv-SE', { maximumFractionDigits: 6 }), kr(h.cost), kr(units > 0 ? costOf(h, units) : 0)]) : '';
+        var amount = Math.round(num(f.amount.value) * 100);
+        result.textContent = '';
+        if (h && units > 0 && amount > 0) {
+          var gain = amount - costOf(h, units);
+          result.textContent = fill(result.getAttribute(gain < 0 ? 'data-loss' : 'data-gain'), [kr(Math.abs(gain))]);
+        }
+      }
+      document.querySelectorAll('[data-share]').forEach(function (b) {
+        b.addEventListener('click', function () {
+          var h = fund(); if (!h) return;
+          var share = parseFloat(b.getAttribute('data-share'));
+          f.fromUnits.value = share === 1 ? String(h.units) : String(Math.round(h.units * share * 1e6) / 1e6);
+          show();
+        });
+      });
+      ['kind', 'fromFund', 'fromUnits', 'amount'].forEach(function (n) { f[n].addEventListener('input', show); f[n].addEventListener('change', show); });
+      show();
+    })();
+    </script>
+</section>
+<section class="panel">
+    <h2><%t.securities.history%></h2>
+    <swe:condition source="eventsAny">
+        <table>
+            <thead><tr><th><%t.col.date%></th><th><%t.col.what%></th><th class="num"><%t.securities.col.units%></th><th class="num"><%t.col.amount%></th><th class="num"><%t.securities.col.result%></th><th><%t.securities.col.voucher%></th><th></th></tr></thead>
+            <tbody>
+                <swe:iterator source="events">
+                <tr>
+                    <td><%current.date%></td>
+                    <td><%current.text%></td>
+                    <td class="num"><%current.units%></td>
+                    <td class="num"><%current.amount%></td>
+                    <td class="num <%current.loss%>"><%current.result%></td>
+                    <td><swe:condition source="current.hasVoucher"><a href="<%current.voucherHref%>"><%current.voucher%></a></swe:condition></td>
+                    <td><swe:condition source="current.removable"><form method="post" class="row-action"><input type="hidden" name="id" value="<%current.id%>"><button type="submit" name="action" value="remove" class="link danger"><%t.common.remove%></button></form></swe:condition></td>
+                </tr>
+                </swe:iterator>
+            </tbody>
+        </table>
+    <else>
+        <p class="empty"><%t.securities.historyEmpty%></p>
+    </else>
+    </swe:condition>
+</section>
+<% include=partials/bottom.part %>
