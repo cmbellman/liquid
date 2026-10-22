@@ -6,8 +6,9 @@ using System.Linq;
 namespace com.swecial.web {
     /// <summary>
     /// /liquid/securities.html : Källaren, the company's funds. What it holds (units, cost and the
-    /// value at the latest event), a form for a purchase, sale or switch (Securities), and the events
-    /// so far; POST action=remove takes back the latest one.
+    /// value at the latest event), a form for a purchase, sale or switch (Securities), the value on
+    /// 1 January per year for the standard income (action=yearValue), and the events so far;
+    /// POST action=remove takes back the latest one.
     /// </summary>
     public class WebSecurities : LiquidPage {
         public override void processPage() {
@@ -18,6 +19,11 @@ namespace com.swecial.web {
                     var e = Db.getOwned("security_event", form("id"), companyId) ?? throw new LiquidException("Händelsen finns inte.", "EVENT NOT FOUND.");
                     Securities.remove(e, account.id);
                     redirect(BasePath + "/securities.html?ok=deleted");
+                    return;
+                }
+                if (form("action") == "yearValue") {
+                    Securities.setValueAtYearStart(company, (int)Money.parseDecimal(form("year"), "år"), Money.parse(form("value")));
+                    redirect(BasePath + "/securities.html?ok=saved#yearStart");
                     return;
                 }
                 string kind = form("kind");
@@ -36,14 +42,24 @@ namespace com.swecial.web {
         void setValues() {
             var holdings = Securities.holdings(companyId);
             rows("holdings", holdings.Select(x => row(("name", h(x.name)), ("units", Securities.formatUnits(x.units)), ("cost", Money.format(x.cost)),
-                ("value", Money.format(value(x))), ("valueDate", h(x.lastDate)))));
+                ("value", Money.format(Securities.lastKnownValue(x))), ("valueDate", h(x.lastDate)))));
             set("holdingsCost", Money.format(holdings.Sum(x => x.cost)));
-            set("holdingsValue", Money.format(holdings.Sum(x => value(x))));
+            set("holdingsValue", Money.format(holdings.Sum(Securities.lastKnownValue)));
 
             int year = DateTime.Today.Year;
             var (gain, loss) = Securities.realised(companyId, year);
             set("realisedAny", gain != 0 || loss != 0);
             set("realised", T("securities.realised", year, Money.format(gain), Money.format(loss)));
+
+            // The standard income: the value of the funds on 1 January, per year
+            var values = Securities.valuesAtYearStart(company);
+            set("standardIncomeLead", T("securities.yearStart.lead", Money.formatDecimal(Rules.value(Rules.FundStandardIncome) / 10m)));
+            rows("yearValues", Enumerable.Reverse(Securities.yearsWithFunds(companyId)).Select(y => {
+                bool known = values.TryGetValue(y, out long v);
+                return row(("year", y.ToString()), ("value", Money.input(v)), ("known", known),
+                    ("income", known ? Money.format(Securities.standardIncome(y, v)) : ""),
+                    ("lastKnown", T("securities.yearStart.lastKnown", Money.format(Securities.lastKnownValueBefore(companyId, y + "-01-01")))));
+            }));
 
             // The form
             string kind = isPost ? form("kind") : Securities.Switch;
@@ -78,11 +94,6 @@ namespace com.swecial.web {
                     ("hasVoucher", voucher != null), ("voucherHref", BasePath + "/voucher.html?id=" + u(voucher?.id)), ("voucher", h(voucher != null ? Ledger.label(voucher) : "")),
                     ("removable", e.id == latest));
             }));
-        }
-
-        /// <summary>The holding at the price of its latest event (Liquid doesn't know today's price).</summary>
-        static long value(Holding x) {
-            return (long)Math.Round(x.units * x.lastPrice / Securities.UnitScale, 0, MidpointRounding.AwayFromZero);
         }
     }
 }

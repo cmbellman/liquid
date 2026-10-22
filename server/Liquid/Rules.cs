@@ -8,7 +8,7 @@ namespace com.swecial.code {
     public class RuleValue {
         public string from;
         public string to = "";
-        /// <summary>A percentage, or an amount in öre.</summary>
+        /// <summary>A percentage, an amount in öre, or tenths of a percent (Rules.Permille).</summary>
         public long value;
         /// <summary>The last day this value is known to hold (checked against the source); "" = assumed, not checked.</summary>
         public string checkedUntil = "";
@@ -16,7 +16,7 @@ namespace com.swecial.code {
 
     public class Rule {
         public string key;
-        /// <summary>"percent" or "amount" (öre).</summary>
+        /// <summary>"percent", "amount" (öre) or "permille".</summary>
         public string unit;
         /// <summary>Where the rule comes from: a law, a regulation or Skatteverket's page (a link when it starts with http).</summary>
         public string source;
@@ -38,9 +38,12 @@ namespace com.swecial.code {
         public const string CashMethodLimit = "cashMethodLimit";
         public const string YearlyVatLimit = "yearlyVatLimit";
         public const string MonthlyVatLimit = "monthlyVatLimit";
+        public const string FundStandardIncome = "fundStandardIncome";
 
         public const string Percent = "percent";
         public const string Amount = "amount";
+        /// <summary>Tenths of a percent (4 = 0,4 %), for rates below one percent.</summary>
+        public const string Permille = "permille";
 
         static RuleValue v(string from, string to, long value, string checkedUntil) {
             return new RuleValue { from = from, to = to, value = value, checkedUntil = checkedUntil };
@@ -78,6 +81,9 @@ namespace com.swecial.code {
                 values = new List<RuleValue> { v("2010-01-01", "", 1_000_000_00, "2026-12-31") } },
             new Rule { key = MonthlyVatLimit, unit = Amount, source = "Skatteförfarandelagen 26 kap.: redovisningsperioder för moms",
                 values = new List<RuleValue> { v("2010-01-01", "", 40_000_000_00, "2026-12-31") } },
+            // Fund units owned at the start of the calendar year: a standard income of 0,4 % of their value (INK2S 4.6 b)
+            new Rule { key = FundStandardIncome, unit = Permille, source = "https://www.skatteverket.se/download/18.569165a01749e7ae7892301/1603721577162/skatteregler-for-aktie-och-handelsbolag-skv294-utgava19.pdf",
+                values = new List<RuleValue> { v("2012-01-01", "", 4, "2026-12-31") } },
         };
 
         public static Rule find(string key) {

@@ -20,6 +20,24 @@
     </swe:condition>
     <swe:condition source="realisedAny"><p><%realised%></p><p class="hint"><%t.securities.taxHint%></p></swe:condition>
 </section>
+<swe:condition source="yearValuesAny">
+<section class="panel" id="yearStart">
+    <h2><%t.securities.yearStart.title%></h2>
+    <p class="lead"><%standardIncomeLead%></p>
+    <table>
+        <thead><tr><th><%t.securities.yearStart.year%></th><th><%t.securities.yearStart.value%></th><th class="num"><%t.securities.yearStart.income%></th></tr></thead>
+        <tbody>
+            <swe:iterator source="yearValues">
+            <tr>
+                <td><%current.year%></td>
+                <td><form method="post" class="inline row-action"><input type="hidden" name="action" value="yearValue"><input type="hidden" name="year" value="<%current.year%>"><input type="text" name="value" value="<%current.value%>" inputmode="decimal" class="num" aria-label="<%t.securities.yearStart.value%> <%current.year%>"><button type="submit" class="secondary"><%t.common.save%></button></form><span class="hint"><%current.lastKnown%></span></td>
+                <td class="num"><swe:condition source="current.known"><%current.income%><else><span class="status draft"><%t.securities.yearStart.missing%></span></else></swe:condition></td>
+            </tr>
+            </swe:iterator>
+        </tbody>
+    </table>
+</section>
+</swe:condition>
 <section class="panel">
     <h2><%t.securities.register%></h2>
     <form method="post" id="security">
