@@ -57,6 +57,11 @@ namespace com.swecial.web {
                     vatRate = int.TryParse(form("vatRate"), out int rate) ? rate : -1,
                     foreign = form("foreign"),
                     note = form("note"),
+                    representationKind = form("representationKind"),
+                    participants = int.TryParse(form("participants").Trim(), out int people) ? people : 0,
+                    attendees = form("attendees"),
+                    purpose = form("purpose"),
+                    alcohol = form("alcohol") == "1",
                 };
                 bool isNew = expense == null;
                 bool fromBag = sorting;
@@ -81,7 +86,10 @@ namespace com.swecial.web {
             if (isPost) return form(key);
             if (expense == null) return "";
             if (sorting && Db.str(expense, "aiStatus") == ReceiptReader.Done) return suggestion(key);
+            if (key == "vat" && Db.str(expense, "category") == Representation.CategoryKey) return Money.input(Db.num(expense, "receiptVat"));
             if (key == "total" || key == "vat") return Money.input(Db.num(expense, key));
+            if (key == "participants") return Db.num(expense, key) > 0 ? Db.num(expense, key).ToString() : "";
+            if (key == "alcohol") return expense.get<bool>("alcohol") ? "1" : "";
             return Db.str(expense, key);
         }
 
@@ -95,6 +103,7 @@ namespace com.swecial.web {
                 case "vat": return expense.hasValue("aiVat") ? Money.input(Db.num(expense, "aiVat")) : "";
                 case "vatRate": return expense.hasValue("aiVatRate") ? Db.num(expense, "aiVatRate").ToString() : "";
                 case "foreign": return Db.str(expense, "aiForeign");
+                case "alcohol": return expense.get<bool>("aiAlcohol") ? "1" : "";
                 default: return "";
             }
         }
@@ -137,12 +146,20 @@ namespace com.swecial.web {
             string category = value("category");
             rows("categories", Categories.All.Select(c => {
                 string hint = Tr("category." + c.key + ".hint");
-                return row(("value", c.key), ("vat", c.vatRate.ToString()), ("hint", h(hint)),
+                // Food VAT depends on the date (6 % from April 2026)
+                int suggested = c.key == Representation.CategoryKey ? Representation.foodRate(date) : c.vatRate;
+                return row(("value", c.key), ("vat", suggested.ToString()), ("hint", h(hint)),
                     ("selected", selected(c.key == category)), ("text", T("category." + c.key + ".name")));
             }));
             string rate = value("vatRate");
             if (rate.Length == 0) rate = (Categories.find(category)?.vatRate ?? 25).ToString();
             set("vatRates", vatOptions(rate));
+            val("participants", value("participants"));
+            val("attendees", value("attendees"));
+            val("purpose", value("purpose"));
+            set("alcoholChecked", isChecked(value("alcohol") == "1"));
+            set("representationKinds", options(new[] { (Representation.Internal, Tr("expense.representation.internal")), (Representation.External, Tr("expense.representation.external")) },
+                value("representationKind") == Representation.External ? Representation.External : Representation.Internal));
             set("foreignOptions", options(new[] { ("", Tr("expense.foreign.no")), (Expenses.ForeignEu, Tr("expense.foreign.eu")), (Expenses.ForeignNonEu, Tr("expense.foreign.noneu")) }, value("foreign")));
         }
     }

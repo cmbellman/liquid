@@ -12,7 +12,9 @@ namespace com.swecial.code {
     ///
     /// Booking (series U): cost (category account) D net, 2641 D VAT, 1930 K total. Bought abroad
     /// without Swedish VAT (reverse charge): cost D total, 1930 K total, and the Swedish VAT the company
-    /// calculates itself, 2645 D / 2614 K, which cancel out in the VAT return.
+    /// calculates itself, 2645 D / 2614 K, which cancel out in the VAT return. Representation (food and
+    /// drink): only the deductible part of the VAT goes to 2641 (Representation), the rest is part of the
+    /// cost; the receipt's VAT is kept as receiptVat, and the participants and purpose with the expense.
     /// </summary>
     public static class Expenses {
         public const string ForeignEu = "eu";
@@ -39,6 +41,12 @@ namespace com.swecial.code {
             /// <summary>"", "eu" or "noneu".</summary>
             public string foreign = "";
             public string note;
+            // Representation (food and drink): the documentation and what decides the VAT deduction
+            public string representationKind = "";
+            public int participants;
+            public string attendees = "";
+            public string purpose = "";
+            public bool alcohol;
         }
 
         public const string Inbox = "inbox";
@@ -103,6 +111,25 @@ namespace com.swecial.code {
             if (foreign.Length == 0 && input.vatRate == 0 && vat != 0) throw new LiquidException("Momsen ska vara 0 när momssatsen är 0 %.", "VAT MUST BE ZERO AT A 0 % RATE.");
 
             string text = supplier + ", " + category.name;
+            // Representation: only part of the VAT may be deducted, the rest is part of the cost
+            bool representation = category.key == Representation.CategoryKey;
+            long receiptVat = vat;
+            string kind = "", attendees = "", purpose = "";
+            int participants = 0;
+            bool alcohol = false;
+            if (representation) {
+                if (foreign.Length > 0) throw new LiquidException("Representation utomlands har ingen svensk moms att dra av. Välj \"Nej\" under Köpt från utlandet och 0 % moms.", "FOREIGN ENTERTAINMENT CARRIES NO DEDUCTIBLE SWEDISH VAT. SET ABROAD TO NO AND VAT TO 0 %.");
+                kind = input.representationKind == Representation.External ? Representation.External : Representation.Internal;
+                participants = input.participants;
+                attendees = (input.attendees ?? "").Trim();
+                purpose = (input.purpose ?? "").Trim();
+                alcohol = input.alcohol;
+                if (participants < 1 || participants > 1000) throw new LiquidException("Fyll i hur många som deltog.", "ENTER THE NUMBER OF PARTICIPANTS.");
+                if (attendees.Length == 0) throw new LiquidException("Skriv vilka som deltog (namn och roll). Det krävs som underlag för representation.", "LIST THE PARTICIPANTS (NAME AND ROLE). REQUIRED FOR ENTERTAINMENT RECORDS.");
+                if (purpose.Length == 0) throw new LiquidException("Skriv syftet med representationen. Det krävs som underlag.", "STATE THE PURPOSE. REQUIRED FOR ENTERTAINMENT RECORDS.");
+                vat = Representation.deductibleVat(date, input.total, receiptVat, participants, alcohol);
+                text += ", " + purpose + " (" + participants + " pers.)";
+            }
             var rows = foreign.Length > 0
                 ? new List<VoucherRow> {
                     new VoucherRow { account = category.account, debit = input.total },
@@ -124,8 +151,11 @@ namespace com.swecial.code {
                     expense.set("createdBy", userId);
                 } else if (Db.str(expense, "status") == Booked && Db.str(expense, "date") == date && Db.str(expense, "supplier") == supplier && Db.str(expense, "category") == category.key
                         && Db.num(expense, "total") == input.total && Db.num(expense, "vat") == vat
-                        && Db.num(expense, "vatRate") == input.vatRate && Db.str(expense, "foreign") == foreign) {
-                    // Nothing that is booked changed (only the note or the receipt): keep the voucher
+                        && Db.num(expense, "vatRate") == input.vatRate && Db.str(expense, "foreign") == foreign
+                        && Db.num(expense, "receiptVat") == (representation ? receiptVat : 0) && Db.num(expense, "participants") == participants
+                        && Db.str(expense, "purpose") == purpose) {
+                    // Nothing that is booked changed (only the note, the receipt or who took part): keep the voucher
+                    setRepresentation(expense, kind, attendees, alcohol);
                     expense.set("note", (input.note ?? "").Trim());
                     Db.commit(expense);
                     return expense;
@@ -141,11 +171,21 @@ namespace com.swecial.code {
                 expense.set("vatRate", input.vatRate);
                 expense.set("foreign", foreign);
                 expense.set("note", (input.note ?? "").Trim());
+                expense.set("receiptVat", representation ? receiptVat : 0);
+                expense.set("participants", participants);
+                expense.set("purpose", purpose);
+                setRepresentation(expense, kind, attendees, alcohol);
                 var voucher = Ledger.book(companyId, Ledger.Expenses, date, text, rows, userId, "expense", expense.id);
                 expense.set("voucherId", voucher.id);
                 Db.commit(expense);
                 return expense;
             }
+        }
+
+        static void setRepresentation(SwecialObject expense, string kind, string attendees, bool alcohol) {
+            expense.set("representationKind", kind);
+            expense.set("attendees", attendees);
+            expense.set("alcohol", alcohol);
         }
 
         /// <summary>Reverses the expense's voucher and hides it. The receipt is kept with the record.</summary>

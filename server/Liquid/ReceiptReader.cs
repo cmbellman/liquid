@@ -42,6 +42,7 @@ namespace com.swecial.code {
  ""currency"":{""type"":""string"",""description"":""ISO code, e.g. SEK""},
  ""category"":{""type"":""string""},
  ""foreign"":{""type"":""boolean"",""description"":""True if a company outside Sweden charged no Swedish VAT""},
+ ""alcohol"":{""type"":""boolean"",""description"":""True if the receipt lists alcoholic drinks (beer, wine, cider, spirits)""},
  ""country"":{""type"":""string"",""description"":""The seller's country, ISO 3166 alpha-2, e.g. SE, IE, US""},
  ""confidence"":{""type"":""number"",""description"":""0 to 1""},
  ""documentType"":{""type"":""string"",""description"":""receipt, supplierInvoice or salesInvoice (an invoice OUR company issued to a customer)""},
@@ -58,7 +59,7 @@ namespace com.swecial.code {
  ""lines"":{""type"":""array"",""description"":""For a salesInvoice: the invoice rows"",""items"":{""type"":""object"",""properties"":{
    ""description"":{""type"":""string""},""quantity"":{""type"":""number""},""unitPrice"":{""type"":""number"",""description"":""Price per unit excluding VAT""},""vatRate"":{""type"":""integer""}},
    ""required"":[""description"",""quantity"",""unitPrice"",""vatRate""]}}},
- ""required"":[""supplier"",""date"",""total"",""vat"",""vatRate"",""currency"",""category"",""foreign"",""country"",""confidence"",""documentType"",""sellerOrgNumber"",""invoiceNumber"",""dueDate"",""customerName"",""customerOrgNumber"",""customerAddress"",""customerPostalAddress"",""customerReference"",""ourReference"",""note"",""lines""]}";
+ ""required"":[""supplier"",""date"",""total"",""vat"",""vatRate"",""currency"",""category"",""foreign"",""alcohol"",""country"",""confidence"",""documentType"",""sellerOrgNumber"",""invoiceNumber"",""dueDate"",""customerName"",""customerOrgNumber"",""customerAddress"",""customerPostalAddress"",""customerReference"",""ourReference"",""note"",""lines""]}";
 
         static readonly string[] EuCountries = {
             "AT", "BE", "BG", "CY", "CZ", "DE", "DK", "EE", "ES", "FI", "FR", "GR", "EL", "HR", "HU", "IE",
@@ -190,6 +191,7 @@ namespace com.swecial.code {
                 string category = ((string)a["category"] ?? "").Trim();
                 expense.set("aiCategory", Categories.find(category) != null ? category : "other");
 
+                expense.set("aiAlcohol", a["alcohol"]?.Type == JTokenType.Boolean && (bool)a["alcohol"]);
                 bool foreign = a["foreign"]?.Type == JTokenType.Boolean && (bool)a["foreign"];
                 string country = ((string)a["country"] ?? "").Trim().ToUpperInvariant();
                 if (country == "SE") foreign = false;

@@ -144,8 +144,8 @@
     "category.postage.name": "Frakt och porto",
     "category.rent.hint": "Hyresvärden tar bara moms om lokalen är frivilligt momsregistrerad. Står ingen moms på avin, välj 0 %.",
     "category.rent.name": "Lokalhyra",
-    "category.representation.hint": "Kostnaden är inte avdragsgill. Momsen får dras av på högst 300 kr exkl. moms per person och tillfälle, alltså högst 36 kr per person. Ändra momsbeloppet om det behövs.",
-    "category.representation.name": "Representation (mat och dryck med kunder)",
+    "category.representation.hint": "Kostnaden är inte avdragsgill. Momsen får dras av på högst 300 kr exkl. moms per person och tillfälle; Liquid räknar ut avdraget när du fyller i deltagarna. Taxi till och från bokförs som en resa.",
+    "category.representation.name": "Representation (mat och dryck)",
     "category.software.hint": "Står det ingen svensk moms på kvittot (t.ex. Google, Microsoft, Adobe)? Markera att det är köpt från utlandet.",
     "category.software.name": "Programvara och prenumerationer",
     "category.travel.hint": "",
@@ -412,6 +412,17 @@
     "settings.method.otherYears": "Andra räkenskapsår",
     "settings.method.cashShort": "Kontantmetoden",
     "settings.method.accrualShort": "Faktureringsmetoden",
-    "invoice.takeUp.label": "Ta upp som intäkt året den betalas (bokföringen för {0} finns inte i Liquid)"
+    "invoice.takeUp.label": "Ta upp som intäkt året den betalas (bokföringen för {0} finns inte i Liquid)",
+    "expense.representation.title": "Representation: underlag",
+    "expense.representation.kind": "Typ",
+    "expense.representation.internal": "Intern (personal, ägare, t.ex. årsstämma)",
+    "expense.representation.external": "Extern (kunder, affärskontakter)",
+    "expense.representation.participants": "Antal deltagare",
+    "expense.representation.attendees": "Deltagare (namn och roll)",
+    "expense.representation.attendeesPlaceholder": "T.ex. Anna Andersson (ledamot), Bo Andersson (suppleant)",
+    "expense.representation.purpose": "Syfte",
+    "expense.representation.purposePlaceholder": "T.ex. Intern representation i samband med årsstämma 2026",
+    "expense.representation.alcohol": "Notan innehåller alkohol",
+    "expense.representation.deductible": "Avdragsgill moms: {0} kr. Resten, {1} kr, bokförs som ej avdragsgill representation."
   }
 }

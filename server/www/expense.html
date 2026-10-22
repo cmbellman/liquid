@@ -57,6 +57,7 @@
     if (typed) return;
     var t = n(total.value), r = parseInt(rate.value, 10) || 0;
     vat.value = t ? fmt(Math.round(foreign.value ? t * r / 100 : t * r / (100 + r))) : '';
+    if (typeof deductible === 'function' && repBox) deductible();
   }
   function showHints() {
     var o = cat.options[cat.selectedIndex];
@@ -64,7 +65,30 @@
     hint.style.display = hint.textContent ? '' : 'none';
     foreignHint.style.display = foreign.value ? '' : 'none';
     vat.readOnly = !!foreign.value;
+    var rep = cat.value === 'representation';
+    repBox.style.display = rep ? '' : 'none';
+    [f.participants, f.attendees, f.purpose].forEach(function (i) { i.required = rep; });
+    deductible();
   }
+  // Representation: VAT on at most 300 kr excl. VAT per person (Liquid.Representation does the same)
+  var repBox = document.getElementById('representation'), ded = document.getElementById('deductible');
+  function deductible() {
+    if (cat.value !== 'representation') return;
+    var t = n(total.value), v = n(vat.value), p = parseInt(f.participants.value, 10) || 0, d = f.date.value || '';
+    if (!t || !p) { ded.textContent = ''; return; }
+    var food = d >= '2026-04-01' && d < '2028-01-01' ? 6 : 12, max;
+    if (v <= 0) max = 0;
+    else if (t - v <= 30000 * p) max = v;
+    else max = Math.min(v, f.alcohol.checked ? (food === 6 ? 3300 : 4600) * p : Math.round(30000 * p * food / 100));
+    ded.textContent = ded.getAttribute('data-text').replace('{0}', fmt(max)).replace('{1}', fmt(t - max));
+  }
+  [total, vat, f.participants, f.date].forEach(function (i) { i.addEventListener('input', deductible); });
+  f.alcohol.addEventListener('change', deductible);
+  f.date.addEventListener('change', function () {
+    var d = f.date.value || '';
+    if (cat.value === 'representation' && !typed) { rate.value = d >= '2026-04-01' && d < '2028-01-01' ? '6' : '12'; computeVat(); }
+    deductible();
+  });
   cat.addEventListener('change', function () {
     var o = cat.options[cat.selectedIndex];
     if (o && o.getAttribute('data-vat') !== null) rate.value = o.getAttribute('data-vat');
