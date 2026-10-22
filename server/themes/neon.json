@@ -254,7 +254,7 @@
     "invoice.ourReference": "Vår referens",
     "invoice.paymentHint.accrual": "Registrera när {0} kr har kommit in på företagskontot. Då bokförs betalningen mot kundfordran.",
     "invoice.paymentHint.cash": "Registrera när {0} kr har kommit in på företagskontot. Då bokförs försäljningen och momsen.",
-    "invoice.paymentHint.closing": "Registrera när {0} kr har kommit in på företagskontot. Fakturan är från ett tidigare år men bokfördes inte som kundfordran i det årets bokslut, så försäljningen och momsen bokförs nu, i år.",
+    "invoice.paymentHint.closing": "Registrera när {0} kr har kommit in på företagskontot. Fakturan är från {1} och var obetald vid årsskiftet: försäljningen och momsen bokförs som kundfordran den 31 december {1}, och betalningen bokförs mot kundfordran.",
     "invoice.print": "Skriv ut / PDF",
     "invoice.registerPayment": "Registrera betalning",
     "invoice.undoPayment.confirm": "Ångra betalningen? Verifikationen makuleras med en rättelse.",
@@ -353,7 +353,7 @@
     "settings.method.cash": "När pengarna kommer in (kontantmetoden)",
     "settings.method.cashText": "Enklast. Fakturan bokförs när du prickar av den på notan. Obetalda fakturor bokas upp i bokslutet. Får användas om omsättningen är under 3 miljoner kr per år.",
     "settings.method.label": "När ska fakturor bokföras?",
-    "settings.methodHint": "Metoden ska gälla ett helt räkenskapsår, så byt helst vid årsskiftet. Ett byte gäller nya fakturor; de som redan skickats bokförs som när de skickades. Utgifter bokförs alltid när de betalas.",
+    "settings.methodHint": "Metoden väljs per räkenskapsår och gäller hela året. Ett byte gäller nya fakturor; de som redan skickats bokförs som när de skickades. Utgifter bokförs alltid när de betalas.",
     "settings.nextSerial": "Nästa nummer",
     "settings.numbering.date": "Fakturadatum + löpnummer",
     "settings.numbering.dateText": "Datumet och ett nummer för dagen, till exempel {0}. Nästa faktura samma dag får {1}.",
@@ -407,6 +407,11 @@
     "vouchers.empty": "Inga verifikationer än.",
     "vouchers.lead": "Allt Liquid har bokfört, med konton, debet och kredit. Fakturor, utgifter och bankhändelser bokförs automatiskt; en egen verifikation behövs bara för det som inte passar där.",
     "vouchers.subtitle": "Bokföringen under huven",
-    "vouchers.title": "Avancerat: verifikationer"
+    "vouchers.title": "Avancerat: verifikationer",
+    "settings.method.yearLabel": "När ska fakturor bokföras {0}?",
+    "settings.method.otherYears": "Andra räkenskapsår",
+    "settings.method.cashShort": "Kontantmetoden",
+    "settings.method.accrualShort": "Faktureringsmetoden",
+    "invoice.takeUp.label": "Ta upp som intäkt året den betalas (bokföringen för {0} finns inte i Liquid)"
   }
 }

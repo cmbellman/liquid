@@ -16,7 +16,7 @@ namespace com.swecial.web {
             if (isPost) {
                 if (form("action") == "paid") {
                     var invoice = Db.getOwned("invoice", form("id"), companyId) ?? throw new LiquidException("Fakturan finns inte.", "INVOICE NOT FOUND.");
-                    Invoicing.markPaid(invoice, form("paidDate"), account.id);
+                    Invoicing.markPaid(invoice, form("paidDate"), account.id, form("incomeWhenPaid") == "1");
                     redirect(BasePath + "/?ok=paid");
                     return;
                 }
@@ -94,7 +94,9 @@ namespace com.swecial.web {
                 int days = (int)(Dates.parse(Db.str(i, "dueDate")) - today).TotalDays;
                 string due = days < 0 ? Tn("bar.tab.overdue", -days) : days == 0 ? T("bar.tab.dueToday") : Tn("bar.tab.dueIn", days);
                 return row(("id", u(i.id)), ("customer", h(Db.str(i, "customerName"))), ("amount", Money.format(Db.num(i, "total"))),
-                    ("number", T("bar.tab.invoice", Db.num(i, "number"))), ("due", due), ("late", days < 0 ? "late" : ""));
+                    ("number", T("bar.tab.invoice", Db.num(i, "number"))), ("due", due), ("late", days < 0 ? "late" : ""),
+                    ("mayTakeUp", Invoicing.overYearEnd(Db.str(i, "invoiceDate"), Dates.today()) && Invoicing.mayTakeUpWhenPaid(i)),
+                    ("takeUpLabel", T("invoice.takeUp.label", Db.str(i, "invoiceDate").Substring(0, 4))));
             }));
             set("tabTotal", Money.format(unpaid.Sum(i => Db.num(i, "total"))));
         }

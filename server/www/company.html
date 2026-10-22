@@ -27,9 +27,11 @@
     </section>
     <section class="panel">
         <div class="heading"><div><h2><%t.settings.bookkeeping.title%></h2><p class="sub"><%t.settings.bookkeeping.subtitle%></p></div></div>
-        <p class="label"><%t.settings.method.label%></p>
+        <p class="label"><%methodLabel%></p>
         <div class="choices"><swe:iterator source="methods"><label class="choice"><input type="radio" name="<%current.name%>" value="<%current.value%>" <%current.checked%>><b><%current.title%></b><span><%current.text%></span><swe:condition source="current.serial"><label><%t.settings.nextSerial%><input type="number" name="nextSerial" value="<%nextSerial%>" min="1" max="<%maxSerial%>"></label></swe:condition></label></swe:iterator></div>
         <p class="hint"><%t.settings.methodHint%></p>
+        <p class="label"><%t.settings.method.otherYears%></p>
+        <div class="grid"><swe:iterator source="methodYears"><label><%current.year%><select name="method<%current.year%>"><swe:iterator source="current.options"><option value="<%current.value%>" <%current.selected%>><%current.text%></option></swe:iterator></select></label></swe:iterator></div>
         <p class="label"><%t.settings.vatPeriod%></p>
         <div class="choices three"><swe:iterator source="vatPeriods"><label class="choice"><input type="radio" name="<%current.name%>" value="<%current.value%>" <%current.checked%>><b><%current.title%></b><span><%current.text%></span><swe:condition source="current.serial"><label><%t.settings.nextSerial%><input type="number" name="nextSerial" value="<%nextSerial%>" min="1" max="<%maxSerial%>"></label></swe:condition></label></swe:iterator></div>
         <p class="hint"><%t.settings.vatPeriodHint%></p>

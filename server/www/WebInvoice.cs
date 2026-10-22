@@ -1,5 +1,6 @@
 using com.swecial.code;
 using com.swecial.server;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -30,7 +31,7 @@ namespace com.swecial.web {
             if (isPost) {
                 string action = form("action");
                 if (action == "paid") {
-                    Invoicing.markPaid(invoice, form("paidDate"), account.id);
+                    Invoicing.markPaid(invoice, form("paidDate"), account.id, form("incomeWhenPaid") == "1");
                     redirect(here() + "&ok=paid");
                     return;
                 }
@@ -151,7 +152,7 @@ namespace com.swecial.web {
                         ("vatRates", vatOptions(isPost ? form("vat" + i) : (line?.vatRate ?? 25).ToString())),
                         ("net", line != null ? Money.formatOrBlank(line.net) : ""));
                 }));
-                bool accrual = Settings.accountingMethod(company) == Settings.AccrualMethod;
+                bool accrual = Settings.accountingMethod(company, DateTime.TryParse(value("invoiceDate"), out DateTime d) ? d.Year : DateTime.Today.Year) == Settings.AccrualMethod;
                 set("sendHint", T(accrual ? "invoice.sendHint.accrual" : "invoice.sendHint.cash"));
             } else {
                 rows("lines", lines.Select(line => row(("text", h(line.text)), ("qty", Money.formatDecimal(line.quantity)),
@@ -159,10 +160,15 @@ namespace com.swecial.web {
                 // Booked when sent (accrual method) and/or when paid
                 var links = new[] { voucherLink("voucherId"), voucherLink("paymentVoucherId") }.Where(l => l.Length > 0).ToList();
                 set("bookkeeping", links.Count > 0 ? string.Join(", ", links) : T("invoice.bookedWhenPaid"));
-                bool bookedWhenSent = Db.str(invoice, "voucherId").Length > 0 || Db.str(invoice, "closingVoucherId").Length > 0;
-                string hint = bookedWhenSent ? "invoice.paymentHint.accrual"
-                    : Invoicing.overYearEnd(Db.str(invoice, "invoiceDate"), Dates.today()) ? "invoice.paymentHint.closing" : "invoice.paymentHint.cash";
-                set("paymentHint", T(hint, Money.format(totals.total)));
+                string invoiceYear = Db.str(invoice, "invoiceDate").Substring(0, 4);
+                bool overYearEnd = status == Invoicing.Sent && !Invoicing.bookedAsReceivable(invoice) && Invoicing.overYearEnd(Db.str(invoice, "invoiceDate"), Dates.today());
+                bool mayTakeUp = overYearEnd && Invoicing.mayTakeUpWhenPaid(invoice);
+                string hint = Invoicing.bookedAsReceivable(invoice) ? "invoice.paymentHint.accrual"
+                    : mayTakeUp ? "invoice.paymentHint.cash" : overYearEnd ? "invoice.paymentHint.closing" : "invoice.paymentHint.cash";
+                set("paymentHint", T(hint, Money.format(totals.total), invoiceYear));
+                set("mayTakeUp", mayTakeUp);
+                set("takeUpLabel", T("invoice.takeUp.label", invoiceYear));
+                set("takeUpChecked", isChecked(!isPost || form("incomeWhenPaid") == "1"));
             }
         }
 

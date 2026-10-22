@@ -194,8 +194,8 @@ namespace com.swecial.code {
                 Dates.parse(Db.str(invoice, "invoiceDate"));
                 Dates.parse(Db.str(invoice, "dueDate"));
                 var company = Db.get("company", companyId);
-                bool accrual = Settings.accountingMethod(company) == Settings.AccrualMethod;
                 string date = Dates.clean(Db.str(invoice, "invoiceDate"));
+                bool accrual = Settings.accountingMethod(company, date) == Settings.AccrualMethod;
                 // The accounts it will be booked on must exist before the invoice gets a number
                 Ledger.validate(companyId, date, "Kundfaktura", saleRows(Bas.Bank, t));
                 if (accrual) Ledger.validate(companyId, date, "Kundfaktura", saleRows(Bas.Receivables, t));
@@ -241,25 +241,41 @@ namespace com.swecial.code {
 
         /// <summary>
         /// Books the full payment: with the cash method the sale and its VAT against 1930; for an
-        /// invoice already booked as a receivable, when sent (accrual method) or in the closing of the year
-        /// it was unpaid at (closingVoucherId, set by the closing), 1930 against the receivable. A cash
-        /// method invoice from an earlier year that no closing booked is booked as a sale when paid.
+        /// invoice already booked as a receivable (when sent with the accrual method, or in a closing:
+        /// closingVoucherId), 1930 against the receivable.
+        /// An invoice paid in a later year than its invoice date was unpaid at year end, so its sale
+        /// belongs to that year: it is booked as a receivable on the year's last day (closingVoucherId,
+        /// closingByPayment) and the payment clears it. Only when the books have no income for that year
+        /// (earlier years kept elsewhere, invoices booked when paid) may the user take it up as income
+        /// in the year of payment instead (incomeWhenPaid).
         /// </summary>
-        public static void markPaid(SwecialObject invoice, string paidDate, string userId) {
+        public static void markPaid(SwecialObject invoice, string paidDate, string userId, bool incomeWhenPaid = false) {
             lock (Db.Sync) {
                 if (Db.str(invoice, "status") != Sent) throw new LiquidException("Bara skickade, obetalda fakturor kan markeras som betalda.", "ONLY ISSUED, OUTSTANDING INVOICES CAN BE SETTLED.");
                 paidDate = Dates.clean(paidDate);
+                string companyId = Db.str(invoice, "companyId");
+                string invoiceDate = Db.str(invoice, "invoiceDate");
+                if (string.CompareOrdinal(paidDate, invoiceDate) < 0) throw new LiquidException("Betalningen kan inte vara före fakturadatumet " + invoiceDate + ".", "PAYMENT CANNOT PREDATE THE ISSUE DATE " + invoiceDate + ".");
                 var t = totals(rows(invoice));
-                bool bookedWhenSent = Db.str(invoice, "voucherId").Length > 0 || Db.str(invoice, "closingVoucherId").Length > 0;
-                var paymentRows = bookedWhenSent
+                long number = Db.num(invoice, "number");
+                string customerName = Db.str(invoice, "customerName");
+                bool receivable = bookedAsReceivable(invoice);
+                if (!receivable && overYearEnd(invoiceDate, paidDate) && !(incomeWhenPaid && mayTakeUpWhenPaid(invoice))) {
+                    int year = Dates.parse(invoiceDate).Year;
+                    var closing = Ledger.book(companyId, Ledger.Invoices, year + "-12-31",
+                        "Obetald kundfaktura " + number + " vid årsskiftet, " + customerName, saleRows(Bas.Receivables, t), userId, "invoice", invoice.id);
+                    invoice.set("closingVoucherId", closing.id);
+                    invoice.set("closingByPayment", "true");
+                    receivable = true;
+                }
+                var paymentRows = receivable
                     ? new List<VoucherRow> {
                         new VoucherRow { account = Bas.Bank, debit = t.total },
                         new VoucherRow { account = Bas.Receivables, credit = t.total },
                     }
                     : saleRows(Bas.Bank, t);
-                var voucher = Ledger.book(Db.str(invoice, "companyId"), Ledger.Payments, paidDate,
-                    "Inbetalning kundfaktura " + Db.num(invoice, "number") + ", " + Db.str(invoice, "customerName"),
-                    paymentRows, userId, "invoice", invoice.id);
+                var voucher = Ledger.book(companyId, Ledger.Payments, paidDate,
+                    "Inbetalning kundfaktura " + number + ", " + customerName, paymentRows, userId, "invoice", invoice.id);
                 invoice.set("status", Paid);
                 invoice.set("paidDate", paidDate);
                 invoice.set("paymentVoucherId", voucher.id);
@@ -267,25 +283,50 @@ namespace com.swecial.code {
             }
         }
 
+        /// <summary>Booked as a receivable before payment: when sent (accrual method) or in a closing.</summary>
+        public static bool bookedAsReceivable(SwecialObject invoice) {
+            return Db.str(invoice, "voucherId").Length > 0 || Db.str(invoice, "closingVoucherId").Length > 0;
+        }
+
+        /// <summary>True when an invoice dated invoiceDate and paid on paidDate was unpaid at a year end.</summary>
+        public static bool overYearEnd(string invoiceDate, string paidDate) {
+            return string.CompareOrdinal(Dates.clean(invoiceDate).Substring(0, 4), Dates.clean(paidDate).Substring(0, 4)) < 0;
+        }
+
         /// <summary>
-        /// Undoes a registered payment, e.g. one booked on the wrong date: the payment voucher is
-        /// reversed (dated like the original) and the invoice is unpaid again, ready to be paid anew.
+        /// An invoice from an earlier year may be taken up as income when paid only if the books have
+        /// no income in its year: then that year was kept elsewhere and can't get the receivable.
+        /// </summary>
+        public static bool mayTakeUpWhenPaid(SwecialObject invoice) {
+            if (bookedAsReceivable(invoice)) return false;
+            string year = Dates.clean(Db.str(invoice, "invoiceDate")).Substring(0, 4);
+            return !Ledger.vouchers(Db.str(invoice, "companyId")).Any(v =>
+                Db.str(v, "date").StartsWith(year) && Db.str(v, "reversedById").Length == 0 && Db.str(v, "reversesId").Length == 0
+                && Ledger.rows(v).Any(r => r.account.StartsWith("3") && r.credit > 0));
+        }
+
+        /// <summary>
+        /// Undoes a registered payment, e.g. one booked on the wrong date: the payment voucher (and a
+        /// year-end receivable booked with it) is reversed, dated like the original, and the invoice is
+        /// unpaid again, ready to be paid anew.
         /// </summary>
         public static void unmarkPaid(SwecialObject invoice, string userId) {
             lock (Db.Sync) {
                 if (Db.str(invoice, "status") != Paid) throw new LiquidException("Fakturan är inte betald.", "INVOICE IS NOT SETTLED.");
-                var voucher = Db.getOwned("voucher", Db.str(invoice, "paymentVoucherId"), Db.str(invoice, "companyId"));
+                string companyId = Db.str(invoice, "companyId");
+                var voucher = Db.getOwned("voucher", Db.str(invoice, "paymentVoucherId"), companyId);
                 if (voucher != null) Ledger.reverse(voucher, Db.str(voucher, "date"), userId, fromSource: true);
+                if (Db.str(invoice, "closingByPayment") == "true") {
+                    var closing = Db.getOwned("voucher", Db.str(invoice, "closingVoucherId"), companyId);
+                    if (closing != null) Ledger.reverse(closing, Db.str(closing, "date"), userId, fromSource: true);
+                    invoice.set("closingVoucherId", "");
+                    invoice.set("closingByPayment", "");
+                }
                 invoice.set("status", Sent);
                 invoice.set("paidDate", "");
                 invoice.set("paymentVoucherId", "");
                 Db.commit(invoice);
             }
-        }
-
-        /// <summary>True when an invoice dated invoiceDate and paid on paidDate was unpaid at a year end.</summary>
-        public static bool overYearEnd(string invoiceDate, string paidDate) {
-            return string.CompareOrdinal(Dates.clean(invoiceDate).Substring(0, 4), paidDate.Substring(0, 4)) < 0;
         }
 
         /// <summary>The sale: the total on debitAccount (1930 when paid, 1510 when sent), sales and VAT per rate.</summary>

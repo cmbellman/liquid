@@ -257,7 +257,7 @@
     "invoice.ourReference": "Our reference",
     "invoice.paymentHint.accrual": "Register when {0} SEK has been received. Payment is then cleared against the receivable.",
     "invoice.paymentHint.cash": "Register when {0} SEK has been received. Sale and VAT are then committed.",
-    "invoice.paymentHint.closing": "Register when {0} SEK has been received. Invoice predates this fiscal year but was not committed as a receivable in that year's closing: sale and VAT are committed now, in this year.",
+    "invoice.paymentHint.closing": "Register when {0} SEK has been received. Invoice dates from {1} and was outstanding at year end: sale and VAT are committed as a receivable on 31 December {1}, and the payment clears it.",
     "invoice.print": "Print / PDF",
     "invoice.registerPayment": "Register payment",
     "invoice.undoPayment.confirm": "Undo payment? The voucher will be voided with a reversal entry.",
@@ -356,7 +356,7 @@
     "settings.method.cash": "On payment (cash method)",
     "settings.method.cashText": "Committed when settled. Outstanding invoices are booked at year-end closing. Permitted below 3 million SEK annual turnover.",
     "settings.method.label": "When are invoices committed?",
-    "settings.methodHint": "The method applies to a full fiscal year: switch at year-end. A switch affects new invoices only. Expenditures are always committed when paid.",
+    "settings.methodHint": "The method is set per fiscal year and applies to the full year. A switch affects new invoices only. Expenditures are always committed when paid.",
     "settings.nextSerial": "Next number",
     "settings.numbering.date": "Issue date + serial",
     "settings.numbering.dateText": "Date plus a daily serial, e.g. {0}. The next invoice that day is {1}.",
@@ -410,6 +410,11 @@
     "vouchers.empty": "No vouchers on record.",
     "vouchers.lead": "Every committed entry with accounts, debit and credit. Invoices, expenditures and treasury events post automatically; manual vouchers are for exceptions only.",
     "vouchers.subtitle": "The books beneath the surface",
-    "vouchers.title": "Ledger core // vouchers"
+    "vouchers.title": "Ledger core // vouchers",
+    "settings.method.yearLabel": "When are invoices committed in {0}?",
+    "settings.method.otherYears": "Other fiscal years",
+    "settings.method.cashShort": "Cash method",
+    "settings.method.accrualShort": "Accrual method",
+    "invoice.takeUp.label": "Recognise as income in the year of payment (no {0} ledger in Liquid)"
   }
 }

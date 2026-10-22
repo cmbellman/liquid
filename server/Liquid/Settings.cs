@@ -1,5 +1,7 @@
 using com.swecial.server;
+using Newtonsoft.Json;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace com.swecial.code {
@@ -31,8 +33,34 @@ namespace com.swecial.code {
             return Db.str(company, "invoiceNumbering") == DateNumbers ? DateNumbers : SerialNumbers;
         }
 
-        public static string accountingMethod(SwecialObject company) {
-            return Db.str(company, "accountingMethod") == AccrualMethod ? AccrualMethod : CashMethod;
+        /// <summary>
+        /// The accounting method for a fiscal year (calendar year). It is chosen per year
+        /// (methodsJson, {"2026":"cash"}); a year without a choice has the latest earlier year's,
+        /// or the company's old single setting.
+        /// </summary>
+        public static string accountingMethod(SwecialObject company, int year) {
+            string chosen = methods(company).Where(p => p.Key <= year).OrderByDescending(p => p.Key).Select(p => p.Value).FirstOrDefault();
+            return clean(chosen ?? Db.str(company, "accountingMethod"));
+        }
+
+        public static string accountingMethod(SwecialObject company, string date) {
+            return accountingMethod(company, Dates.parse(date).Year);
+        }
+
+        public static Dictionary<int, string> methods(SwecialObject company) {
+            string json = Db.str(company, "methodsJson");
+            return json.Length == 0 ? new Dictionary<int, string>() : JsonConvert.DeserializeObject<Dictionary<int, string>>(json);
+        }
+
+        /// <summary>Sets the method for a year (the caller commits the company).</summary>
+        public static void setAccountingMethod(SwecialObject company, int year, string method) {
+            var all = methods(company);
+            all[year] = clean(method);
+            company.set("methodsJson", JsonConvert.SerializeObject(all));
+        }
+
+        public static string clean(string method) {
+            return method == AccrualMethod ? AccrualMethod : CashMethod;
         }
 
         public static string vatPeriod(SwecialObject company) {

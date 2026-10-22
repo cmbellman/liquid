@@ -52,6 +52,7 @@
                                 <input type="hidden" name="id" value="<%current.id%>">
                                 <input type="hidden" name="action" value="paid">
                                 <label><%t.bar.tab.paidOn%><input type="date" name="paidDate" value="<%today%>" required></label>
+                                <swe:condition source="current.mayTakeUp"><label class="check"><input type="checkbox" name="incomeWhenPaid" value="1" checked> <%current.takeUpLabel%></label></swe:condition>
                                 <button type="submit"><%t.bar.tab.paid%></button>
                             </form>
                         </details>

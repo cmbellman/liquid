@@ -1,6 +1,7 @@
 using com.swecial.code;
 using com.swecial.server;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -44,7 +45,6 @@ namespace com.swecial.web {
         void save(string name) {
             int terms = parseTerms(form("paymentTerms"));
             string numbering = form("invoiceNumbering") == Settings.DateNumbers ? Settings.DateNumbers : Settings.SerialNumbers;
-            string method = form("accountingMethod") == Settings.AccrualMethod ? Settings.AccrualMethod : Settings.CashMethod;
             string vatPeriod = form("vatPeriod");
             if (vatPeriod != Settings.VatQuarter && vatPeriod != Settings.VatMonth) vatPeriod = Settings.VatYear;
 
@@ -59,7 +59,12 @@ namespace com.swecial.web {
             company.set("name", name);
             company.set("paymentTerms", terms);
             company.set("invoiceNumbering", numbering);
-            company.set("accountingMethod", method);
+            // The method is chosen per fiscal year: this year's on the cards, the others in the list
+            int thisYear = DateTime.Today.Year;
+            Settings.setAccountingMethod(company, thisYear, form("accountingMethod"));
+            foreach (int year in methodYears()) {
+                if (year != thisYear && form("method" + year).Length > 0) Settings.setAccountingMethod(company, year, form("method" + year));
+            }
             company.set("vatPeriod", vatPeriod);
             Db.commit(company);
             Themes.set(account, form("theme"));
@@ -88,7 +93,12 @@ namespace com.swecial.web {
             });
             val("paymentTerms", isPost ? form("paymentTerms") : Invoicing.paymentTerms(company).ToString());
 
-            string method = isPost ? (form("accountingMethod") == Settings.AccrualMethod ? Settings.AccrualMethod : Settings.CashMethod) : Settings.accountingMethod(company);
+            int thisYear = DateTime.Today.Year;
+            string method = isPost ? Settings.clean(form("accountingMethod")) : Settings.accountingMethod(company, thisYear);
+            set("methodLabel", T("settings.method.yearLabel", thisYear));
+            rows("methodYears", methodYears().Where(y => y != thisYear).Select(y => row(("year", y.ToString()),
+                ("options", options(new[] { (Settings.CashMethod, Tr("settings.method.cashShort")), (Settings.AccrualMethod, Tr("settings.method.accrualShort")) },
+                    isPost ? Settings.clean(form("method" + y)) : Settings.accountingMethod(company, y))))));
             rows("methods", new[] {
                 choice("accountingMethod", Settings.CashMethod, method, T("settings.method.cash"), T("settings.method.cashText")),
                 choice("accountingMethod", Settings.AccrualMethod, method, T("settings.method.accrual"), T("settings.method.accrualText")),
@@ -100,6 +110,16 @@ namespace com.swecial.web {
             // Every theme in server/themes describes itself
             string current = isPost ? form("theme") : theme.id;
             rows("themes", Themes.all().Select(t => choice("theme", t.id, current, h(t.name ?? t.id), h(t.description ?? ""))));
+        }
+
+        /// <summary>The years whose method can be set: from the first year in the books (at least last year) to next year.</summary>
+        IEnumerable<int> methodYears() {
+            int thisYear = DateTime.Today.Year;
+            int first = Db.forCompany("voucher", companyId).Select(v => Db.str(v, "date"))
+                .Concat(Db.forCompany("invoice", companyId).Select(i => Db.str(i, "invoiceDate")))
+                .Where(d => d.Length >= 4 && int.TryParse(d.Substring(0, 4), out _)).Select(d => int.Parse(d.Substring(0, 4)))
+                .DefaultIfEmpty(thisYear).Min();
+            return Enumerable.Range(Math.Min(first, thisYear - 1), thisYear + 2 - Math.Min(first, thisYear - 1));
         }
 
         /// <summary>One option card: a radio button, a title and an explanation (both already encoded).</summary>

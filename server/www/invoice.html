@@ -75,6 +75,7 @@
     <form method="post" class="inline">
         <input type="hidden" name="id" value="<%id%>">
         <label><%t.bar.tab.paidOn%><input type="date" name="paidDate" value="<%paidDateInput%>" required></label>
+        <swe:condition source="mayTakeUp"><label class="check"><input type="checkbox" name="incomeWhenPaid" value="1" <%takeUpChecked%>> <%takeUpLabel%></label></swe:condition>
         <button type="submit" name="action" value="paid"><%t.invoice.registerPayment%></button>
     </form>
     <p class="hint"><%paymentHint%></p>
