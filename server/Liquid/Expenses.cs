@@ -15,6 +15,7 @@ namespace com.swecial.code {
     /// calculates itself, 2645 D / 2614 K, which cancel out in the VAT return. Representation (food and
     /// drink): only the deductible part of the VAT goes to 2641 (Representation), the rest is part of the
     /// cost; the receipt's VAT is kept as receiptVat, and the participants and purpose with the expense.
+    /// Representation abroad has no reverse charge: the whole amount is cost, without VAT.
     /// </summary>
     public static class Expenses {
         public const string ForeignEu = "eu";
@@ -103,22 +104,28 @@ namespace com.swecial.code {
             if (input.total <= 0) throw new LiquidException("Fyll i beloppet som drogs från kontot.", "ENTER THE AMOUNT DEBITED FROM THE ACCOUNT.");
             if (!Bas.VatRates.Contains(input.vatRate)) throw new LiquidException("Ogiltig momssats.", "INVALID VAT RATE.");
             string foreign = input.foreign == ForeignEu || input.foreign == ForeignNonEu ? input.foreign : "";
+            // Representation abroad: a meal is taxed where it's eaten, so there is no reverse charge and
+            // no Swedish VAT to deduct. The whole amount is non-deductible cost.
+            bool representation = category.key == Representation.CategoryKey;
+            bool reverseCharge = foreign.Length > 0 && !representation;
+            if (representation && foreign.Length > 0) {
+                input.vatRate = 0;
+                input.vat = 0;
+            }
             // 2614 is the 25 % account; services bought abroad are almost always 25 % in Sweden
-            if (foreign.Length > 0 && input.vatRate != 25) throw new LiquidException("Köp från utlandet räknas med 25 % moms i Liquid.", "FOREIGN PURCHASES ARE ASSESSED AT 25 % VAT.");
+            if (reverseCharge && input.vatRate != 25) throw new LiquidException("Köp från utlandet räknas med 25 % moms i Liquid.", "FOREIGN PURCHASES ARE ASSESSED AT 25 % VAT.");
             // Bought abroad: the receipt has no Swedish VAT, the company calculates it on the total
-            long vat = foreign.Length > 0 ? Money.percent(input.total, input.vatRate) : input.vat ?? vatIncluded(input.total, input.vatRate);
-            if (vat < 0 || (foreign.Length == 0 && vat >= input.total)) throw new LiquidException("Momsen kan inte vara större än beloppet.", "VAT CANNOT EXCEED THE AMOUNT.");
-            if (foreign.Length == 0 && input.vatRate == 0 && vat != 0) throw new LiquidException("Momsen ska vara 0 när momssatsen är 0 %.", "VAT MUST BE ZERO AT A 0 % RATE.");
+            long vat = reverseCharge ? Money.percent(input.total, input.vatRate) : input.vat ?? vatIncluded(input.total, input.vatRate);
+            if (vat < 0 || (!reverseCharge && vat >= input.total)) throw new LiquidException("Momsen kan inte vara större än beloppet.", "VAT CANNOT EXCEED THE AMOUNT.");
+            if (!reverseCharge && input.vatRate == 0 && vat != 0) throw new LiquidException("Momsen ska vara 0 när momssatsen är 0 %.", "VAT MUST BE ZERO AT A 0 % RATE.");
 
             string text = supplier + ", " + category.name;
             // Representation: only part of the VAT may be deducted, the rest is part of the cost
-            bool representation = category.key == Representation.CategoryKey;
             long receiptVat = vat;
             string kind = "", attendees = "", purpose = "";
             int participants = 0;
             bool alcohol = false;
             if (representation) {
-                if (foreign.Length > 0) throw new LiquidException("Representation utomlands har ingen svensk moms att dra av. Välj \"Nej\" under Köpt från utlandet och 0 % moms.", "FOREIGN ENTERTAINMENT CARRIES NO DEDUCTIBLE SWEDISH VAT. SET ABROAD TO NO AND VAT TO 0 %.");
                 kind = input.representationKind == Representation.External ? Representation.External : Representation.Internal;
                 participants = input.participants;
                 attendees = (input.attendees ?? "").Trim();
@@ -130,7 +137,7 @@ namespace com.swecial.code {
                 vat = Representation.deductibleVat(date, input.total, receiptVat, participants, alcohol);
                 text += ", " + purpose + " (" + participants + " pers.)";
             }
-            var rows = foreign.Length > 0
+            var rows = reverseCharge
                 ? new List<VoucherRow> {
                     new VoucherRow { account = category.account, debit = input.total },
                     new VoucherRow { account = Bas.ReverseChargeInputVat, debit = vat },
@@ -246,7 +253,7 @@ namespace com.swecial.code {
         /// <summary>Net purchases of services from abroad in the period, for VAT return boxes 21 and 22.</summary>
         public static long foreignPurchases(string companyId, string foreign, string from, string to) {
             return list(companyId)
-                .Where(e => Db.str(e, "foreign") == foreign
+                .Where(e => Db.str(e, "foreign") == foreign && Db.str(e, "category") != Representation.CategoryKey
                     && string.CompareOrdinal(Db.str(e, "date"), from) >= 0
                     && string.CompareOrdinal(Db.str(e, "date"), to) <= 0)
                 .Sum(e => Db.num(e, "total"));

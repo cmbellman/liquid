@@ -56,16 +56,18 @@
   function computeVat() {
     if (typed) return;
     var t = n(total.value), r = parseInt(rate.value, 10) || 0;
-    vat.value = t ? fmt(Math.round(foreign.value ? t * r / 100 : t * r / (100 + r))) : '';
+    var rc = foreign.value && cat.value !== 'representation';
+    vat.value = t ? fmt(Math.round(rc ? t * r / 100 : t * r / (100 + r))) : '';
     if (typeof deductible === 'function' && repBox) deductible();
   }
   function showHints() {
     var o = cat.options[cat.selectedIndex];
     hint.textContent = o ? (o.getAttribute('data-hint') || '') : '';
     hint.style.display = hint.textContent ? '' : 'none';
-    foreignHint.style.display = foreign.value ? '' : 'none';
-    vat.readOnly = !!foreign.value;
     var rep = cat.value === 'representation';
+    foreignHint.style.display = foreign.value && !rep ? '' : 'none';
+    vat.readOnly = !!foreign.value;
+    if (rep && foreign.value) { rate.value = '0'; vat.value = '0,00'; }
     repBox.style.display = rep ? '' : 'none';
     [f.participants, f.attendees, f.purpose].forEach(function (i) { i.required = rep; });
     deductible();
@@ -94,7 +96,11 @@
     if (o && o.getAttribute('data-vat') !== null) rate.value = o.getAttribute('data-vat');
     typed = false; computeVat(); showHints();
   });
-  foreign.addEventListener('change', function () { if (foreign.value) rate.value = '25'; typed = false; computeVat(); showHints(); });
+  foreign.addEventListener('change', function () {
+    // Abroad: reverse charge at 25 %, but representation abroad has no Swedish VAT at all
+    if (foreign.value) rate.value = cat.value === 'representation' ? '0' : '25';
+    typed = false; computeVat(); showHints();
+  });
   total.addEventListener('input', computeVat);
   rate.addEventListener('change', function () { typed = false; computeVat(); });
   vat.addEventListener('input', function () { typed = vat.value !== ''; });
