@@ -35,14 +35,26 @@ namespace com.swecial.web {
             val("yourReference", Db.str(customer, "reference"));
             val("customerName", Db.str(invoice, "customerName"));
             set("customerAddress", spans(customer, "address", "postalAddress"));
-            set("hasCustomerVat", Db.str(customer, "vatNumber").Length > 0);
-            val("customerVat", Db.str(customer, "vatNumber"));
 
             rows("lines", lines.Select(l => row(("text", h(l.text)), ("qty", Money.formatDecimal(l.quantity)), ("price", Money.formatOrBlank(l.unitPrice)),
                 ("vat", l.vatRate.ToString()), ("net", Money.formatOrBlank(l.net)))));
             set("net", Money.formatOrBlank(totals.net));
             rows("vatLines", totals.byRate.Where(r => r.Key > 0).Reverse().Select(r => row(("rate", r.Key.ToString()), ("vat", Money.formatOrBlank(r.Value.vat)))));
             set("total", Money.format(totals.total));
+            // Required wording when no Swedish VAT is charged (mervärdesskattelagen 17 kap.)
+            string treatment = Db.str(invoice, "vatTreatment");
+            bool goods = Invoicing.isGoods(invoice);
+            string vatNote = treatment == Invoicing.EuReverseCharge
+                ? (goods ? "Unionsintern leverans, undantagen från skatteplikt (artikel 138 i mervärdesskattedirektivet). Intra-Community supply, exempt (Article 138 VAT Directive)."
+                    : "Omvänd betalningsskyldighet (artikel 196 i mervärdesskattedirektivet). Reverse charge (Article 196 VAT Directive).")
+                : treatment == Invoicing.Export
+                ? (goods ? "Export, undantagen från skatteplikt. Export, exempt from VAT." : "Tjänsten är inte skattepliktig i Sverige. Service not subject to Swedish VAT.")
+                : "";
+            set("hasVatNote", vatNote.Length > 0);
+            val("vatNote", vatNote);
+            string customerVat = Db.str(invoice, "customerVatNumber").Length > 0 ? Db.str(invoice, "customerVatNumber") : Db.str(customer, "vatNumber");
+            set("hasCustomerVat", customerVat.Length > 0);
+            val("customerVat", customerVat);
             set("hasNote", Db.str(invoice, "note").Length > 0);
             val("note", Db.str(invoice, "note"));
             set("paid", Db.str(invoice, "status") == Invoicing.Paid);

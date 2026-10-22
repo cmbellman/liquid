@@ -56,5 +56,23 @@
         <p class="hint"><%t.reports.vatHint%></p>
     </section>
     </if>
+    <if value="eu">
+    <section class="panel">
+        <h2><%t.reports.eu%> <%from%> – <%to%></h2>
+        <swe:condition source="euAny">
+        <table>
+            <thead><tr><th><%t.reports.eu.vatNumber%></th><th><%t.col.customer%></th><th class="num"><%t.reports.eu.goods%></th><th class="num"><%t.reports.eu.services%></th></tr></thead>
+            <tbody>
+                <swe:iterator source="euRows"><tr><td><%current.vatNumber%></td><td><%current.customer%></td><td class="num"><%current.goods%></td><td class="num"><%current.services%></td></tr></swe:iterator>
+            </tbody>
+            <tfoot><tr class="total"><td colspan="2"><%t.reports.sum%></td><td class="num"><%euGoods%></td><td class="num"><%euServices%></td></tr></tfoot>
+        </table>
+        <else>
+        <p class="empty"><%t.reports.eu.empty%></p>
+        </else>
+        </swe:condition>
+        <p class="hint"><%t.reports.eu.hint%></p>
+    </section>
+    </if>
 </swe:condition>
 <% include=partials/bottom.part %>

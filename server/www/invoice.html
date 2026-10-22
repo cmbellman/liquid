@@ -17,6 +17,10 @@
             <label><%t.invoice.dueDate%><input type="date" name="dueDate" value="<%dueDate%>" required></label>
             <label><%t.invoice.ourReference%><input type="text" name="ourReference" value="<%ourReference%>"></label>
         </div>
+        <swe:condition source="foreignVat">
+        <p class="hint"><%treatmentText%></p>
+        <div class="grid"><label><%t.invoice.supply.label%><select name="supplyType"><swe:iterator source="supplyOptions"><option value="<%current.value%>" <%current.selected%>><%current.text%></option></swe:iterator></select></label></div>
+        </swe:condition>
         <swe:condition source="noCustomers"><p class="hint"><%t.invoice.addCustomerFirst%> <a href="/liquid/customers.html"><%t.nav.customers%></a></p></swe:condition>
         <table class="rows">
             <thead><tr><th><%t.invoice.col.description%></th><th class="num"><%t.invoice.col.quantity%></th><th class="num"><%t.invoice.col.unitPrice%></th><th><%t.col.vat%></th><th class="num"><%t.col.amount%></th></tr></thead>
@@ -57,11 +61,13 @@
         <p class="hint"><%sendHint%></p>
     </form>
     <else>
+    <swe:condition source="foreignVat"><p class="hint"><%treatmentText%></p></swe:condition>
     <dl class="facts">
         <dt><%t.col.customer%></dt><dd><%customerName%></dd>
         <dt><%t.invoice.invoiceDate%></dt><dd><%invoiceDate%></dd>
         <dt><%t.invoice.dueDate%></dt><dd><%dueDate%></dd>
         <swe:condition source="paid"><dt><%t.status.paid%></dt><dd><%paidDate%></dd></swe:condition>
+        <swe:condition source="foreignVat"><dt><%t.invoice.supply.label%></dt><dd><%supplyText%></dd></swe:condition>
         <dt><%t.invoice.bookkeeping%></dt><dd><%bookkeeping%></dd>
     </dl>
     <table class="rows">

@@ -33,6 +33,22 @@ namespace com.swecial.code {
             }
         }
 
+        /// <summary>Output VAT on purchases with reverse charge (bought from abroad), per rate: 2614, 2624, 2634.</summary>
+        public static string reverseChargeVatAccount(int vatRate) {
+            return vatRate == 12 ? "2624" : vatRate == 6 ? "2634" : "2614";
+        }
+
+        /// <summary>Output VAT on imported goods, per rate: 2615, 2625, 2635.</summary>
+        public static string importVatAccount(int vatRate) {
+            return vatRate == 12 ? "2625" : vatRate == 6 ? "2635" : "2615";
+        }
+
+        /// <summary>Sales without Swedish VAT: goods or services to a business in another EU country, or outside the EU.</summary>
+        public static string foreignSalesAccount(string treatment, bool goods) {
+            if (treatment == Invoicing.EuReverseCharge) return goods ? "3108" : "3308";
+            return goods ? "3105" : "3305";
+        }
+
         /// <summary>Output VAT account per rate (2611, 2621, 2631), null for 0 %.</summary>
         public static string outputVatAccount(int vatRate) {
             switch (vatRate) {
@@ -57,6 +73,11 @@ namespace com.swecial.code {
             ("2621", "Utgående moms på försäljning inom Sverige, 12 %"),
             ("2631", "Utgående moms på försäljning inom Sverige, 6 %"),
             ("2614", "Utgående moms omvänd skattskyldighet, 25 %"),
+            ("2615", "Utgående moms import av varor, 25 %"),
+            ("2624", "Utgående moms omvänd skattskyldighet, 12 %"),
+            ("2625", "Utgående moms import av varor, 12 %"),
+            ("2634", "Utgående moms omvänd skattskyldighet, 6 %"),
+            ("2635", "Utgående moms import av varor, 6 %"),
             ("2641", "Debiterad ingående moms"),
             ("2645", "Beräknad ingående moms på förvärv från utlandet"),
             ("2650", "Redovisningskonto för moms"),
@@ -67,6 +88,10 @@ namespace com.swecial.code {
             ("3002", "Försäljning inom Sverige, 12 % moms"),
             ("3003", "Försäljning inom Sverige, 6 % moms"),
             ("3004", "Försäljning inom Sverige, momsfri"),
+            ("3105", "Försäljning varor till land utanför EU"),
+            ("3108", "Försäljning varor till annat EU-land, momsfri"),
+            ("3305", "Försäljning tjänster till land utanför EU"),
+            ("3308", "Försäljning tjänster till annat EU-land"),
             ("3740", "Öres- och kronutjämning"),
             ("4010", "Inköp material och varor"),
             ("5010", "Lokalhyra"),
@@ -74,6 +99,7 @@ namespace com.swecial.code {
             ("5420", "Programvaror"),
             ("5800", "Resekostnader"),
             ("5831", "Kost och logi i Sverige"),
+            ("5832", "Kost och logi i utlandet"),
             ("5910", "Annonsering"),
             ("6071", "Representation, avdragsgill"),
             ("6072", "Representation, ej avdragsgill"),

@@ -42,6 +42,7 @@
                     <tr class="total"><td colspan="4">Att betala (SEK)</td><td class="num"><%total%></td></tr>
                 </tfoot>
             </table>
+            <swe:condition source="hasVatNote"><p class="note"><%vatNote%></p></swe:condition>
             <swe:condition source="hasNote"><p class="note"><%note%></p></swe:condition>
             <swe:condition source="paid"><p class="paid">Betald <%paidDate%></p></swe:condition>
             <footer>

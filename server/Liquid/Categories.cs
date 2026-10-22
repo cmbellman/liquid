@@ -11,6 +11,8 @@ namespace com.swecial.code {
         public int vatRate;
         /// <summary>Help shown under the category, empty when there's nothing to say.</summary>
         public string hint = "";
+        /// <summary>Used where it's bought (travel, hotels, meals): abroad it's taxed there, never reverse charge.</summary>
+        public bool consumedAbroad;
     }
 
     /// <summary>
@@ -29,9 +31,9 @@ namespace com.swecial.code {
             new Category { key = "office", name = "Kontorsmaterial", account = "6110", vatRate = 25 },
             new Category { key = "rent", name = "Lokalhyra", account = "5010", vatRate = 25,
                 hint = "Hyresvärden tar bara moms om lokalen är frivilligt momsregistrerad. Står ingen moms på avin, välj 0 %." },
-            new Category { key = "travel", name = "Resor (tåg, flyg, taxi)", account = "5800", vatRate = 6 },
-            new Category { key = "hotel", name = "Hotell och logi", account = "5831", vatRate = 12 },
-            new Category { key = "representation", name = "Representation (mat och dryck)", account = "6072", vatRate = 12,
+            new Category { key = "travel", name = "Resor (tåg, flyg, taxi)", account = "5800", vatRate = 6, consumedAbroad = true },
+            new Category { key = "hotel", name = "Hotell och logi", account = "5831", vatRate = 12, consumedAbroad = true },
+            new Category { key = "representation", name = "Representation (mat och dryck)", account = "6072", vatRate = 12, consumedAbroad = true,
                 hint = "Kostnaden är inte avdragsgill. Momsen får dras av på högst 300 kr exkl. moms per person och tillfälle; Liquid räknar ut avdraget när du fyller i deltagarna. Taxi till och från bokförs som en resa." },
             new Category { key = "marketing", name = "Reklam och marknadsföring", account = "5910", vatRate = 25 },
             new Category { key = "consulting", name = "Konsulter och köpta tjänster", account = "6550", vatRate = 25 },

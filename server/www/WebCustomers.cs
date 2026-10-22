@@ -26,6 +26,13 @@ namespace com.swecial.web {
                 if (name.Length == 0) throw new LiquidException("Fyll i kundens namn.", "CLIENT NAME REQUIRED.");
                 if (customer == null) customer = Db.create("customer", companyId);
                 foreach (var key in Fields) customer.set(key, form(key).Trim());
+                string region = form("region");
+                customer.set("region", region == Invoicing.RegionEu || region == Invoicing.RegionOutsideEu ? region : Invoicing.RegionSweden);
+                if (region == Invoicing.RegionEu && form("vatNumber").Trim().Length == 0) {
+                    Db.commit(customer);
+                    redirect(BasePath + "/customers.html?ok=saved&id=" + u(customer.id) + "&novat=1");
+                    return;
+                }
                 Db.commit(customer);
                 redirect(BasePath + "/customers.html?ok=saved");
                 return;
@@ -45,6 +52,10 @@ namespace com.swecial.web {
             set("formTitle", customer == null ? T("customers.new") : T("customers.edit", h(Db.str(customer, "name"))));
             rows("fields", Fields.Select(key => row(("name", key), ("label", T("field." + key)), ("type", key == "email" ? "email" : "text"),
                 ("value", h(isPost ? form(key) : Db.str(customer, key))), ("required", key == "name" ? "required" : ""))));
+            string region = isPost ? form("region") : Db.str(customer, "region");
+            set("regions", options(new[] { (Invoicing.RegionSweden, Tr("customers.region.se")), (Invoicing.RegionEu, Tr("customers.region.eu")), (Invoicing.RegionOutsideEu, Tr("customers.region.noneu")) },
+                region.Length > 0 ? region : Invoicing.RegionSweden));
+            set("noVatWarning", query("novat") == "1");
         }
     }
 }

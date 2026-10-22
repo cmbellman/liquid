@@ -31,11 +31,75 @@ namespace com.swecial.code {
     /// - cash method (kontantmetoden): nothing at sending; paid: 1930 D / 300x K / 26x1 K.
     /// - accrual method (faktureringsmetoden): sent: 1510 D / 300x K / 26x1 K (series F);
     ///   paid: 1930 D / 1510 K.
+    /// The customer decides the VAT (vatTreatment, fixed when sent): a business in another EU country
+    /// with a VAT number gets no VAT (reverse charge; 3108 goods / 3308 services, VAT return boxes 35/39
+    /// and the EU sales list), a customer outside the EU gets no VAT (export; 3105 / 3305, boxes 36/40),
+    /// everyone else Swedish VAT per row. These are reported by invoice date, whatever the method.
     /// </summary>
     public static class Invoicing {
         public const string Draft = "draft";
         public const string Sent = "sent";
         public const string Paid = "paid";
+
+        public const string Domestic = "domestic";
+        public const string EuReverseCharge = "eu";
+        public const string Export = "export";
+        public const string Goods = "goods";
+        public const string Services = "services";
+
+        /// <summary>Where the customer is: Sweden (default), another EU country or outside the EU.</summary>
+        public const string RegionSweden = "se";
+        public const string RegionEu = "eu";
+        public const string RegionOutsideEu = "noneu";
+
+        /// <summary>How an invoice to the customer is taxed: reverse charge for an EU business, export outside the EU.</summary>
+        public static string vatTreatment(SwecialObject customer) {
+            string region = Db.str(customer, "region");
+            if (region == RegionEu && Db.str(customer, "vatNumber").Trim().Length > 0) return EuReverseCharge;
+            if (region == RegionOutsideEu) return Export;
+            return Domestic;
+        }
+
+        /// <summary>The invoice's treatment: fixed when sent, otherwise from the chosen customer.</summary>
+        public static string vatTreatmentOf(SwecialObject invoice) {
+            string fixedTreatment = Db.str(invoice, "vatTreatment");
+            if (Db.str(invoice, "status") != Draft && fixedTreatment.Length > 0) return fixedTreatment;
+            var customer = Db.getOwned("customer", Db.str(invoice, "customerId"), Db.str(invoice, "companyId"));
+            return customer == null ? Domestic : vatTreatment(customer);
+        }
+
+        public static bool isGoods(SwecialObject invoice) {
+            return Db.str(invoice, "supplyType") == Goods;
+        }
+
+        /// <summary>Net sales without Swedish VAT by invoice date, for VAT return boxes 35, 36, 39 and 40.</summary>
+        public static (long euGoods, long exportGoods, long euServices, long exportServices) foreignSales(string companyId, string from, string to) {
+            long euGoods = 0, exportGoods = 0, euServices = 0, exportServices = 0;
+            foreach (var invoice in issuedIn(companyId, from, to)) {
+                string treatment = Db.str(invoice, "vatTreatment");
+                long net = totals(rows(invoice)).net;
+                bool goods = isGoods(invoice);
+                if (treatment == EuReverseCharge) { if (goods) euGoods += net; else euServices += net; }
+                else if (treatment == Export) { if (goods) exportGoods += net; else exportServices += net; }
+            }
+            return (euGoods, exportGoods, euServices, exportServices);
+        }
+
+        /// <summary>The EU sales list (periodisk sammanställning): per customer VAT number, goods and services.</summary>
+        public static List<(string vatNumber, string customer, long goods, long services)> euSalesList(string companyId, string from, string to) {
+            return issuedIn(companyId, from, to)
+                .Where(i => Db.str(i, "vatTreatment") == EuReverseCharge)
+                .GroupBy(i => Db.str(i, "customerVatNumber").Replace(" ", "").ToUpperInvariant())
+                .Select(g => (g.Key, Db.str(g.First(), "customerName"),
+                    g.Where(isGoods).Sum(i => totals(rows(i)).net), g.Where(i => !isGoods(i)).Sum(i => totals(rows(i)).net)))
+                .OrderBy(r => r.Item1)
+                .ToList();
+        }
+
+        static IEnumerable<SwecialObject> issuedIn(string companyId, string from, string to) {
+            return Db.forCompany("invoice", companyId).Where(i => Db.str(i, "status") != Draft
+                && string.CompareOrdinal(Db.str(i, "invoiceDate"), from) >= 0 && string.CompareOrdinal(Db.str(i, "invoiceDate"), to) <= 0);
+        }
 
         public static List<InvoiceRow> rows(SwecialObject invoice) {
             string json = Db.str(invoice, "rowsJson");
@@ -194,11 +258,18 @@ namespace com.swecial.code {
                 Dates.parse(Db.str(invoice, "invoiceDate"));
                 Dates.parse(Db.str(invoice, "dueDate"));
                 var company = Db.get("company", companyId);
+                // The customer decides the VAT; it is fixed on the invoice from now on
+                string treatment = vatTreatment(customer);
+                if (treatment != Domestic && rows.Any(r => r.vatRate != 0)) throw new LiquidException("Fakturor till kunder utomlands har ingen svensk moms. Spara utkastet igen så sätts momsen till 0 %.", "NO SWEDISH VAT ON INVOICES TO CLIENTS ABROAD. SAVE THE DRAFT AGAIN TO SET VAT TO 0 %.");
+                if (treatment == EuReverseCharge && Db.str(company, "vatNumber").Trim().Length == 0) throw new LiquidException("Fyll i företagets momsregistreringsnummer under Inställningar. Det måste stå på fakturor till EU-kunder.", "ENTER THE COMPANY VAT NUMBER IN SYSTEM CONFIG. REQUIRED ON INVOICES TO EU CLIENTS.");
+                invoice.set("vatTreatment", treatment);
+                invoice.set("supplyType", isGoods(invoice) ? Goods : Services);
+                invoice.set("customerVatNumber", Db.str(customer, "vatNumber").Trim());
                 string date = Dates.clean(Db.str(invoice, "invoiceDate"));
                 bool accrual = Settings.accountingMethod(company, date) == Settings.AccrualMethod;
                 // The accounts it will be booked on must exist before the invoice gets a number
-                Ledger.validate(companyId, date, "Kundfaktura", saleRows(Bas.Bank, t));
-                if (accrual) Ledger.validate(companyId, date, "Kundfaktura", saleRows(Bas.Receivables, t));
+                Ledger.validate(companyId, date, "Kundfaktura", saleRows(Bas.Bank, t, invoice));
+                if (accrual) Ledger.validate(companyId, date, "Kundfaktura", saleRows(Bas.Receivables, t, invoice));
 
                 long number;
                 if (issuedNumber.HasValue) {
@@ -210,7 +281,7 @@ namespace com.swecial.code {
                 invoice.set("number", number);
                 if (accrual) {
                     var voucher = Ledger.book(companyId, Ledger.Invoices, date,
-                        "Kundfaktura " + number + ", " + Db.str(customer, "name"), saleRows(Bas.Receivables, t), userId, "invoice", invoice.id);
+                        "Kundfaktura " + number + ", " + Db.str(customer, "name"), saleRows(Bas.Receivables, t, invoice), userId, "invoice", invoice.id);
                     invoice.set("voucherId", voucher.id);
                 }
                 invoice.set("status", Sent);
@@ -263,7 +334,7 @@ namespace com.swecial.code {
                 if (!receivable && overYearEnd(invoiceDate, paidDate) && !(incomeWhenPaid && mayTakeUpWhenPaid(invoice))) {
                     int year = Dates.parse(invoiceDate).Year;
                     var closing = Ledger.book(companyId, Ledger.Invoices, year + "-12-31",
-                        "Obetald kundfaktura " + number + " vid årsskiftet, " + customerName, saleRows(Bas.Receivables, t), userId, "invoice", invoice.id);
+                        "Obetald kundfaktura " + number + " vid årsskiftet, " + customerName, saleRows(Bas.Receivables, t, invoice), userId, "invoice", invoice.id);
                     invoice.set("closingVoucherId", closing.id);
                     invoice.set("closingByPayment", "true");
                     receivable = true;
@@ -273,7 +344,7 @@ namespace com.swecial.code {
                         new VoucherRow { account = Bas.Bank, debit = t.total },
                         new VoucherRow { account = Bas.Receivables, credit = t.total },
                     }
-                    : saleRows(Bas.Bank, t);
+                    : saleRows(Bas.Bank, t, invoice);
                 var voucher = Ledger.book(companyId, Ledger.Payments, paidDate,
                     "Inbetalning kundfaktura " + number + ", " + customerName, paymentRows, userId, "invoice", invoice.id);
                 invoice.set("status", Paid);
@@ -330,8 +401,14 @@ namespace com.swecial.code {
         }
 
         /// <summary>The sale: the total on debitAccount (1930 when paid, 1510 when sent), sales and VAT per rate.</summary>
-        static List<VoucherRow> saleRows(string debitAccount, InvoiceTotals t) {
+        static List<VoucherRow> saleRows(string debitAccount, InvoiceTotals t, SwecialObject invoice) {
             var rows = new List<VoucherRow> { new VoucherRow { account = debitAccount, debit = t.total } };
+            string treatment = Db.str(invoice, "vatTreatment");
+            if (treatment == EuReverseCharge || treatment == Export) {
+                // No Swedish VAT: the whole amount on the account for sales abroad
+                rows.Add(credit(Bas.foreignSalesAccount(treatment, isGoods(invoice)), t.net));
+                return rows;
+            }
             foreach (var rate in t.byRate) {
                 if (rate.Value.net != 0) rows.Add(credit(Bas.salesAccount(rate.Key), rate.Value.net));
                 if (rate.Value.vat != 0) rows.Add(credit(Bas.outputVatAccount(rate.Key), rate.Value.vat));

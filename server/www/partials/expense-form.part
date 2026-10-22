@@ -6,16 +6,17 @@
     </div>
     <label><%t.expense.category%><select name="category" required>
         <option value=""><%t.common.choose%></option>
-        <swe:iterator source="categories"><option value="<%current.value%>" data-vat="<%current.vat%>" data-hint="<%current.hint%>" <%current.selected%>><%current.text%></option></swe:iterator>
+        <swe:iterator source="categories"><option value="<%current.value%>" data-vat="<%current.vat%>" data-hint="<%current.hint%>" data-abroad="<%current.abroad%>" <%current.selected%>><%current.text%></option></swe:iterator>
     </select></label>
     <p class="hint" id="categoryHint"></p>
     <div class="grid">
         <label><%t.expense.total%><input type="text" name="total" value="<%total%>" inputmode="decimal" class="num" required></label>
         <label><%t.expense.vatRate%><select name="vatRate"><swe:iterator source="vatRates"><option value="<%current.value%>" <%current.selected%>><%current.text%></option></swe:iterator></select></label>
         <label><%t.expense.vat%><input type="text" name="vat" value="<%vat%>" inputmode="decimal" class="num"></label>
-        <label><%t.expense.foreign.label%><select name="foreign"><swe:iterator source="foreignOptions"><option value="<%current.value%>" <%current.selected%>><%current.text%></option></swe:iterator></select></label>
+        <label><%t.expense.foreign.label%><select name="foreign"><swe:iterator source="foreignOptions"><option value="<%current.value%>" data-hint="<%current.hint%>" <%current.selected%>><%current.text%></option></swe:iterator></select></label>
+        <label id="importBaseField"><%t.expense.importBase%><input type="text" name="importBase" value="<%importBase%>" inputmode="decimal" class="num" placeholder="<%t.expense.importBasePlaceholder%>"></label>
     </div>
-    <p class="hint" id="foreignHint"><%t.expense.foreignHint%></p>
+    <p class="hint" id="foreignHint"></p>
     <fieldset id="representation" class="representation">
         <legend><%t.expense.representation.title%></legend>
         <div class="grid">

@@ -56,18 +56,21 @@
   function computeVat() {
     if (typed) return;
     var t = n(total.value), r = parseInt(rate.value, 10) || 0;
-    var rc = foreign.value && cat.value !== 'representation';
-    vat.value = t ? fmt(Math.round(rc ? t * r / 100 : t * r / (100 + r))) : '';
+    var k = kind(), b = k === 'import' && n(f.importBase.value) ? n(f.importBase.value) : t;
+    vat.value = k === 'abroad' ? '0,00' : t ? fmt(Math.round(k ? b * r / 100 : t * r / (100 + r))) : '';
     if (typeof deductible === 'function' && repBox) deductible();
   }
   function showHints() {
     var o = cat.options[cat.selectedIndex];
     hint.textContent = o ? (o.getAttribute('data-hint') || '') : '';
     hint.style.display = hint.textContent ? '' : 'none';
-    var rep = cat.value === 'representation';
-    foreignHint.style.display = foreign.value && !rep ? '' : 'none';
-    vat.readOnly = !!foreign.value;
-    if (rep && foreign.value) { rate.value = '0'; vat.value = '0,00'; }
+    var rep = cat.value === 'representation', k = kind();
+    var fo = k === 'abroad' ? foreign.querySelector('option[value=abroad]') : foreign.options[foreign.selectedIndex];
+    foreignHint.textContent = fo ? (fo.getAttribute('data-hint') || '') : '';
+    foreignHint.style.display = foreignHint.textContent ? '' : 'none';
+    document.getElementById('importBaseField').style.display = k === 'import' ? '' : 'none';
+    vat.readOnly = !!k;
+    if (k === 'abroad') { rate.value = '0'; vat.value = '0,00'; }
     repBox.style.display = rep ? '' : 'none';
     [f.participants, f.attendees, f.purpose].forEach(function (i) { i.required = rep; });
     deductible();
@@ -96,12 +99,21 @@
     if (o && o.getAttribute('data-vat') !== null) rate.value = o.getAttribute('data-vat');
     typed = false; computeVat(); showHints();
   });
+  // Abroad: reverse charge and import at a Swedish rate (usually 25 %); travel, hotels and meals
+  // abroad and foreign VAT on the receipt have no Swedish VAT at all (Liquid.Expenses does the same)
+  function kind() {
+    var o = cat.options[cat.selectedIndex];
+    return foreign.value && o && o.getAttribute('data-abroad') === '1' ? 'abroad' : foreign.value;
+  }
   foreign.addEventListener('change', function () {
-    // Abroad: reverse charge at 25 %, but representation abroad has no Swedish VAT at all
-    if (foreign.value) rate.value = cat.value === 'representation' ? '0' : '25';
+    var k = kind();
+    if (k === 'abroad') rate.value = '0';
+    else if (k && (rate.value === '0' || !rate.value)) rate.value = '25';
+    else if (!k) { var o = cat.options[cat.selectedIndex]; if (o && o.getAttribute('data-vat')) rate.value = o.getAttribute('data-vat'); }
     typed = false; computeVat(); showHints();
   });
   total.addEventListener('input', computeVat);
+  f.importBase.addEventListener('input', computeVat);
   rate.addEventListener('change', function () { typed = false; computeVat(); });
   vat.addEventListener('input', function () { typed = vat.value !== ''; });
   showHints();

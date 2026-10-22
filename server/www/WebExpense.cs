@@ -56,6 +56,7 @@ namespace com.swecial.web {
                     vat = form("vat").Trim().Length > 0 ? Money.parse(form("vat")) : (long?)null,
                     vatRate = int.TryParse(form("vatRate"), out int rate) ? rate : -1,
                     foreign = form("foreign"),
+                    importBase = form("importBase").Trim().Length > 0 ? Money.parse(form("importBase")) : (long?)null,
                     note = form("note"),
                     representationKind = form("representationKind"),
                     participants = int.TryParse(form("participants").Trim(), out int people) ? people : 0,
@@ -88,6 +89,7 @@ namespace com.swecial.web {
             if (sorting && Db.str(expense, "aiStatus") == ReceiptReader.Done) return suggestion(key);
             if (key == "vat" && Db.str(expense, "category") == Representation.CategoryKey) return Money.input(Db.num(expense, "receiptVat"));
             if (key == "total" || key == "vat") return Money.input(Db.num(expense, key));
+            if (key == "importBase") return Db.num(expense, key) > 0 ? Money.input(Db.num(expense, key)) : "";
             if (key == "participants") return Db.num(expense, key) > 0 ? Db.num(expense, key).ToString() : "";
             if (key == "alcohol") return expense.get<bool>("alcohol") ? "1" : "";
             return Db.str(expense, key);
@@ -148,7 +150,7 @@ namespace com.swecial.web {
                 string hint = Tr("category." + c.key + ".hint");
                 // Food VAT depends on the date (6 % from April 2026)
                 int suggested = c.key == Representation.CategoryKey ? Representation.foodRate(date) : c.vatRate;
-                return row(("value", c.key), ("vat", suggested.ToString()), ("hint", h(hint)),
+                return row(("value", c.key), ("vat", suggested.ToString()), ("hint", h(hint)), ("abroad", c.consumedAbroad ? "1" : ""),
                     ("selected", selected(c.key == category)), ("text", T("category." + c.key + ".name")));
             }));
             string rate = value("vatRate");
@@ -160,7 +162,11 @@ namespace com.swecial.web {
             set("alcoholChecked", isChecked(value("alcohol") == "1"));
             set("representationKinds", options(new[] { (Representation.Internal, Tr("expense.representation.internal")), (Representation.External, Tr("expense.representation.external")) },
                 value("representationKind") == Representation.External ? Representation.External : Representation.Internal));
-            set("foreignOptions", options(new[] { ("", Tr("expense.foreign.no")), (Expenses.ForeignEu, Tr("expense.foreign.eu")), (Expenses.ForeignNonEu, Tr("expense.foreign.noneu")) }, value("foreign")));
+            string foreign = value("foreign");
+            rows("foreignOptions", new[] { "", Expenses.ForeignEu, Expenses.ForeignNonEu, Expenses.ForeignEuGoods, Expenses.Import, Expenses.Abroad }.Select(k =>
+                row(("value", k), ("text", T("expense.foreign." + (k.Length == 0 ? "no" : k))), ("hint", k.Length == 0 ? "" : T("expense.foreignHint." + k)),
+                    ("selected", selected(k == foreign)))));
+            val("importBase", value("importBase"));
         }
     }
 }

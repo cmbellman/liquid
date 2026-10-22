@@ -16,10 +16,10 @@ namespace com.swecial.web {
             title(Tr("reports.title"));
             string year = Dates.today().Substring(0, 4);
             report = query("report");
-            if (report != "ledger" && report != "vat") report = "balance";
+            if (report != "ledger" && report != "vat" && report != "eu") report = "balance";
             var vatPeriod = Settings.vatPeriodOf(company, System.DateTime.Today);
-            from = query("from").Length > 0 ? query("from") : report == "vat" ? Dates.format(vatPeriod.from) : year + "-01-01";
-            to = query("to").Length > 0 ? query("to") : report == "vat" ? Dates.format(vatPeriod.to) : year + "-12-31";
+            from = query("from").Length > 0 ? query("from") : report == "vat" || report == "eu" ? Dates.format(vatPeriod.from) : year + "-01-01";
+            to = query("to").Length > 0 ? query("to") : report == "vat" || report == "eu" ? Dates.format(vatPeriod.to) : year + "-12-31";
             accountNumber = query("account");
             setFilter();
 
@@ -29,12 +29,13 @@ namespace com.swecial.web {
             set("shown", report);
             if (report == "balance") setBalance();
             else if (report == "ledger") setLedger();
+            else if (report == "eu") setEuSales();
             else setVat();
         }
 
         void setFilter() {
             set("shown", "");
-            set("reportOptions", options(new[] { ("balance", Tr("reports.balance")), ("ledger", Tr("reports.ledger")), ("vat", Tr("reports.vat")) }, report));
+            set("reportOptions", options(new[] { ("balance", Tr("reports.balance")), ("ledger", Tr("reports.ledger")), ("vat", Tr("reports.vat")), ("eu", Tr("reports.eu")) }, report));
             val("from", from);
             val("to", to);
             set("isLedger", report == "ledger");
@@ -68,6 +69,16 @@ namespace com.swecial.web {
         void setVat() {
             rows("boxes", Reports.vatReturn(companyId, from, to).Select(b => row(("box", b.box), ("label", T("vat.box" + b.box)),
                 ("amount", Money.format(b.amount)), ("class", b.box == "49" ? "total" : ""))));
+        }
+
+        /// <summary>The EU sales list (periodisk sammanställning) to file with Skatteverket.</summary>
+        void setEuSales() {
+            var list = Invoicing.euSalesList(companyId, from, to);
+            set("euAny", list.Count > 0);
+            rows("euRows", list.Select(r => row(("vatNumber", h(r.vatNumber)), ("customer", h(r.customer)),
+                ("goods", Money.formatOrBlank(r.goods)), ("services", Money.formatOrBlank(r.services)))));
+            set("euGoods", Money.formatOrBlank(list.Sum(r => r.goods)));
+            set("euServices", Money.formatOrBlank(list.Sum(r => r.services)));
         }
 
         string ledgerLink(string account) {

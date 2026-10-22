@@ -82,12 +82,15 @@ namespace com.swecial.web {
             invoice.set("note", form("note").Trim());
             if (Db.str(invoice, "documentFileId").Length > 0) invoice.set("issuedNumber", form("issuedNumber").Trim());
 
+            invoice.set("supplyType", form("supplyType") == Invoicing.Goods ? Invoicing.Goods : Invoicing.Services);
+            // Customers abroad get no Swedish VAT
+            bool noVat = Invoicing.vatTreatmentOf(invoice) != Invoicing.Domestic;
             var rows = new List<InvoiceRow>();
             for (int i = 0; i < rowCount(); i++) {
                 string text = form("text" + i).Trim();
                 string price = form("price" + i);
                 if (text.Length == 0 && price.Trim().Length == 0) continue;
-                int vat = int.TryParse(form("vat" + i), out int v) && Bas.VatRates.Contains(v) ? v : 25;
+                int vat = noVat ? 0 : int.TryParse(form("vat" + i), out int v) && Bas.VatRates.Contains(v) ? v : 25;
                 decimal quantity = form("qty" + i).Trim().Length == 0 ? 1 : Money.parseDecimal(form("qty" + i), "antal");
                 rows.Add(new InvoiceRow { text = text, quantity = quantity, unitPrice = Money.parse(price), vatRate = vat });
             }
@@ -123,6 +126,13 @@ namespace com.swecial.web {
             val("paidDateInput", isPost ? form("paidDate") : Dates.today());
             string documentId = Db.str(invoice, "documentFileId");
             set("hasDocument", documentId.Length > 0);
+            // VAT for customers abroad: reverse charge (EU business) or export
+            string treatment = Invoicing.vatTreatmentOf(invoice);
+            set("foreignVat", treatment != Invoicing.Domestic);
+            set("treatmentText", treatment == Invoicing.Domestic ? "" : T("invoice.treatment." + treatment));
+            set("supplyOptions", options(new[] { (Invoicing.Services, Tr("invoice.supply.services")), (Invoicing.Goods, Tr("invoice.supply.goods")) },
+                isPost ? form("supplyType") : Invoicing.isGoods(invoice) ? Invoicing.Goods : Invoicing.Services));
+            set("supplyText", Tr(Invoicing.isGoods(invoice) ? "invoice.supply.goods" : "invoice.supply.services"));
             set("documentSrc", BasePath + "/receipt.html?invoice=" + u(invoice.id) + "&amp;v=" + u(documentId));
             // Issued outside Liquid (from Pantpåsen): registered with the document's own number
             set("issued", draft && documentId.Length > 0);
