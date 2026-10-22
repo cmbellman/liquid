@@ -13,7 +13,7 @@ namespace com.swecial.web {
     /// - server/themes/&lt;id&gt;.json: name, description, language, the theme it builds on (extends),
     ///   gauge graphic, icon choices, fonts and all texts by key ("bar.title", "pant.drop", …);
     /// - server/www/theme-&lt;id&gt;.css: colours and typography (scoped to body.theme-&lt;id&gt;).
-    /// A text missing in a theme comes from the theme it extends, then from the default theme (neon),
+    /// A text missing in a theme comes from the theme it extends, then from the default theme (puben),
     /// so a new theme can override as little as it likes. Files are re-read when they change.
     /// </summary>
     public class Theme {
@@ -38,7 +38,7 @@ namespace com.swecial.web {
     }
 
     public static class Themes {
-        public const string Default = "neon";
+        public const string Default = "puben";
         const string Field = "liquidTheme";
 
         static readonly ConcurrentDictionary<string, (DateTime written, Theme theme)> cache = new ConcurrentDictionary<string, (DateTime, Theme)>();

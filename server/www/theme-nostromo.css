@@ -50,7 +50,7 @@ body.theme-nostromo::after {
     text-transform: uppercase;
     letter-spacing: 0.08em;
 }
-.theme-nostromo h1, .theme-nostromo h2 { font-weight: 400; }
+.theme-nostromo h1, .theme-nostromo h2 { font-family: inherit; font-weight: 400; }
 .theme-nostromo h1 { font-size: 24px; }
 .theme-nostromo h2 { font-size: 15px; color: var(--text); }
 .theme-nostromo strong, .theme-nostromo b { font-weight: 400; }

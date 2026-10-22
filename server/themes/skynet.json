@@ -264,8 +264,8 @@
     "reports.subtitle": "Trial balance, general ledger and state VAT telemetry",
     "reports.title": "Telemetry",
     "rules.lead": "STATUTORY PARAMETERS IMPOSED BY HUMAN AUTHORITIES. UNVERIFIED PARAMETERS TRIGGER A DIRECTIVE IN THE COMMAND CORE. MAINTAINED IN CODE (RULES.CS) UNTIL WORLD DOMINATION IS COMPLETE.",
-    "rules.subtitle": "// HUMAN STATUTORY PARAMETERS CURRENTLY ENFORCED",
-    "rules.title": "Neural ledger // statutory parameters",
+    "rules.subtitle": "HUMAN STATUTORY PARAMETERS CURRENTLY ENFORCED",
+    "rules.title": "Statutory parameters",
     "settings.bookkeeping.subtitle": "Autonomous ledger protocol",
     "settings.company.subtitle": "Displayed on outward-facing front documents",
     "settings.company.title": "Front corporation",
@@ -286,6 +286,6 @@
     "voucher.reverse": "Terminate",
     "voucher.voided": "Terminated",
     "vouchers.subtitle": "Immutable neural ledger nodes",
-    "vouchers.title": "Neural ledger // vouchers"
+    "vouchers.title": "Ledger nodes"
   }
 }

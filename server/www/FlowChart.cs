@@ -140,25 +140,37 @@ namespace com.swecial.web {
 
         /// <summary>
         /// A beer glass filled to how long the money lasts (full at six months or more), with
-        /// foam and a few rising bubbles.
+        /// a gently sloshing surface, rolling foam and rising streams of bubbles.
         /// </summary>
         static string glass(Runway r) {
             // Full is a little below the rim, so the foam shows
             double level = 0.88 * fill(r);
             const double top = 10, bottom = 90, height = bottom - top;
             double liquidTop = bottom - height * level;
+            // 74-unit periodic frothy curve (dx = 74, dy = 0) repeated twice for seamless horizontal wave motion
+            const string Wave = "q6 -6 12 -1 q6 -6 13 1 q7 -7 12 -1 q6 -5 13 1 q6 -6 12 -1 q6 -5 12 1";
             var sb = new StringBuilder("<svg viewBox='0 0 74 96' aria-hidden='true'>");
             sb.Append("<defs><linearGradient id='beer' x1='0' y1='0' x2='0' y2='1'><stop class='s-beer-top' offset='0'/><stop class='s-beer-bottom' offset='1'/></linearGradient>");
             sb.Append("<clipPath id='glassClip'><path d='M10 8 L64 8 L58 90 Q57 93 54 93 L20 93 Q17 93 16 90 Z'/></clipPath></defs>");
             sb.Append("<g clip-path='url(#glassClip)'>");
             if (level > 0) {
-                sb.Append("<rect class='beer' x='0' y='" + f(liquidTop) + "' width='74' height='" + f(96 - liquidTop) + "'/>");
-                sb.Append("<path class='foam' d='M0 " + f(liquidTop + 2) + " q6 -7 12 -2 q6 -7 13 -1 q7 -7 13 0 q6 -6 12 -1 q7 -6 12 1 q6 -4 12 -1 V" + f(liquidTop + 4) + " H0 Z'/>");
+                sb.Append("<g class='beer-slosh' style='transform-origin:37px " + f(liquidTop) + "px'>");
+                sb.Append("<rect class='beer' x='-20' y='" + f(liquidTop) + "' width='114' height='" + f(102 - liquidTop) + "'/>");
+                sb.Append("<path class='foam-wave' d='M-74 " + f(liquidTop + 3) + " " + Wave + " " + Wave + " V" + f(liquidTop + 8) + " H-74 Z'/>");
+                sb.Append("<path class='foam' d='M-74 " + f(liquidTop + 1.5) + " " + Wave + " " + Wave + " V" + f(liquidTop + 5.5) + " H-74 Z'/>");
+                sb.Append("</g>");
                 if (level > 0.15) {
-                    sb.Append("<circle class='bubble' cx='28' cy='86' r='1.6'/><circle class='bubble' cx='41' cy='84' r='1.2'/><circle class='bubble' cx='48' cy='88' r='1.4'/>");
+                    sb.Append("<circle class='bubble' cx='22' cy='89' r='1.2'/>");
+                    sb.Append("<circle class='bubble' cx='27' cy='86' r='1.6'/>");
+                    sb.Append("<circle class='bubble' cx='32' cy='90' r='1.0'/>");
+                    sb.Append("<circle class='bubble' cx='37' cy='85' r='1.5'/>");
+                    sb.Append("<circle class='bubble' cx='41' cy='89' r='1.3'/>");
+                    sb.Append("<circle class='bubble' cx='46' cy='87' r='1.7'/>");
+                    sb.Append("<circle class='bubble' cx='50' cy='90' r='1.1'/>");
+                    sb.Append("<circle class='bubble' cx='54' cy='86' r='1.4'/>");
                 }
             }
-            sb.Append("</g><path class='cup' d='M10 8 L64 8 L58 90 Q57 93 54 93 L20 93 Q17 93 16 90 Z'/></svg>");
+            sb.Append("</g><path class='glass-shine' d='M15 14 L20 86'/><path class='cup' d='M10 8 L64 8 L58 90 Q57 93 54 93 L20 93 Q17 93 16 90 Z'/></svg>");
             return sb.ToString();
         }
     }
