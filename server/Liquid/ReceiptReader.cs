@@ -5,6 +5,8 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -69,9 +71,30 @@ namespace com.swecial.code {
 
         static SwecialApplication.Settings settings => Db.app?.settings;
 
-        public static bool enabled => command.Length > 0;
+        /// <summary>On when the server has a Gemini API key (preferred) or the agy command.</summary>
+        public static bool enabled => apiKey.Length > 0 || command.Length > 0;
 
         static string command => (settings?.get<string>("receiptReaderCommand") ?? "").Trim();
+
+        /// <summary>Gemini API key: Liquid calls Gemini itself, so it doesn't depend on a signed-in Windows account.</summary>
+        static string apiKey => (settings?.get<string>("geminiApiKey") ?? "").Trim();
+
+        const string DefaultGeminiModel = "gemini-flash-latest";
+        static readonly HttpClient http = new HttpClient { Timeout = TimeSpan.FromSeconds(120) };
+
+        /// <summary>A reading that failed, with a kind the pages can explain (Problem.*) and a short detail.</summary>
+        class ReaderException : Exception {
+            public readonly string kind;
+            public ReaderException(string kind, string message) : base(message) { this.kind = kind; }
+        }
+
+        public static class Problem {
+            public const string NotLoggedIn = "notLoggedIn";
+            public const string BadKey = "badKey";
+            public const string Quota = "quota";
+            public const string Timeout = "timeout";
+            public const string Other = "other";
+        }
 
         /// <summary>Starts reading the receipt in the background, if the reader is configured.</summary>
         public static void queue(SwecialObject expense) {
@@ -93,42 +116,57 @@ namespace com.swecial.code {
 
         static void read(string expenseId, string companyId) {
             Slots.Wait();
-            string folder = null;
             try {
                 var expense = Db.getOwned("expense", expenseId, companyId);
                 var file = expense == null ? null : Expenses.receipt(Db.str(expense, "receiptFileId"), companyId);
                 byte[] data = file?.data;
-                if (data == null) throw new Exception("receipt file missing");
-
-                folder = Path.Combine(Path.GetTempPath(), "liquid-receipt-" + Guid.NewGuid().ToString("N"));
-                Directory.CreateDirectory(folder);
-                File.WriteAllBytes(Path.Combine(folder, "receipt." + file.fileType), data);
-                string schemaPath = Path.Combine(Path.GetTempPath(), "liquid-receipt-" + Guid.NewGuid().ToString("N") + ".json");
-                File.WriteAllText(schemaPath, Schema);
-                try {
-                    var company = Db.get("company", companyId);
-                    var answer = run(folder, schemaPath, "receipt." + file.fileType, Db.str(company, "name"), Db.str(company, "orgNumber"));
-                    store(expenseId, companyId, answer);
-                } finally {
-                    File.Delete(schemaPath);
-                }
+                if (data == null) throw new ReaderException(Problem.Other, "receipt file missing");
+                var company = Db.get("company", companyId);
+                string prompt = instructions(Db.str(company, "name"), Db.str(company, "orgNumber"));
+                var answer = apiKey.Length > 0
+                    ? askGemini(data, Db.str(file, "contentType"), prompt)
+                    : askAgy(data, file.fileType, prompt);
+                store(expenseId, companyId, answer);
+                setProblem(companyId, null, null);
             } catch (Exception ex) {
-                SwecialData.current.log.write("liquid: receipt reading failed for " + expenseId + ": " + ex.Message);
+                var problem = ex as ReaderException ?? new ReaderException(ex is TaskCanceledException ? Problem.Timeout : Problem.Other, ex.Message);
+                SwecialData.current.log.write("liquid: receipt reading failed for " + expenseId + " (" + problem.kind + "): " + problem.Message);
+                setProblem(companyId, problem.kind, problem.Message);
                 var expense = Db.getOwned("expense", expenseId, companyId);
                 if (expense != null && Db.str(expense, "status") == Expenses.Inbox) {
                     expense.set("aiStatus", Failed);
+                    expense.set("aiProblem", problem.kind);
                     Db.commit(expense);
                 }
             } finally {
-                if (folder != null) {
-                    try { Directory.Delete(folder, true); } catch { }
-                }
                 Slots.Release();
             }
         }
 
-        static JObject run(string folder, string schemaPath, string fileName, string companyName, string companyOrgNumber) {
-            string prompt = "Read the receipt or invoice in the file " + fileName + " in this directory and extract the fields of the JSON schema. "
+        /// <summary>
+        /// The reader's last problem on the company (readerProblem, readerProblemDetail, readerProblemAt),
+        /// shown on Baren and Pantpåsen until a reading succeeds again.
+        /// </summary>
+        static void setProblem(string companyId, string kind, string detail) {
+            lock (Db.Sync) {
+                var company = Db.get("company", companyId);
+                if (company == null) return;
+                if (kind == null) {
+                    if (Db.str(company, "readerProblem").Length == 0) return;
+                    company.remove("readerProblem");
+                    company.remove("readerProblemDetail");
+                    company.remove("readerProblemAt");
+                } else {
+                    company.set("readerProblem", kind);
+                    company.set("readerProblemDetail", Truncate(detail, 160));
+                    company.set("readerProblemAt", DateTime.UtcNow.ToString("o"));
+                }
+                Db.commit(company);
+            }
+        }
+
+        static string instructions(string companyName, string companyOrgNumber) {
+            return "Read the attached receipt or invoice and extract the fields of the JSON schema. "
                 + "It was handed in by the company \"" + companyName + "\"" + (companyOrgNumber.Length > 0 ? " (organisation number " + companyOrgNumber + ")" : "") + ". "
                 + "If that company is the SELLER (its name or number is the sender), the document is an invoice it issued to a customer: documentType salesInvoice, "
                 + "fill in the customer, invoice number, dates, references and every row. Otherwise it's a purchase: receipt, or supplierInvoice for an invoice to pay. "
@@ -136,6 +174,83 @@ namespace com.swecial.code {
                 + "category is one of: " + string.Join(", ", Categories.All.Select(c => c.key)) + " ("
                 + string.Join("; ", Categories.All.Select(c => c.key + " = " + c.name)) + "). "
                 + "foreign is true when the seller is outside Sweden; vat is then the VAT it charged (often 0). Answer only with the JSON.";
+        }
+
+        /// <summary>
+        /// Gemini's REST API with the server's API key: the receipt inline, structured JSON output.
+        /// If the model doesn't take a JSON schema, it's asked again for plain JSON (the answer is
+        /// checked field by field in store either way).
+        /// </summary>
+        static JObject askGemini(byte[] data, string contentType, string prompt) {
+            string model = (settings?.get<string>("geminiModel") ?? "").Trim();
+            if (model.Length == 0) model = DefaultGeminiModel;
+            string mime = contentType.Length > 0 ? contentType : "application/octet-stream";
+            JObject request(bool withSchema) {
+                var config = new JObject { ["responseMimeType"] = "application/json", ["temperature"] = 0 };
+                if (withSchema) config["responseJsonSchema"] = JObject.Parse(Schema);
+                return new JObject {
+                    ["contents"] = new JArray { new JObject { ["role"] = "user", ["parts"] = new JArray {
+                        new JObject { ["inline_data"] = new JObject { ["mime_type"] = mime, ["data"] = Convert.ToBase64String(data) } },
+                        new JObject { ["text"] = prompt },
+                    } } },
+                    ["generationConfig"] = config,
+                };
+            }
+            string url = "https://generativelanguage.googleapis.com/v1beta/models/" + Uri.EscapeDataString(model) + ":generateContent";
+            JObject send(JObject body) {
+                using (var message = new HttpRequestMessage(HttpMethod.Post, url)) {
+                    message.Headers.Add("x-goog-api-key", apiKey);
+                    message.Content = new StringContent(body.ToString(Newtonsoft.Json.Formatting.None), Encoding.UTF8, "application/json");
+                    using (var response = http.SendAsync(message).GetAwaiter().GetResult()) {
+                        string text = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
+                        if (response.IsSuccessStatusCode) return JObject.Parse(text);
+                        string error = "HTTP " + (int)response.StatusCode;
+                        string status = "";
+                        try {
+                            var json = JObject.Parse(text);
+                            status = (string)json["error"]?["status"] ?? "";
+                            error += " " + status + ": " + (string)json["error"]?["message"];
+                        } catch { }
+                        int code = (int)response.StatusCode;
+                        string kind = code == 429 || status == "RESOURCE_EXHAUSTED" ? Problem.Quota
+                            : code == 401 || code == 403 || error.Contains("API key") || error.Contains("API_KEY") ? Problem.BadKey
+                            : Problem.Other;
+                        throw new ReaderException(kind, error);
+                    }
+                }
+            }
+            JObject result;
+            try {
+                result = send(request(true));
+            } catch (ReaderException ex) when (ex.kind == Problem.Other && ex.Message.Contains("HTTP 400") && ex.Message.IndexOf("schema", StringComparison.OrdinalIgnoreCase) >= 0) {
+                result = send(request(false));
+            }
+            string answer = string.Concat((result["candidates"]?[0]?["content"]?["parts"] as JArray ?? new JArray()).Select(p => (string)p["text"] ?? ""));
+            if (answer.Trim().Length == 0) {
+                throw new ReaderException(Problem.Other, "no answer (" + ((string)result["candidates"]?[0]?["finishReason"] ?? (string)result["promptFeedback"]?["blockReason"] ?? "empty") + ")");
+            }
+            answer = answer.Trim();
+            if (answer.StartsWith("```")) answer = answer.Trim('`').Substring(answer.Trim('`').IndexOf('\n') + 1);
+            return JObject.Parse(answer);
+        }
+
+        /// <summary>The Antigravity CLI, in an empty temp folder with only the receipt and --sandbox.</summary>
+        static JObject askAgy(byte[] data, string fileType, string prompt) {
+            string folder = Path.Combine(Path.GetTempPath(), "liquid-receipt-" + Guid.NewGuid().ToString("N"));
+            string schemaPath = folder + ".json";
+            try {
+                Directory.CreateDirectory(folder);
+                string fileName = "receipt." + fileType;
+                File.WriteAllBytes(Path.Combine(folder, fileName), data);
+                File.WriteAllText(schemaPath, Schema);
+                return run(folder, schemaPath, "The receipt is the file " + fileName + " in this directory. " + prompt);
+            } finally {
+                try { Directory.Delete(folder, true); } catch { }
+                try { File.Delete(schemaPath); } catch { }
+            }
+        }
+
+        static JObject run(string folder, string schemaPath, string prompt) {
             var start = new ProcessStartInfo(command) {
                 WorkingDirectory = folder,
                 RedirectStandardOutput = true,
@@ -162,13 +277,17 @@ namespace com.swecial.code {
                 var stderr = process.StandardError.ReadToEndAsync();
                 if (!process.WaitForExit((int)(Timeout.TotalMilliseconds + 15000))) {
                     try { process.Kill(true); } catch { }
-                    throw new Exception("timed out");
+                    throw new ReaderException(Problem.Timeout, "agy timed out");
                 }
                 string last = stdout.Result.Split('\n').Select(l => l.Trim()).LastOrDefault(l => l.StartsWith("{"));
-                if (last == null) throw new Exception("no answer: " + Truncate(stderr.Result, 300));
+                if (last == null) throw new ReaderException(Problem.Other, "agy gave no answer: " + Truncate(stderr.Result, 300));
                 var result = JObject.Parse(last);
                 if ((string)result["status"] != "SUCCESS" || !(result["structured_output"] is JObject output)) {
-                    throw new Exception("agy: " + Truncate((string)result["error"] ?? last, 300));
+                    string error = (string)result["error"] ?? last;
+                    // agy keeps its sign-in per Windows account; a service account isn't signed in
+                    bool notLoggedIn = new[] { "not logged in", "authentication failed" }
+                        .Any(m => error.Contains(m, StringComparison.OrdinalIgnoreCase) || stderr.Result.Contains(m, StringComparison.OrdinalIgnoreCase));
+                    throw new ReaderException(notLoggedIn ? Problem.NotLoggedIn : Problem.Other, "agy: " + Truncate(error, 300));
                 }
                 return output;
             }

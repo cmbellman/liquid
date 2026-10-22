@@ -255,6 +255,16 @@ namespace com.swecial.web {
             }
         }
 
+        /// <summary>
+        /// The receipt reader's last problem, if any (readerProblem and readerProblemText), for the
+        /// pages where receipts come in. Cleared by the next reading that succeeds.
+        /// </summary>
+        protected void setReaderProblem() {
+            string kind = Db.str(company, "readerProblem");
+            set("readerProblem", kind.Length > 0 && ReceiptReader.enabled);
+            set("readerProblemText", kind.Length > 0 ? T("reader.problem." + kind, h(Db.str(company, "readerProblemDetail"))) : "");
+        }
+
         // --- Navigation (partials/top.part) ---
 
         void setNav() {

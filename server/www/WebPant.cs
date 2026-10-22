@@ -50,6 +50,7 @@ namespace com.swecial.web {
         void setValues() {
             var items = Expenses.inbox(companyId);
             set("bagAction", BasePath + "/pant.html");
+            setReaderProblem();
             set("toSort", Tn("pant.toSort", items.Count));
             set("firstId", items.Count > 0 ? u(items[0].id) : "");
             set("reading", items.Any(i => Db.str(i, "aiStatus") == ReceiptReader.Reading));

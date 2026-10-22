@@ -49,6 +49,7 @@ namespace com.swecial.web {
             set("periodText", T("bar.amount.period", T("bar.period." + period)));
             setGauge(Flow.runway(companyId, today));
             setTab(today);
+            setReaderProblem();
             setTodo();
 
             int bag = Expenses.inbox(companyId).Count;

@@ -1,6 +1,7 @@
 <% class=WebPant %>
 <% include=partials/top.part %>
 <div class="heading"><div><h1><%t.pant.title%></h1><p class="sub"><%t.pant.subtitle%></p></div></div>
+<swe:condition source="readerProblem"><p class="ai failed reader-problem"><%readerProblemText%></p></swe:condition>
 <section class="panel">
     <% include=partials/dropzone.part %>
 </section>

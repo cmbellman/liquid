@@ -20,20 +20,30 @@ Dark, pub-themed web app (Baren, Kranen, Glaset, Notan, Pantpåsen, Kassan, Stam
 
 ## Receipt reading with AI (optional)
 
-Receipts in Pantpåsen can be read with AI through the [Antigravity CLI](https://antigravity.google) (`agy`) on the server. Liquid fills in a suggestion (supplier, date, amount, VAT, category, bought abroad) that the user checks before booking. Turn it on in the app's settings on the server, `SwecialServer/apps/liquid/settings/settings.json` locally or `D:\data\swecialserver\apps\liquid\settings\settings.json` in production (not in this repo):
+Receipts in Pantpåsen can be read with AI. Liquid fills in a suggestion (supplier, date, amount, VAT, category, bought abroad, or an invoice your own company issued) that the user checks before booking. It's turned on in the app's settings on the server, `SwecialServer/apps/liquid/settings/settings.json` locally or `D:\data\swecialserver\apps\liquid\settings\settings.json` in production (not in this repo). Settings are read when the server starts.
+
+**Production: Gemini with an API key (preferred).** Liquid calls the Gemini API itself, so it works whatever Windows account the server runs as, and the key doesn't expire on its own:
 
 ```json
-"receiptReaderCommand": "C:\\Users\\ander\\AppData\\Local\\agy\\bin\\agy.exe",
-"receiptReaderModel": "gemini-3.8-flash-low",
-"receiptReaderHome": "C:\\Users\\ander"
+"geminiApiKey": "<key from Google AI Studio or Cloud Console>",
+"geminiModel": "gemini-flash-latest"
 ```
 
-(Locally on the Mac: `"receiptReaderCommand": "/Users/aad01/.local/bin/agy"` and no home.)
+- Create the key in a Google Cloud project with billing enabled: on the free tier Google may use the content to improve its products, and receipts are personal data.
+- `geminiModel` is optional.
+- When a key is set it's used, even if `receiptReaderCommand` is set too.
 
-- `receiptReaderCommand`: full path to `agy` (the server's PATH may not include it). Without it the reader is off.
-- `receiptReaderModel`: optional, `agy models` lists them.
-- `receiptReaderHome`: optional, sets `HOME`, `USERPROFILE`, `APPDATA` and `LOCALAPPDATA` for `agy`. In production Swecial Server runs as a Windows service under LocalSystem, while `agy` is signed in as `ander` (`C:\Users\ander\.gemini`), so point it there. Not verified yet: if `agy` keeps its sign-in in the Windows Credential Manager, LocalSystem can't reach it, and the service would have to run as `ander` instead. A failed reading only shows "Kunde inte läsas" and is logged; nothing else is affected.
-- Settings are read when the server starts.
+**Locally: the Antigravity CLI.** On a machine where you're signed in to `agy`:
+
+```json
+"receiptReaderCommand": "/Users/aad01/.local/bin/agy",
+"receiptReaderModel": "gemini-3.8-flash-low"
+```
+
+- `agy` keeps its sign-in per Windows/macOS account, encrypted for that account. A Windows service running as LocalSystem can't use another account's sign-in (tested: "You are not logged into Antigravity"), which is why production uses the API key.
+- `receiptReaderHome` (optional) sets `HOME`, `USERPROFILE`, `APPDATA` and `LOCALAPPDATA` for `agy`.
+
+**When it stops working**, Baren and Pantpåsen say why (agy not signed in, API key refused, quota, timeout, other), until a reading succeeds again. The receipts stay in the bag; "Läs kvittot igen" retries one.
 
 ## Local development
 

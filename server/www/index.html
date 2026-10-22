@@ -1,6 +1,7 @@
 <% class=WebDashboard %>
 <% include=partials/top.part %>
 <div class="heading"><div><h1><%companyName%></h1><p class="sub"><%t.bar.subtitle%></p></div></div>
+<swe:condition source="readerProblem"><p class="ai failed reader-problem"><%readerProblemText%></p></swe:condition>
 <div class="bar-grid">
     <div>
         <section class="panel">
