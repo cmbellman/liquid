@@ -249,7 +249,7 @@ namespace com.swecial.web {
         /// <summary>Messages shown after a redirect (?ok=key), so a reload doesn't repost a form.</summary>
         string messageText(string key) {
             switch (key) {
-                case "saved": case "booked": case "reversed": case "sent": case "paid": case "unpaid": case "deleted": case "bagged": case "sorted": case "imported": case "registered":
+                case "saved": case "booked": case "reversed": case "sent": case "paid": case "unpaid": case "deleted": case "bagged": case "sorted": case "imported": case "registered": case "closed": case "reopened":
                     return Tr("message." + key);
                 default: return "";
             }
@@ -284,6 +284,7 @@ namespace com.swecial.web {
                 items.Add(navItem("/securities.html", "nav.securities", "barrel", 0));
                 items.Add(navItem("/customers.html", "nav.customers", "people", 0));
                 items.Add(navItem("/reports.html", "nav.reports", "chart", 0));
+                items.Add(navItem("/closing.html", "nav.closing", "lock", 0));
                 // Accounts and vouchers are there for those who want them, not needed day to day
                 items.Add(navItem("/vouchers.html", "nav.advanced", "book", 0, "/voucher.html", "/accounts.html", "/rules.html"));
                 items.Add(navItem("/company.html", "nav.settings", "gear", 0));

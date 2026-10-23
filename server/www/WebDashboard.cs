@@ -112,6 +112,11 @@ namespace com.swecial.web {
             if (missingReceipts > 0) items.Add(row(("href", BasePath + "/expenses.html"), ("link", Tn("bar.todo.receipts", missingReceipts)), ("rest", T("bar.todo.receiptsRest"))));
             // The funds' value on 1 January, for the standard income
             if (Securities.missingValueThisYear(company)) items.Add(row(("href", BasePath + "/securities.html#yearStart"), ("link", T("bar.todo.fundValue", DateTime.Today.Year)), ("rest", T("bar.todo.fundValueRest"))));
+            // Last year's closing, once the year is over
+            int lastYear = DateTime.Today.Year - 1;
+            if (!Closing.isClosed(companyId, lastYear) && Ledger.vouchers(companyId).Any(v => Db.str(v, "date").StartsWith(lastYear + "-"))) {
+                items.Add(row(("href", BasePath + "/closing.html?year=" + lastYear), ("link", T("bar.todo.closing", lastYear)), ("rest", T("bar.todo.closingRest"))));
+            }
             // Figures from laws and Skatteverket that haven't been checked for this year
             int rules = Rules.notChecked().Count;
             if (rules > 0) items.Add(row(("href", BasePath + "/rules.html"), ("link", Tn("bar.todo.rules", rules)), ("rest", T("bar.todo.rulesRest"))));

@@ -354,6 +354,21 @@ namespace com.swecial.code {
             }
         }
 
+        /// <summary>
+        /// The closing (cash method): an invoice unpaid at year end is booked as a receivable on the
+        /// year's last day (closingVoucherId), and its payment clears it.
+        /// </summary>
+        public static void bookAtYearEnd(SwecialObject invoice, string date, string userId) {
+            lock (Db.Sync) {
+                if (Db.str(invoice, "status") != Sent || bookedAsReceivable(invoice)) return;
+                var voucher = Ledger.book(Db.str(invoice, "companyId"), Ledger.Invoices, date,
+                    "Obetald kundfaktura " + Db.num(invoice, "number") + " vid årsskiftet, " + Db.str(invoice, "customerName"),
+                    saleRows(Bas.Receivables, totals(rows(invoice)), invoice), userId, "invoice", invoice.id);
+                invoice.set("closingVoucherId", voucher.id);
+                Db.commit(invoice);
+            }
+        }
+
         /// <summary>Booked as a receivable before payment: when sent (accrual method) or in a closing.</summary>
         public static bool bookedAsReceivable(SwecialObject invoice) {
             return Db.str(invoice, "voucherId").Length > 0 || Db.str(invoice, "closingVoucherId").Length > 0;

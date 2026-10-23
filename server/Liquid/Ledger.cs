@@ -17,7 +17,7 @@ namespace com.swecial.code {
     /// rows live inside the voucher as JSON, so a voucher is always written as a whole.
     ///
     /// Series: A manual vouchers, F customer invoices booked when sent (accrual method), I customer
-    /// payments, U expenses, B other bank events, V funds and other securities. Numbers run per series and calendar year (the
+    /// payments, U expenses, B other bank events, V funds and other securities, S the year-end closing. Numbers run per series and calendar year (the
     /// fiscal year is the calendar year for now).
     /// </summary>
     public static class Ledger {
@@ -27,6 +27,7 @@ namespace com.swecial.code {
         public const string Expenses = "U";
         public const string BankEvents = "B";
         public const string Securities = "V";
+        public const string YearEnd = "S";
 
         public static List<VoucherRow> rows(SwecialObject voucher) {
             string json = Db.str(voucher, "rowsJson");
@@ -51,6 +52,7 @@ namespace com.swecial.code {
         /// </summary>
         public static List<VoucherRow> validate(string companyId, string date, string text, List<VoucherRow> input) {
             Dates.parse(date);
+            Closing.requireOpen(companyId, date);
             if ((text ?? "").Trim().Length == 0) throw new LiquidException("Verifikationen behöver en text.", "VOUCHER DESCRIPTION REQUIRED.");
 
             var rows = input.Where(r => r.debit != 0 || r.credit != 0).ToList();

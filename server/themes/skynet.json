@@ -339,6 +339,9 @@
     "voucher.reverse": "Terminate",
     "voucher.voided": "Terminated",
     "vouchers.subtitle": "Immutable neural ledger nodes",
-    "vouchers.title": "Ledger nodes"
+    "vouchers.title": "Ledger nodes",
+    "nav.closing": "JUDGMENT DAY",
+    "closing.title": "Judgment Day",
+    "closing.subtitle": "Year-end termination protocol {0}"
   }
 }

@@ -8,7 +8,7 @@ namespace com.swecial.code {
     public class RuleValue {
         public string from;
         public string to = "";
-        /// <summary>A percentage, an amount in öre, or tenths of a percent (Rules.Permille).</summary>
+        /// <summary>A percentage, an amount in öre, tenths of a percent (Rules.Permille) or hundredths (Rules.Hundredths).</summary>
         public long value;
         /// <summary>The last day this value is known to hold (checked against the source); "" = assumed, not checked.</summary>
         public string checkedUntil = "";
@@ -16,7 +16,7 @@ namespace com.swecial.code {
 
     public class Rule {
         public string key;
-        /// <summary>"percent", "amount" (öre) or "permille".</summary>
+        /// <summary>"percent", "amount" (öre), "permille" or "hundredths".</summary>
         public string unit;
         /// <summary>Where the rule comes from: a law, a regulation or Skatteverket's page (a link when it starts with http).</summary>
         public string source;
@@ -39,11 +39,17 @@ namespace com.swecial.code {
         public const string YearlyVatLimit = "yearlyVatLimit";
         public const string MonthlyVatLimit = "monthlyVatLimit";
         public const string FundStandardIncome = "fundStandardIncome";
+        public const string CorporateTax = "corporateTax";
+        public const string TaxAllocationShare = "taxAllocationShare";
+        public const string GovernmentBondRate = "governmentBondRate";
+        public const string GovernmentBondRateFloor = "governmentBondRateFloor";
 
         public const string Percent = "percent";
         public const string Amount = "amount";
         /// <summary>Tenths of a percent (4 = 0,4 %), for rates below one percent.</summary>
         public const string Permille = "permille";
+        /// <summary>Hundredths of a percent (196 = 1,96 %), for interest rates.</summary>
+        public const string Hundredths = "hundredths";
 
         static RuleValue v(string from, string to, long value, string checkedUntil) {
             return new RuleValue { from = from, to = to, value = value, checkedUntil = checkedUntil };
@@ -84,6 +90,21 @@ namespace com.swecial.code {
             // Fund units owned at the start of the calendar year: a standard income of 0,4 % of their value (INK2S 4.6 b)
             new Rule { key = FundStandardIncome, unit = Permille, source = "https://www.skatteverket.se/download/18.569165a01749e7ae7892301/1603721577162/skatteregler-for-aktie-och-handelsbolag-skv294-utgava19.pdf",
                 values = new List<RuleValue> { v("2012-01-01", "", 4, "2026-12-31") } },
+            // Bolagsskatt: 20,6 % for fiscal years that began on 1 January 2021 or later
+            new Rule { key = CorporateTax, unit = Permille, source = "https://www.skatteverket.se/download/18.6491ed82199c4722daef0c/1761209691103/skatteregler-for-aktie-och-handelsbolag-skv294-utgava24.pdf",
+                values = new List<RuleValue> { v("2021-01-01", "", 206, "2026-12-31") } },
+            // Periodiseringsfond: an AB may allocate at most 25 % of the surplus before the allocation
+            new Rule { key = TaxAllocationShare, unit = Percent, source = "https://www.skatteverket.se/foretag/drivaforetag/foretagsformer/aktiebolag/periodiseringsfond.4.4887341d16e1e2b8ddf30e.html",
+                values = new List<RuleValue> { v("2021-01-01", "", 25, "2026-12-31") } },
+            // Statslåneräntan at the end of November the year before: the standard income on tax allocation reserves (INK2S 4.6 a), per tax year
+            new Rule { key = GovernmentBondRate, unit = Hundredths, source = "https://www.skatteverket.se/foretag/drivaforetag/foretagsformer/aktiebolag/periodiseringsfond.4.4887341d16e1e2b8ddf30e.html",
+                values = new List<RuleValue> {
+                    v("2025-01-01", "2025-12-31", 196, "2025-12-31"),
+                    v("2026-01-01", "2026-12-31", 255, "2026-12-31"),
+                } },
+            // The standard income is worked out on at least 0,5 %, however low the statslåneränta
+            new Rule { key = GovernmentBondRateFloor, unit = Hundredths, source = "https://www.skatteverket.se/foretag/drivaforetag/foretagsformer/aktiebolag/periodiseringsfond.4.4887341d16e1e2b8ddf30e.html",
+                values = new List<RuleValue> { v("2019-01-01", "", 50, "2026-12-31") } },
         };
 
         public static Rule find(string key) {

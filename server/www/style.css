@@ -184,6 +184,7 @@ button, .button {
     white-space: nowrap;
 }
 button:hover, .button:hover { filter: brightness(1.08); }
+button:disabled { opacity: 0.4; cursor: not-allowed; }
 button.secondary, .button.secondary { background: transparent; color: var(--cyan); box-shadow: none; }
 button.amber, .button.amber { background: var(--amber); border-color: var(--amber); color: var(--amber-ink); box-shadow: 0 0 18px rgba(223, 109, 43, 0.25); }
 button.danger { background: transparent; border-color: rgba(232, 93, 86, 0.6); color: var(--red); box-shadow: none; }

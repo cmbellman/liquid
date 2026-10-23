@@ -218,7 +218,7 @@ namespace com.swecial.code {
         }
 
         /// <summary>Debit minus credit per account for the vouchers dated in the period ("" = from the start).</summary>
-        static Dictionary<string, long> movements(string companyId, string from, string to) {
+        public static Dictionary<string, long> movements(string companyId, string from, string to) {
             var result = new Dictionary<string, long>();
             foreach (var voucher in Ledger.vouchers(companyId)) {
                 string date = Db.str(voucher, "date");

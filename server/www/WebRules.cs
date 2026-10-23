@@ -17,7 +17,7 @@ namespace com.swecial.web {
                 return row(("name", T("rules." + r.key)), ("source", h(r.source)), ("link", link), ("ok", Rules.isChecked(r.key, today)),
                     ("values", r.values.Select(x => row(
                         ("period", h(x.from) + " – " + (x.to.Length > 0 ? h(x.to) : T("rules.open"))),
-                        ("value", r.unit == Rules.Percent ? x.value + " %" : r.unit == Rules.Permille ? Money.formatDecimal(x.value / 10m) + " %" : Money.whole(x.value) + " kr"),
+                        ("value", r.unit == Rules.Percent ? x.value + " %" : r.unit == Rules.Permille ? Money.formatDecimal(x.value / 10m) + " %" : r.unit == Rules.Hundredths ? Money.formatDecimal(x.value / 100m) + " %" : Money.whole(x.value) + " kr"),
                         ("checked", x.checkedUntil.Length > 0 ? T("rules.checkedUntil", h(x.checkedUntil)) : T("rules.notChecked")),
                         ("class", (Rules.at(r.key, today) == x ? "current " : "") + (x.checkedUntil.Length == 0 ? "off" : "")))).ToList()));
             }));

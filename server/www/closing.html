@@ -1,0 +1,138 @@
+<% class=WebClosing %>
+<% include=partials/top.part %>
+<div class="heading"><div><h1><%t.closing.title%></h1><p class="sub"><%subtitle%></p></div></div>
+<section class="panel">
+    <form method="get" class="inline">
+        <label><%t.closing.year%><select name="year"><swe:iterator source="yearOptions"><option value="<%current.value%>" <%current.selected%>><%current.text%></option></swe:iterator></select></label>
+        <button type="submit" class="secondary"><%t.reports.show%></button>
+    </form>
+    <swe:condition source="closed"><p class="lead"><span class="status paid"><%t.closing.closedShort%></span> <%closedText%></p></swe:condition>
+    <swe:condition source="preview"><p class="lead"><%t.closing.preview%></p></swe:condition>
+    <p class="hint"><%t.closing.intro%></p>
+</section>
+
+<section class="panel" id="checks">
+    <h2>1. <%t.closing.checks.title%></h2>
+    <swe:condition source="checksAny">
+        <ul class="todo"><swe:iterator source="checks"><li><a href="<%current.href%>"><%current.text%></a></li></swe:iterator></ul>
+    <else>
+        <p class="empty"><%t.closing.checks.none%></p>
+    </else>
+    </swe:condition>
+</section>
+
+<section class="panel" id="receivables">
+    <h2>2. <%t.closing.receivables.title%> <span class="status <%receivablesState%>"><%receivablesStateText%></span></h2>
+    <p class="lead"><%receivablesLead%></p>
+    <swe:condition source="unpaidAny">
+        <table>
+            <thead><tr><th><%t.closing.col.invoice%></th><th><%t.col.customer%></th><th><%t.col.date%></th><th class="num"><%t.col.amount%></th></tr></thead>
+            <tbody><swe:iterator source="unpaid"><tr><td><a href="/liquid/invoice.html?id=<%current.id%>"><%current.number%></a></td><td><%current.customer%></td><td><%current.date%></td><td class="num"><%current.total%></td></tr></swe:iterator></tbody>
+        </table>
+        <form method="post" class="inline"><input type="hidden" name="year" value="<%year%>"><input type="hidden" name="action" value="book"><input type="hidden" name="step" value="receivables"><button type="submit" <%disabled%>><%t.closing.receivables.book%></button></form>
+    </swe:condition>
+</section>
+
+<section class="panel" id="vat">
+    <h2>3. <%t.closing.vat.title%> <span class="status <%vatState%>"><%vatStateText%></span></h2>
+    <p class="lead"><%t.closing.vat.lead%></p>
+    <swe:condition source="vatRowsAny">
+        <table>
+            <thead><tr><th><%t.reports.col.account%></th><th><%t.field.name%></th><th class="num"><%t.closing.col.toMove%></th></tr></thead>
+            <tbody><swe:iterator source="vatRows"><tr><td><%current.account%></td><td><%current.name%></td><td class="num"><%current.balance%></td></tr></swe:iterator></tbody>
+        </table>
+        <p><%vatNet%></p>
+        <form method="post" class="inline"><input type="hidden" name="year" value="<%year%>"><input type="hidden" name="action" value="book"><input type="hidden" name="step" value="vat"><button type="submit" <%disabled%>><%t.closing.vat.book%></button></form>
+    </swe:condition>
+</section>
+
+<section class="panel" id="preliminaryTax">
+    <h2>4. <%t.closing.taxAccount.title%> <span class="status <%preliminaryTaxState%>"><%preliminaryTaxStateText%></span></h2>
+    <p class="lead"><%t.closing.taxAccount.lead%></p>
+    <form method="post" class="inline"><input type="hidden" name="year" value="<%year%>"><input type="hidden" name="action" value="input"><input type="hidden" name="step" value="preliminaryTax">
+        <label><%t.closing.taxAccount.preliminary%><input type="text" name="amount" value="<%preliminaryTax%>" inputmode="decimal" class="num"></label>
+        <button type="submit" class="secondary" <%disabled%>><%t.common.save%></button><span class="hint"><%preliminaryTaxBooked%></span>
+    </form>
+    <swe:condition source="preliminaryTaxDone"><else><form method="post" class="inline"><input type="hidden" name="year" value="<%year%>"><input type="hidden" name="action" value="book"><input type="hidden" name="step" value="preliminaryTax"><button type="submit" <%disabled%>><%t.closing.book%></button></form></else></swe:condition>
+    <form method="post" class="inline" id="vatPaid"><input type="hidden" name="year" value="<%year%>"><input type="hidden" name="action" value="input"><input type="hidden" name="step" value="vatPaid">
+        <label><%t.closing.taxAccount.vat%><input type="text" name="amount" value="<%vatPaid%>" inputmode="decimal" class="num"></label>
+        <button type="submit" class="secondary" <%disabled%>><%t.common.save%></button><span class="hint"><%vatPaidBooked%></span>
+    </form>
+    <swe:condition source="vatPaidDone"><else><form method="post" class="inline"><input type="hidden" name="year" value="<%year%>"><input type="hidden" name="action" value="book"><input type="hidden" name="step" value="vatPaid"><button type="submit" <%disabled%>><%t.closing.book%></button></form></else></swe:condition>
+    <p class="hint"><%taxAccountBalance%> <%t.closing.taxAccount.hint%></p>
+</section>
+
+<section class="panel" id="allocation">
+    <h2>5. <%t.closing.reserves.title%> <span class="status <%allocationState%>"><%allocationStateText%></span></h2>
+    <p class="lead"><%t.closing.reserves.lead%></p>
+    <swe:condition source="reversalsAny">
+        <p><%t.closing.reserves.mustReverse%></p>
+        <table>
+            <thead><tr><th><%t.closing.col.allocatedYear%></th><th class="num"><%t.col.amount%></th></tr></thead>
+            <tbody><swe:iterator source="reversals"><tr><td><%current.year%></td><td class="num"><%current.amount%></td></tr></swe:iterator></tbody>
+        </table>
+        <form method="post" class="inline" id="reserveReversal"><input type="hidden" name="year" value="<%year%>"><input type="hidden" name="action" value="book"><input type="hidden" name="step" value="reserveReversal"><button type="submit" <%disabled%>><%t.closing.reserves.reverse%></button></form>
+    </swe:condition>
+    <swe:condition source="reservesAny">
+        <p class="hint"><%t.closing.reserves.held%> <swe:iterator source="reserves"><%current.year%>: <%current.amount%> kr. </swe:iterator></p>
+    </swe:condition>
+    <p><%allocationMax%> <%allocationSaves%></p>
+    <form method="post" class="inline"><input type="hidden" name="year" value="<%year%>"><input type="hidden" name="action" value="input"><input type="hidden" name="step" value="allocation">
+        <label><%t.closing.allocation.amount%><input type="text" name="amount" value="<%allocation%>" inputmode="decimal" class="num"></label>
+        <button type="submit" class="secondary" <%disabled%>><%t.common.save%></button><span class="hint"><%allocationBooked%></span>
+    </form>
+    <swe:condition source="allocationDone"><else><form method="post" class="inline"><input type="hidden" name="year" value="<%year%>"><input type="hidden" name="action" value="book"><input type="hidden" name="step" value="allocation"><button type="submit" <%disabled%>><%t.closing.book%></button></form></else></swe:condition>
+    <p class="hint"><%t.closing.reserves.hint%></p>
+</section>
+
+<section class="panel" id="tax">
+    <h2>6. <%t.closing.tax.title%> <span class="status <%taxState%>"><%taxStateText%></span></h2>
+    <p class="lead"><%t.closing.tax.lead%></p>
+    <swe:condition source="fundValueMissing"><p class="error"><a href="/liquid/securities.html#yearStart"><%fundValueText%></a></p></swe:condition>
+    <table>
+        <thead><tr><th></th><th><%t.closing.col.ink2s%></th><th class="num"><%t.col.amount%></th></tr></thead>
+        <tbody>
+            <swe:iterator source="taxLines"><tr class="<%current.class%>"><td><%current.label%></td><td><%current.ink%></td><td class="num"><%current.amount%></td></tr></swe:iterator>
+            <tr><td><%t.closing.tax.taxable%></td><td></td><td class="num"><%taxable%></td></tr>
+            <tr class="total"><td><%t.closing.tax.amount%> (<%taxRate%> %)</td><td></td><td class="num"><%taxAmount%></td></tr>
+        </tbody>
+    </table>
+    <swe:condition source="deficitOut"><p><%deficitOutText%></p></swe:condition>
+    <swe:condition source="capitalLossOut"><p><%capitalLossOutText%></p></swe:condition>
+    <swe:condition source="carriedEditable">
+    <form method="post" class="inline" id="carried"><input type="hidden" name="year" value="<%year%>"><input type="hidden" name="action" value="carried">
+        <p class="hint"><%carriedLead%></p>
+        <label><%t.closing.carried.deficit%><input type="text" name="deficit" value="<%deficitIn%>" inputmode="decimal" class="num"></label>
+        <label><%t.closing.carried.capitalLoss%><input type="text" name="capitalLoss" value="<%capitalLossIn%>" inputmode="decimal" class="num"></label>
+        <button type="submit" class="secondary"><%t.common.save%></button>
+    </form>
+    </swe:condition>
+    <swe:condition source="taxDone"><else><form method="post" class="inline"><input type="hidden" name="year" value="<%year%>"><input type="hidden" name="action" value="book"><input type="hidden" name="step" value="tax"><button type="submit" <%disabled%>><%t.closing.tax.book%></button></form></else></swe:condition>
+    <p class="hint"><%t.closing.tax.hint%></p>
+</section>
+
+<section class="panel" id="result">
+    <h2>7. <%t.closing.result.title%> <span class="status <%resultState%>"><%resultStateText%></span></h2>
+    <p class="lead"><%resultLead%> <strong><%resultAmount%> kr</strong></p>
+    <swe:condition source="resultDone"><else><form method="post" class="inline"><input type="hidden" name="year" value="<%year%>"><input type="hidden" name="action" value="book"><input type="hidden" name="step" value="result"><button type="submit" <%disabled%>><%t.closing.result.book%></button></form></else></swe:condition>
+    <p class="hint"><%t.closing.result.hint%></p>
+</section>
+
+<section class="panel" id="close">
+    <h2>8. <%t.closing.lock.title%></h2>
+    <swe:condition source="closed">
+        <p class="lead"><%closedText%></p>
+        <form method="post" class="inline" id="reopen"><input type="hidden" name="year" value="<%year%>"><input type="hidden" name="action" value="reopen"><button type="submit" class="secondary"><%t.closing.lock.reopen%></button></form>
+        <p class="hint"><%t.closing.lock.reopenHint%></p>
+    <else>
+        <p class="lead"><%t.closing.lock.lead%></p>
+        <form method="post" class="inline"><input type="hidden" name="year" value="<%year%>"><input type="hidden" name="action" value="close">
+            <label class="check"><input type="checkbox" name="bank" value="1"><%bankBalance%></label>
+            <button type="submit" <%disabled%>><%t.closing.lock.button%></button>
+        </form>
+        <swe:condition source="allDone"><else><p class="hint"><%t.closing.lock.notReady%></p></else></swe:condition>
+    </else>
+    </swe:condition>
+</section>
+<p class="hint"><%t.closing.next%></p>
+<% include=partials/bottom.part %>

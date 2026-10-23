@@ -72,6 +72,8 @@ namespace com.swecial.code {
             ("2091", "Balanserad vinst eller förlust"),
             ("2099", "Årets resultat"),
             ("2440", "Leverantörsskulder"),
+            ("2512", "Beräknad inkomstskatt"),
+            ("2518", "Betald F-skatt"),
             ("2611", "Utgående moms på försäljning inom Sverige, 25 %"),
             ("2621", "Utgående moms på försäljning inom Sverige, 12 %"),
             ("2631", "Utgående moms på försäljning inom Sverige, 6 %"),
@@ -116,15 +118,22 @@ namespace com.swecial.code {
             ("6570", "Bankkostnader"),
             ("6970", "Tidningar, tidskrifter och facklitteratur"),
             ("6981", "Föreningsavgifter, avdragsgilla"),
+            ("6982", "Föreningsavgifter, ej avdragsgilla"),
             ("6990", "Övriga externa kostnader, avdragsgilla"),
+            ("6992", "Övriga externa kostnader, ej avdragsgilla"),
             ("7610", "Utbildning"),
             ("7010", "Löner till kollektivanställda"),
             ("7210", "Löner till tjänstemän"),
             ("7510", "Arbetsgivaravgifter"),
             ("8220", "Resultat vid försäljning av värdepapper"),
             ("8310", "Ränteintäkter från omsättningstillgångar"),
+            ("8314", "Skattefria ränteintäkter"),
             ("8410", "Räntekostnader för långfristiga skulder"),
+            ("8423", "Räntekostnader för skatter och avgifter, ej avdragsgilla"),
+            ("8811", "Avsättning till periodiseringsfond"),
+            ("8819", "Återföring från periodiseringsfond"),
             ("8910", "Skatt som belastar årets resultat"),
+            ("8999", "Årets resultat"),
         };
 
         /// <summary>
@@ -135,6 +144,17 @@ namespace com.swecial.code {
             var existing = Db.forCompany("account", companyId).Select(a => Db.str(a, "number")).ToHashSet();
             foreach (var (number, name) in Starter) {
                 if (existing.Contains(number)) continue;
+                var account = Db.create("account", companyId);
+                account.set("number", number);
+                account.set("name", name);
+                Db.commit(account);
+            }
+        }
+
+        /// <summary>Adds an account the books need (e.g. a tax allocation reserve's) when the company doesn't have it.</summary>
+        public static void ensure(string companyId, string number, string name) {
+            lock (Db.Sync) {
+                if (find(companyId, number) != null) return;
                 var account = Db.create("account", companyId);
                 account.set("number", number);
                 account.set("name", name);

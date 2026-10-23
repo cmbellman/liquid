@@ -60,7 +60,8 @@ namespace com.swecial.web {
             set("sumDebit", Money.formatOrBlank(balances.Sum(b => b.debit)));
             set("sumCredit", Money.formatOrBlank(balances.Sum(b => b.credit)));
             set("sumClosing", Money.format(balances.Sum(b => b.closing)));
-            set("result", Money.format(-balances.Where(b => !Bas.isBalanceAccount(b.account)).Sum(b => b.closing)));
+            // The closing's transfer of the result (8990–8999) isn't part of it
+            set("result", Money.format(-balances.Where(b => !Bas.isBalanceAccount(b.account) && !b.account.StartsWith("899")).Sum(b => b.closing)));
         }
 
         void setLedger() {
