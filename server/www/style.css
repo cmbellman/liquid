@@ -210,6 +210,13 @@ td.off { color: var(--red); }
 td.loss { color: var(--red); }
 tr.current td { color: var(--text); font-weight: 700; }
 tr.off td:last-child { color: var(--amber); }
+table.statement tr.part td { color: var(--text); font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; padding-top: 22px; }
+table.statement tr.heading td { color: var(--text); font-weight: 700; padding-top: 14px; }
+table.statement tr.line td:first-child { padding-left: 20px; }
+table.statement tr.sum td { color: var(--text); font-weight: 700; }
+table.statement tr.total td { color: var(--text); font-weight: 800; border-top: 1px solid var(--line-2); }
+table.statement tr.account td { color: var(--faint); font-size: 13px; padding-top: 4px; padding-bottom: 4px; }
+table.statement tr.account td:first-child { padding-left: 36px; }
 
 .status {
     display: inline-block;

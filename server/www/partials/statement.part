@@ -1,0 +1,6 @@
+<table class="statement">
+    <thead><tr><th></th><th class="num"><%periodLabel%></th><th class="num"><%previousLabel%></th></tr></thead>
+    <tbody>
+        <swe:iterator source="statement"><tr class="<%current.class%>"><td><%current.label%></td><td class="num"><%current.amount%></td><td class="num"><%current.previous%></td></tr><swe:iterator source="current.accounts"><tr class="account"><td><a href="<%current.href%>"><%current.account%></a> <%current.name%></td><td class="num"><%current.accountAmount%></td><td class="num"><%current.accountPrevious%></td></tr></swe:iterator></swe:iterator>
+    </tbody>
+</table>

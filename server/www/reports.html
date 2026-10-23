@@ -4,8 +4,9 @@
 <section class="panel">
     <form method="get" class="grid">
         <label><%t.reports.report%><select name="report"><swe:iterator source="reportOptions"><option value="<%current.value%>" <%current.selected%>><%current.text%></option></swe:iterator></select></label>
-        <label><%t.reports.from%><input type="date" name="from" value="<%from%>" required></label>
-        <label><%t.reports.to%><input type="date" name="to" value="<%to%>" required></label>
+        <swe:condition source="isSheet"><else><label><%t.reports.from%><input type="date" name="from" value="<%from%>" required></label></else></swe:condition>
+        <label><swe:condition source="isSheet"><%t.reports.date%><else><%t.reports.to%></else></swe:condition><input type="date" name="to" value="<%to%>" required></label>
+        <swe:condition source="isStatement"><label class="check"><input type="checkbox" name="accounts" value="1" <%accountsChecked%>><%t.reports.showAccounts%></label></swe:condition>
         <swe:condition source="isLedger"><label><%t.reports.account%><select name="account"><swe:iterator source="accountOptions"><option value="<%current.value%>" <%current.selected%>><%current.text%></option></swe:iterator></select></label></swe:condition>
         <div class="actions"><button type="submit"><%t.reports.show%></button></div>
     </form>
@@ -42,6 +43,21 @@
         <p class="empty"><%t.reports.chooseAccount%></p>
         </else>
         </swe:condition>
+    </section>
+    </if>
+    <if value="income">
+    <section class="panel">
+        <h2><%t.reports.income%> <%from%> – <%to%></h2>
+        <% include=partials/statement.part %>
+        <p class="hint"><%t.reports.incomeHint%></p>
+    </section>
+    </if>
+    <if value="sheet">
+    <section class="panel">
+        <h2><%t.reports.sheet%> <%to%></h2>
+        <swe:condition source="unbalanced"><p class="error"><%t.reports.sheetUnbalanced%> <%difference%></p></swe:condition>
+        <% include=partials/statement.part %>
+        <p class="hint"><%t.reports.sheetHint%></p>
     </section>
     </if>
     <if value="vat">

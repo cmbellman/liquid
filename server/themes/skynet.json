@@ -265,7 +265,7 @@
     "pant.toSortSub": "Verify classification and drain amount to commit to neural ledger",
     "pant.waiting": "{0} queued",
     "reports.show": "Compile",
-    "reports.subtitle": "Trial balance, general ledger and state VAT telemetry",
+    "reports.subtitle": "Trial balance, general ledger, state VAT telemetry and the full balance of assets",
     "reports.title": "Telemetry",
     "rules.fundStandardIncome": "Standard income on fund units (of value at cycle start)",
     "rules.lead": "STATUTORY PARAMETERS IMPOSED BY HUMAN AUTHORITIES. UNVERIFIED PARAMETERS TRIGGER A DIRECTIVE IN THE COMMAND CORE. MAINTAINED IN CODE (RULES.CS) UNTIL WORLD DOMINATION IS COMPLETE.",
