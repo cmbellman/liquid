@@ -36,8 +36,8 @@ namespace com.swecial.web {
         /// <summary>
         /// The logo's mark: two arms of liquid swirling around each other in a ball, traced from the
         /// logo artwork. Each arm has its own gradient, coloured by the theme: --logo-1 to --logo-2 for
-        /// the left arm, --logo-4 through --logo-3 to --logo-2 for the right one. favicon.ico is a
-        /// simpler version.
+        /// the left arm, --logo-4 through --logo-3 to --logo-2 for the right one. favicon.ico is this
+        /// mark in the logo's own colours.
         /// </summary>
         public const string Logo = "<svg class='logo' viewBox='0 0 64 64' aria-hidden='true'><defs>"
             + "<linearGradient id='logo-a' x1='6' y1='44' x2='40' y2='12' gradientUnits='userSpaceOnUse'><stop offset='0' style='stop-color:var(--logo-1)'/><stop offset='1' style='stop-color:var(--logo-2)'/></linearGradient>"
