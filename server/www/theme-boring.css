@@ -71,11 +71,8 @@ body.theme-boring {
     border-right: 1px solid var(--line);
 }
 
-.theme-boring .brand {
-    font-size: 27px;
-    color: #ffffff;
-    text-shadow: none;
-}
+.theme-boring .brand { color: #ffffff; }
+.theme-boring .brand .word { width: 72px; height: 23px; filter: none; }
 .theme-boring .brand .logo { width: 34px; height: 34px; filter: none; }
 
 .theme-boring .side nav a {

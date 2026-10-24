@@ -8,7 +8,6 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Exo+2:ital,wght@1,800&text=liquid&display=swap" rel="stylesheet">
     <link rel="icon" href="/liquid/favicon.ico" sizes="any">
     <link rel="icon" href="/liquid/favicon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/liquid/apple-touch-icon.png">
@@ -19,7 +18,7 @@
 <body class="theme-<%theme%>">
     <div class="app">
         <aside class="side">
-            <a class="brand" href="/liquid/"><%logo%><span><%brand%></span></a>
+            <a class="brand" href="/liquid/"><%logo%><span class="word"><%brand%></span></a>
             <swe:condition source="clock"><div class="clock" aria-hidden="true"><span id="clock"></span><script>(function(){function t(){var d=new Date(),e=document.getElementById('clock');if(e)e.textContent=('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);}t();setInterval(t,10000);})();</script></div></swe:condition>
             <swe:condition source="navItemsAny">
             <nav>

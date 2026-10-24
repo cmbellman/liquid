@@ -78,8 +78,8 @@ body.theme-skynet::after {
 .theme-skynet .brand {
     flex-wrap: wrap;
     color: var(--cyan);
-    text-shadow: 0 0 14px rgba(255, 59, 31, 0.9), 0 0 3px #ff9e80;
 }
+.theme-skynet .brand .word { filter: drop-shadow(0 0 7px rgba(255, 59, 31, 0.9)); }
 .theme-skynet .brand .logo { filter: drop-shadow(0 0 7px rgba(255, 59, 31, 0.7)); }
 .theme-skynet .brand::after {
     flex-basis: 100%;

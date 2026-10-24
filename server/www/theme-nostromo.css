@@ -61,10 +61,8 @@ body.theme-nostromo::after {
 
 /* Sidebar: a status column */
 .theme-nostromo .side { background: rgba(3, 7, 3, 0.9); border-right: 1px solid var(--line); }
-.theme-nostromo .brand {
-    color: var(--cyan);
-    text-shadow: 0 0 10px rgba(93, 255, 122, 0.8);
-}
+.theme-nostromo .brand { color: var(--cyan); }
+.theme-nostromo .brand .word { filter: drop-shadow(0 0 6px rgba(93, 255, 122, 0.8)); }
 .theme-nostromo .brand .logo { filter: drop-shadow(0 0 6px rgba(93, 255, 122, 0.6)); }
 .theme-nostromo .clock { display: block; padding: 0 10px; font-size: 40px; line-height: 1; color: var(--cyan); text-shadow: 0 0 14px rgba(93, 255, 122, 0.7); }
 .theme-nostromo .side nav a, .theme-nostromo .side .who a { border-radius: 0; font-weight: 400; font-size: 13px; padding: 8px 10px; border: 1px solid transparent; }
