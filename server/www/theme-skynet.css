@@ -22,6 +22,10 @@ body.theme-skynet {
     --beer-top: #ff8826;
     --beer-bottom: #c41e0e;
     --radius: 0px;
+    --logo-1: #a3140a;
+    --logo-2: #ff3b1f;
+    --logo-3: #ff7a4d;
+    --logo-4: #ffd0bd;
     --glow: inset 0 0 28px rgba(255, 59, 31, 0.05), 0 0 14px rgba(255, 45, 20, 0.08);
     background:
         radial-gradient(1100px 680px at 55% 35%, rgba(255, 59, 31, 0.09), transparent 70%),
@@ -72,16 +76,13 @@ body.theme-skynet::after {
     box-shadow: 4px 0 24px rgba(0, 0, 0, 0.6);
 }
 .theme-skynet .brand {
-    font-family: "Orbitron", "Share Tech Mono", monospace;
-    font-weight: 900;
-    font-style: italic;
-    font-size: 24px;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
+    flex-wrap: wrap;
     color: var(--cyan);
     text-shadow: 0 0 14px rgba(255, 59, 31, 0.9), 0 0 3px #ff9e80;
 }
+.theme-skynet .brand .logo { filter: drop-shadow(0 0 7px rgba(255, 59, 31, 0.7)); }
 .theme-skynet .brand::after {
+    flex-basis: 100%;
     content: "FINANCIAL INTELLIGENCE SYSTEM";
     display: block;
     margin-top: 5px;

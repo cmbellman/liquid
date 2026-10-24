@@ -4,7 +4,7 @@
   "language": "en",
   "extends": "nostromo",
   "order": 4,
-  "brand": "LIQUID //",
+  "brand": "liquid",
   "gauge": "tank",
   "clock": true,
   "fonts": "https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&family=Share+Tech+Mono&display=swap",

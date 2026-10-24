@@ -3,7 +3,7 @@
   "description": "Klassiskt och avskalat ekonomisystem. Tydligt, stilrent och utan krusiduller. Svenska.",
   "language": "sv",
   "order": 1,
-  "brand": "Liquid",
+  "brand": "liquid",
   "gauge": "tank",
   "clock": false,
   "fonts": "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap",

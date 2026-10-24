@@ -22,6 +22,10 @@ body.theme-nostromo {
     --beer-top: #d6ff5a;
     --beer-bottom: #5dbf2f;
     --radius: 3px;
+    --logo-1: #1f8a34;
+    --logo-2: #3fd85a;
+    --logo-3: #8dff9e;
+    --logo-4: #e6ffe9;
     --glow: none;
     background:
         radial-gradient(1100px 700px at 50% 40%, rgba(93, 255, 122, 0.06), transparent 70%),
@@ -58,13 +62,10 @@ body.theme-nostromo::after {
 /* Sidebar: a status column */
 .theme-nostromo .side { background: rgba(3, 7, 3, 0.9); border-right: 1px solid var(--line); }
 .theme-nostromo .brand {
-    font-family: "Share Tech Mono", monospace;
-    font-size: 26px;
-    letter-spacing: 0.3em;
-    text-transform: uppercase;
     color: var(--cyan);
     text-shadow: 0 0 10px rgba(93, 255, 122, 0.8);
 }
+.theme-nostromo .brand .logo { filter: drop-shadow(0 0 6px rgba(93, 255, 122, 0.6)); }
 .theme-nostromo .clock { display: block; padding: 0 10px; font-size: 40px; line-height: 1; color: var(--cyan); text-shadow: 0 0 14px rgba(93, 255, 122, 0.7); }
 .theme-nostromo .side nav a, .theme-nostromo .side .who a { border-radius: 0; font-weight: 400; font-size: 13px; padding: 8px 10px; border: 1px solid transparent; }
 .theme-nostromo .side nav a:hover, .theme-nostromo .side .who a:hover { background: transparent; border-color: var(--line); }

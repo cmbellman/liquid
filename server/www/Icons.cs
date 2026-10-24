@@ -33,6 +33,19 @@ namespace com.swecial.web {
             }
         }
 
+        /// <summary>
+        /// The logo's mark: a ball of two swirling halves. Its colours come from the theme
+        /// (--logo-1 … --logo-4, from the bottom left to the top right), so each theme can recolour it.
+        /// </summary>
+        public const string Logo = "<svg class='logo' viewBox='0 0 64 64' aria-hidden='true'><defs>"
+            + "<linearGradient id='logo-fill' x1='10' y1='56' x2='54' y2='8' gradientUnits='userSpaceOnUse'>"
+            + "<stop offset='0' style='stop-color:var(--logo-1)'/><stop offset='0.45' style='stop-color:var(--logo-2)'/>"
+            + "<stop offset='0.75' style='stop-color:var(--logo-3)'/><stop offset='1' style='stop-color:var(--logo-4)'/></linearGradient>"
+            + "<mask id='logo-cut' maskUnits='userSpaceOnUse' x='0' y='0' width='64' height='64'><rect width='64' height='64' fill='#fff'/>"
+            + "<g transform='rotate(-35 32 32)'><path d='M32 3.5A14.25 14.25 0 0 0 32 32A14.25 14.25 0 0 1 32 60.5' fill='none' stroke='#000' stroke-width='3.4'/>"
+            + "<circle cx='39' cy='45.5' r='7.6' fill='#000'/><circle cx='25' cy='18.5' r='7.6' fill='#000'/></g></mask></defs>"
+            + "<circle cx='32' cy='32' r='27' fill='url(#logo-fill)' mask='url(#logo-cut)'/></svg>";
+
         const string Open = "<svg class='icon' viewBox='0 0 24 24' aria-hidden='true' fill='none' stroke='currentColor' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'>";
         const string Close = "</svg>";
 

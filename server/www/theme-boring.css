@@ -21,6 +21,11 @@ body.theme-boring {
     --red: #ef4444;
     --green: #10b981;
     --radius: 10px;
+    /* The logo in its own colours: violet, magenta and yellow */
+    --logo-1: #5b2bea;
+    --logo-2: #d42f9e;
+    --logo-3: #ff7a3d;
+    --logo-4: #ffd23f;
     --glow: 0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 1px 2px -1px rgba(0, 0, 0, 0.3);
 
     background:
@@ -67,13 +72,11 @@ body.theme-boring {
 }
 
 .theme-boring .brand {
-    font-family: "Inter", system-ui, -apple-system, sans-serif;
-    font-weight: 800;
-    font-size: 20px;
-    letter-spacing: -0.03em;
+    font-size: 27px;
     color: #ffffff;
     text-shadow: none;
 }
+.theme-boring .brand .logo { width: 30px; height: 30px; filter: none; }
 
 .theme-boring .side nav a {
     font-weight: 500;

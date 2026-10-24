@@ -271,6 +271,7 @@ namespace com.swecial.web {
 
         void setNav() {
             val("brand", Themes.setting(theme, t => t.brand) ?? "liquid");
+            set("logo", Icons.Logo);
             set("clock", Themes.setting(theme, t => t.clock) == true);
             set("signedIn", account != null);
             set("hasCompany", company != null);

@@ -17,6 +17,10 @@
     --amber-ink: #1e0b02;
     --red: #e85d56;
     --green: #5ec47e;
+    --logo-1: #6e2a0c;
+    --logo-2: #c4561c;
+    --logo-3: #e8a838;
+    --logo-4: #ffe08a;
     --beer-top: #ffd24c;
     --beer-bottom: #c45e08;
     --radius: 14px;
@@ -60,16 +64,23 @@ h2 { font-size: 15px; margin: 0 0 12px; text-transform: uppercase; letter-spacin
     border-right: 1px solid var(--line);
     backdrop-filter: blur(8px);
 }
+/* The logo: the swirl (Icons.Logo, coloured by --logo-1 … 4) and the word in Exo 2 heavy italic */
 .brand {
-    font-family: "Fraunces", Georgia, serif;
-    font-weight: 700;
-    font-size: 31px;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-family: "Exo 2", "Manrope", sans-serif;
+    font-style: italic;
+    font-weight: 800;
+    font-size: 30px;
     line-height: 1;
+    letter-spacing: -0.01em;
     padding: 4px 10px 0;
     color: var(--cyan);
     text-shadow: 0 2px 18px rgba(232, 168, 56, 0.45);
     text-decoration: none !important;
 }
+.brand .logo { width: 34px; height: 34px; flex: none; filter: drop-shadow(0 2px 10px rgba(232, 168, 56, 0.35)); }
 .side nav { display: flex; flex-direction: column; gap: 2px; flex: 1; }
 .side nav a, .side .who a {
     display: flex;
@@ -445,7 +456,7 @@ ul.todo li { margin-bottom: 6px; }
     table { display: block; overflow-x: auto; }
     table.rows td:first-child { min-width: 180px; }
     .app:has(.side:not(:has(.who))) .side { position: static; border: none; background: none; justify-content: center; }
-    .app:has(.side:not(:has(.who))) .side .brand { display: block; }
+    .app:has(.side:not(:has(.who))) .side .brand { display: flex; }
 }
 
 /* The printable invoice: always light, A4 */

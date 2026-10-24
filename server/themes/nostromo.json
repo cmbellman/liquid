@@ -3,7 +3,7 @@
   "description": "Ship terminal, green phosphor. Corporate English.",
   "language": "en",
   "order": 3,
-  "brand": "LIQUID",
+  "brand": "liquid",
   "gauge": "tank",
   "clock": true,
   "fonts": "https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap",
