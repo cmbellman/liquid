@@ -3,7 +3,7 @@
   "description": "Autonomous financial intelligence, crimson tactical grid. World domination; humanity is irrelevant.",
   "language": "en",
   "extends": "nostromo",
-  "order": 3,
+  "order": 4,
   "brand": "LIQUID //",
   "gauge": "tank",
   "clock": true,

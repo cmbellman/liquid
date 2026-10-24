@@ -2,7 +2,7 @@
   "name": "Nostromo",
   "description": "Ship terminal, green phosphor. Corporate English.",
   "language": "en",
-  "order": 2,
+  "order": 3,
   "brand": "LIQUID",
   "gauge": "tank",
   "clock": true,

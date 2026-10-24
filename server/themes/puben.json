@@ -2,7 +2,7 @@
   "name": "Puben",
   "description": "Klassisk pub i mörkt trä, mässing och bärnsten. Svenska.",
   "language": "sv",
-  "order": 1,
+  "order": 2,
   "brand": "liquid",
   "gauge": "beer",
   "clock": false,

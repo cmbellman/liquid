@@ -1,1 +1,25 @@
-/* Theme: Puben. The default look; its tokens are the defaults at the top of style.css. */
+/* ============================================================
+   Theme: Puben. Classic dark pub in mahogany, brass and amber.
+   ============================================================ */
+body.theme-puben {
+    --bg: #130d08;
+    --bg-2: #1b120b;
+    --panel: #21160e;
+    --panel-2: #2a1c12;
+    --line: #3c2919;
+    --line-2: #543a24;
+    --text: #f5ebd9;
+    --muted: #bfa88a;
+    --faint: #8a7356;
+    --cyan: #e8a838;
+    --cyan-2: #c9881e;
+    --cyan-ink: #1c1104;
+    --amber: #df6d2b;
+    --amber-ink: #1e0b02;
+    --red: #e85d56;
+    --green: #5ec47e;
+    --beer-top: #ffd24c;
+    --beer-bottom: #c45e08;
+    --radius: 14px;
+    --glow: 0 0 0 1px rgba(232, 168, 56, 0.1), 0 10px 30px rgba(0, 0, 0, 0.45);
+}
