@@ -76,7 +76,7 @@ body.theme-boring {
     color: #ffffff;
     text-shadow: none;
 }
-.theme-boring .brand .logo { width: 30px; height: 30px; filter: none; }
+.theme-boring .brand .logo { width: 36px; height: 36px; filter: none; }
 
 .theme-boring .side nav a {
     font-weight: 500;
