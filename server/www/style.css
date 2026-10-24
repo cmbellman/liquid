@@ -187,9 +187,13 @@ button:hover, .button:hover { filter: brightness(1.08); }
 button:disabled { opacity: 0.4; cursor: not-allowed; }
 button.secondary, .button.secondary { background: transparent; color: var(--cyan); box-shadow: none; }
 button.amber, .button.amber { background: var(--amber); border-color: var(--amber); color: var(--amber-ink); box-shadow: 0 0 18px rgba(223, 109, 43, 0.25); }
-button.danger { background: transparent; border-color: rgba(232, 93, 86, 0.6); color: var(--red); box-shadow: none; }
+button.danger, .button.danger { background: transparent; border-color: rgba(232, 93, 86, 0.6); color: var(--red); box-shadow: none; }
 button.link { background: none; border: none; padding: 0; font-weight: 600; color: var(--cyan); box-shadow: none; }
 button.link.danger { color: var(--red); }
+.admin-box { margin-top: 32px; padding-top: 24px; border-top: 1px dashed rgba(232, 93, 86, 0.4); }
+.admin-box h3 { color: var(--red); font-size: 15px; margin-bottom: 6px; }
+.admin-box p.hint { margin-bottom: 16px; }
+.admin-box form { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; }
 .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; grid-column: 1 / -1; margin-top: 8px; }
 .actions form, form.row-action { margin: 0; }
 .links { margin-top: 16px; }

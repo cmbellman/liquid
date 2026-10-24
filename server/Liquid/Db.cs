@@ -68,6 +68,14 @@ namespace com.swecial.code {
             o.saveNow();
         }
 
+        /// <summary>Deletes an object permanently from memory and disk.</summary>
+        public static void delete(SwecialObject o) {
+            if (o == null) return;
+            lock (Sync) {
+                o.delete();
+            }
+        }
+
         public static string str(SwecialObject o, string key) {
             return o?.get<string>(key) ?? "";
         }
@@ -94,6 +102,19 @@ namespace com.swecial.code {
                 counter.set("value", next);
                 commit(counter);
                 return next;
+            }
+        }
+
+        /// <summary>Sets the sequence counter value directly (used when renumbering a series).</summary>
+        public static void setCounter(string companyId, string key, long value) {
+            lock (Sync) {
+                var counter = forCompany("counter", companyId).FirstOrDefault(c => str(c, "key") == key);
+                if (counter == null) {
+                    counter = create("counter", companyId);
+                    counter.set("key", key);
+                }
+                counter.set("value", value);
+                commit(counter);
             }
         }
     }

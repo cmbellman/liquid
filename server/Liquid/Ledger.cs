@@ -122,5 +122,194 @@ namespace com.swecial.code {
                 return reversal;
             }
         }
+
+        /// <summary>
+        /// Year of a voucher: from the 'year' field or fallback to the date string prefix.
+        /// </summary>
+        public static int voucherYear(SwecialObject voucher) {
+            long y = Db.num(voucher, "year");
+            if (y > 0) return (int)y;
+            string d = Db.str(voucher, "date");
+            if (d.Length >= 4 && int.TryParse(d.Substring(0, 4), out int yearFromDate)) return yearFromDate;
+            return 0;
+        }
+
+        /// <summary>
+        /// Admin only (for test data): deletes a voucher (and optionally its linked reversal/original),
+        /// cleans up source references, and renumbers the remaining vouchers in the series and year
+        /// so the series remains gap-free (1, 2, 3...).
+        /// </summary>
+        public static void deleteAndRenumber(SwecialObject voucher, string companyId, bool deleteLinked = false) {
+            if (voucher == null) return;
+            lock (Db.Sync) {
+                string date = Db.str(voucher, "date");
+                Closing.requireOpen(companyId, date);
+
+                var toDelete = new List<SwecialObject> { voucher };
+                if (deleteLinked) {
+                    string revId = Db.str(voucher, "reversedById");
+                    if (revId.Length > 0) {
+                        var linked = Db.getOwned("voucher", revId, companyId);
+                        if (linked != null) {
+                            Closing.requireOpen(companyId, Db.str(linked, "date"));
+                            toDelete.Add(linked);
+                        }
+                    }
+                    string origId = Db.str(voucher, "reversesId");
+                    if (origId.Length > 0) {
+                        var linked = Db.getOwned("voucher", origId, companyId);
+                        if (linked != null && !toDelete.Any(v => v.id == linked.id)) {
+                            Closing.requireOpen(companyId, Db.str(linked, "date"));
+                            toDelete.Add(linked);
+                        }
+                    }
+                }
+
+                var affectedSeries = new HashSet<(string series, int year)>();
+
+                foreach (var v in toDelete) {
+                    string series = Db.str(v, "series");
+                    int year = voucherYear(v);
+                    if (series.Length > 0 && year > 0) {
+                        affectedSeries.Add((series, year));
+                    }
+
+                    // Clear links from any other voucher pointing to this one
+                    foreach (var other in Db.forCompany("voucher", companyId)) {
+                        if (toDelete.Any(d => d.id == other.id)) continue;
+                        bool changed = false;
+                        if (Db.str(other, "reversedById") == v.id) {
+                            other.set("reversedById", "");
+                            changed = true;
+                        }
+                        if (Db.str(other, "reversesId") == v.id) {
+                            other.set("reversesId", "");
+                            changed = true;
+                        }
+                        if (changed) Db.commit(other);
+                    }
+
+                    // Clean up source references
+                    cleanSourceReferences(v, companyId);
+
+                    // Delete voucher object
+                    Db.delete(v);
+                }
+
+                // Renumber affected series
+                foreach (var (series, year) in affectedSeries) {
+                    renumberSeries(companyId, series, year);
+                }
+            }
+        }
+
+        static void cleanSourceReferences(SwecialObject v, string companyId) {
+            string vId = v.id;
+            string sourceId = Db.str(v, "sourceId");
+
+            // Expenses: if an expense was removed or points to this voucher, delete it if removed or clear voucherId
+            foreach (var expense in Db.forCompany("expense", companyId)) {
+                if (expense.id == sourceId || Db.str(expense, "voucherId") == vId) {
+                    if (Db.str(expense, "status") == "removed") {
+                        Db.delete(expense);
+                    } else {
+                        expense.set("voucherId", "");
+                        Db.commit(expense);
+                    }
+                }
+            }
+
+            // Invoices: clear any matching voucher pointers
+            foreach (var invoice in Db.forCompany("invoice", companyId)) {
+                bool changed = false;
+                if (Db.str(invoice, "voucherId") == vId) { invoice.set("voucherId", ""); changed = true; }
+                if (Db.str(invoice, "paymentVoucherId") == vId) { invoice.set("paymentVoucherId", ""); changed = true; }
+                if (Db.str(invoice, "closingVoucherId") == vId) { invoice.set("closingVoucherId", ""); changed = true; }
+                if (changed) Db.commit(invoice);
+            }
+
+            // Bank events: clear voucherId or delete if matching sourceId
+            foreach (var be in Db.forCompany("bank_event", companyId)) {
+                if (be.id == sourceId || Db.str(be, "voucherId") == vId) {
+                    be.set("voucherId", "");
+                    Db.commit(be);
+                }
+            }
+
+            // Security events: clear voucherId
+            foreach (var se in Db.forCompany("security_event", companyId)) {
+                if (se.id == sourceId || Db.str(se, "voucherId") == vId) {
+                    se.set("voucherId", "");
+                    Db.commit(se);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Renumbers all remaining vouchers in the given series and year sequentially (1, 2, 3...)
+        /// ordered by date, existing number, and creation time, and updates the sequence counter.
+        /// </summary>
+        public static void renumberSeries(string companyId, string series, int year) {
+            lock (Db.Sync) {
+                var list = Db.forCompany("voucher", companyId)
+                    .Where(v => Db.str(v, "series") == series && voucherYear(v) == year)
+                    .OrderBy(v => Db.str(v, "date"))
+                    .ThenBy(v => Db.num(v, "number"))
+                    .ThenBy(v => v.createdAt)
+                    .ToList();
+
+                for (int i = 0; i < list.Count; i++) {
+                    long newNumber = i + 1;
+                    var v = list[i];
+                    bool changed = false;
+                    if (Db.num(v, "number") != newNumber) {
+                        v.set("number", newNumber);
+                        changed = true;
+                    }
+                    if (Db.num(v, "year") != year) {
+                        v.set("year", year);
+                        changed = true;
+                    }
+                    // Update text if it references an original that might have changed number
+                    string origId = Db.str(v, "reversesId");
+                    if (origId.Length > 0) {
+                        var orig = Db.getOwned("voucher", origId, companyId);
+                        if (orig != null) {
+                            string text = Db.str(v, "text");
+                            if (text.StartsWith("Rättelse av ")) {
+                                int colon = text.IndexOf(": ");
+                                if (colon >= 0) {
+                                    string newText = "Rättelse av " + label(orig) + ": " + text.Substring(colon + 2);
+                                    if (text != newText) {
+                                        v.set("text", newText);
+                                        changed = true;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if (changed) Db.commit(v);
+                }
+
+                Db.setCounter(companyId, "voucher-" + series + "-" + year, list.Count);
+            }
+        }
+
+        /// <summary>
+        /// Renumbers every series across all years for the company.
+        /// </summary>
+        public static void renumberAllSeries(string companyId) {
+            lock (Db.Sync) {
+                var seriesAndYears = Db.forCompany("voucher", companyId)
+                    .Select(v => (series: Db.str(v, "series"), year: voucherYear(v)))
+                    .Where(sy => sy.series.Length > 0 && sy.year > 0)
+                    .Distinct()
+                    .ToList();
+
+                foreach (var (series, year) in seriesAndYears) {
+                    renumberSeries(companyId, series, year);
+                }
+            }
+        }
     }
 }

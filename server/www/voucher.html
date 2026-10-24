@@ -24,6 +24,19 @@
         <button type="submit" name="action" value="reverse" class="danger"><%t.voucher.reverse%></button>
     </form>
     </swe:condition>
+    <swe:condition source="isAdmin">
+    <div class="admin-box">
+        <h3><%t.voucher.adminTitle%></h3>
+        <p class="hint"><%t.voucher.adminWarning%></p>
+        <form method="post" onsubmit="return confirm('<%t.voucher.adminDeleteConfirm%>');">
+            <input type="hidden" name="id" value="<%id%>">
+            <swe:condition source="hasLinked">
+            <p><label class="check"><input type="checkbox" name="deleteLinked" value="1" checked> <%t.voucher.adminDeleteLinked%> (<%linkedLabel%>)</label></p>
+            </swe:condition>
+            <button type="submit" name="action" value="deleteAndRenumber" class="danger"><%t.voucher.adminDelete%></button>
+        </form>
+    </div>
+    </swe:condition>
 </section>
 <else>
 <section class="panel">

@@ -8,6 +8,12 @@ namespace com.swecial.web {
     public class WebVouchers : LiquidPage {
         public override void processPage() {
             if (!requireCompany()) return;
+            if (isPost && form("action") == "renumberAll") {
+                if (!isAdmin) throw new LiquidException("Bara administratörer får omnumrera verifikationer.", "ONLY ADMINISTRATORS MAY RENUMBER VOUCHERS.");
+                Ledger.renumberAllSeries(companyId);
+                redirect(BasePath + "/vouchers.html?ok=renumbered");
+                return;
+            }
             title(Tr("vouchers.title"));
             var vouchers = Ledger.vouchers(companyId);
             vouchers.Reverse();

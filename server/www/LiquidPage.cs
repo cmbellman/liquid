@@ -24,6 +24,7 @@ namespace com.swecial.web {
         const int SessionDays = 30;
 
         protected SwecialUser account;
+        protected bool isAdmin => account != null && account.isAdmin;
         protected SwecialObject company;
         protected Theme theme;
         /// <summary>The theme's texts for the templates (&lt;%t.key%&gt;), see Themes.tree.</summary>
@@ -40,6 +41,7 @@ namespace com.swecial.web {
             string fonts = Themes.setting(theme, t => string.IsNullOrEmpty(t.fonts) ? null : t.fonts);
             set("themeFonts", fonts == null ? "" : "<link href='" + h(fonts) + "' rel='stylesheet'>");
             set("icons", iconSet());
+            set("isAdmin", isAdmin);
             set("title", "Liquid");
             set("error", "");
             set("message", h(messageText(query("ok"))));
@@ -249,7 +251,7 @@ namespace com.swecial.web {
         /// <summary>Messages shown after a redirect (?ok=key), so a reload doesn't repost a form.</summary>
         string messageText(string key) {
             switch (key) {
-                case "saved": case "booked": case "reversed": case "sent": case "paid": case "unpaid": case "deleted": case "bagged": case "sorted": case "imported": case "registered": case "closed": case "reopened":
+                case "saved": case "booked": case "reversed": case "sent": case "paid": case "unpaid": case "deleted": case "bagged": case "sorted": case "imported": case "registered": case "closed": case "reopened": case "renumbered":
                     return Tr("message." + key);
                 default: return "";
             }

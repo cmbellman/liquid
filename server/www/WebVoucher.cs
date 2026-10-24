@@ -32,6 +32,13 @@ namespace com.swecial.web {
                     redirect(BasePath + "/voucher.html?id=" + u(reversal.id) + "&ok=reversed");
                     return;
                 }
+                if (isPost && form("action") == "deleteAndRenumber") {
+                    if (!isAdmin) throw new LiquidException("Bara administratörer får radera verifikationer.", "ONLY ADMINISTRATORS MAY DELETE VOUCHERS.");
+                    bool deleteLinked = form("deleteLinked") == "1";
+                    Ledger.deleteAndRenumber(voucher, companyId, deleteLinked);
+                    redirect(BasePath + "/vouchers.html?ok=deleted");
+                    return;
+                }
                 setValues();
                 return;
             }
@@ -73,6 +80,12 @@ namespace com.swecial.web {
             set("hasReverses", ((string)get("reverses")).Length > 0);
             set("reversedBy", linked("reversedById"));
             set("hasReversedBy", ((string)get("reversedBy")).Length > 0);
+            string revId = Db.str(voucher, "reversedById");
+            string origId = Db.str(voucher, "reversesId");
+            string linkedId = revId.Length > 0 ? revId : origId;
+            var linkedVoucher = linkedId.Length > 0 ? Db.getOwned("voucher", linkedId, companyId) : null;
+            set("hasLinked", linkedVoucher != null);
+            val("linkedLabel", linkedVoucher != null ? Ledger.label(linkedVoucher) : "");
             var lines = Ledger.rows(voucher);
             rows("lines", lines.Select(l => row(("account", h(l.account)), ("name", h(accountName(l.account))),
                 ("debit", Money.formatOrBlank(l.debit)), ("credit", Money.formatOrBlank(l.credit)))));

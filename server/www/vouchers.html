@@ -5,6 +5,11 @@
     <div class="heading-actions">
         <a class="button secondary" href="/liquid/accounts.html"><%t.accounts.title%></a>
         <a class="button secondary" href="/liquid/rules.html"><%t.rules.title%></a>
+        <swe:condition source="isAdmin">
+        <form method="post" class="inline" onsubmit="return confirm('<%t.vouchers.renumberConfirm%>');">
+            <button type="submit" name="action" value="renumberAll" class="button secondary"><%t.vouchers.renumber%></button>
+        </form>
+        </swe:condition>
         <a class="button" href="/liquid/voucher.html"><%t.voucher.new%></a>
     </div>
 </div>
