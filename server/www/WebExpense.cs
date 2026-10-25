@@ -67,7 +67,7 @@ namespace com.swecial.web {
                 bool isNew = expense == null;
                 bool fromBag = sorting;
                 expense = Expenses.save(companyId, expense, input, account.id);
-                Expenses.attachReceipt(expense, upload);
+                Expenses.attachReceipt(expense, upload, account.id);
                 if (fromBag) {
                     var next = Expenses.inbox(companyId).FirstOrDefault();
                     redirect(next != null ? BasePath + "/expense.html?id=" + u(next.id) + "&ok=sorted" : BasePath + "/pant.html?ok=sorted");
@@ -121,6 +121,8 @@ namespace com.swecial.web {
             set("id", exists ? h(expense.id) : "");
             set("heading", T(exists ? "expense.title" : "expense.new"));
             set("receiptSrc", BasePath + "/receipt.html?id=" + u(expense?.id) + "&v=" + u(receiptId));
+            rows("oldReceipts", exists ? Expenses.receiptHistory(expense).Select(r => row(("href", BasePath + "/receipt.html?id=" + u(expense.id) + "&amp;file=" + u(r.fileId)),
+                ("when", T("expense.replacedAt", h(r.replacedAt))))) : Enumerable.Empty<SwecialObject>());
             set("preview", type == "pdf" ? "pdf" : type.Length > 0 && type != "heic" ? "image" : "");
             set("hasReceipt", receiptId.Length > 0);
             set("showReceipt", receiptId.Length > 0 && !sorting);

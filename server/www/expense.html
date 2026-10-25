@@ -12,6 +12,7 @@
             <if value="image"><img src="<%receiptSrc%>" alt="<%t.expense.receipt%>"></if>
         </swe:condition>
         <a href="<%receiptSrc%>" target="_blank"><%t.expense.openReceipt%></a>
+        <swe:condition source="oldReceiptsAny"><p class="hint"><%t.expense.oldReceipts%> <swe:iterator source="oldReceipts"><a href="<%current.href%>" target="_blank"><%current.when%></a> </swe:iterator></p></swe:condition>
     </div>
     <section class="panel">
         <swe:condition source="ai">

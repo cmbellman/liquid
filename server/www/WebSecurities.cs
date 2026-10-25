@@ -22,7 +22,11 @@ namespace com.swecial.web {
                     return;
                 }
                 if (form("action") == "yearValue") {
-                    Securities.setValueAtYearStart(company, (int)Money.parseDecimal(form("year"), "år"), Money.parse(form("value")));
+                    int year = (int)Money.parseDecimal(form("year"), "år");
+                    long before = Securities.valuesAtYearStart(company).TryGetValue(year, out long v) ? v : 0;
+                    long value = Money.parse(form("value"));
+                    Securities.setValueAtYearStart(company, year, value);
+                    if (before != value) Audit.log(companyId, account.id, "funds", "Fondernas värde 1 januari " + year + ": " + Money.format(before) + " → " + Money.format(value) + " kr");
                     redirect(BasePath + "/securities.html?ok=saved#yearStart");
                     return;
                 }

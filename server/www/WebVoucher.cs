@@ -35,7 +35,9 @@ namespace com.swecial.web {
                 if (isPost && form("action") == "deleteAndRenumber") {
                     if (!isAdmin) throw new LiquidException("Bara administratörer får radera verifikationer.", "ONLY ADMINISTRATORS MAY DELETE VOUCHERS.");
                     bool deleteLinked = form("deleteLinked") == "1";
+                    string what = Ledger.label(voucher) + " " + Db.str(voucher, "date") + " " + Db.str(voucher, "text") + " (" + Money.format(Db.num(voucher, "total")) + " kr)";
                     Ledger.deleteAndRenumber(voucher, companyId, deleteLinked);
+                    Audit.log(companyId, account.id, "admin", "Administratören raderade verifikation " + what + (deleteLinked ? " med kopplad rättelse" : "") + " och numrerade om serien");
                     redirect(BasePath + "/vouchers.html?ok=deleted");
                     return;
                 }

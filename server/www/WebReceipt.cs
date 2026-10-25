@@ -1,11 +1,13 @@
 using com.swecial.code;
 using com.swecial.server;
+using System.Linq;
 using System.Text;
 
 namespace com.swecial.web {
     /// <summary>
     /// /liquid/receipt.html?id=&lt;expense id&gt; : the expense's receipt file. The server doesn't serve
     /// images or PDFs from www/, so the page returns the bytes itself, only to the company's users.
+    /// &amp;file= gives one of the expense's earlier receipts, kept when it was replaced.
     /// </summary>
     public class WebReceipt : LiquidPage {
         public override void processPage() {
@@ -14,6 +16,10 @@ namespace com.swecial.web {
             var expense = Db.getOwned("expense", query("id"), companyId);
             var invoice = Db.getOwned("invoice", query("invoice"), companyId);
             string fileId = expense != null ? Db.str(expense, "receiptFileId") : Db.str(invoice, "documentFileId");
+            // A receipt the expense had before (?file=), kept when it was replaced
+            if (expense != null && query("file").Length > 0) {
+                fileId = Expenses.receiptHistory(expense).Any(r => r.fileId == query("file")) ? query("file") : "";
+            }
             var file = fileId.Length > 0 ? Expenses.receipt(fileId, companyId) : null;
             byte[] data = file?.data;
             if (data == null) {

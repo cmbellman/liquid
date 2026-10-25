@@ -34,6 +34,7 @@
         <swe:condition source="receiptIsImage"><a href="<%receiptSrc%>" target="_blank"><img src="<%receiptSrc%>" alt="<%t.expense.receipt%>"></a><else><a href="<%receiptSrc%>" target="_blank"><%t.expense.showReceipt%></a></else></swe:condition>
         <span class="hint"><%t.expense.replaceHint%></span>
     </p>
+    <swe:condition source="oldReceiptsAny"><p class="hint"><%t.expense.oldReceipts%> <swe:iterator source="oldReceipts"><a href="<%current.href%>" target="_blank"><%current.when%></a> </swe:iterator></p></swe:condition>
     </swe:condition>
     <label><%t.expense.note%><input type="text" name="note" value="<%note%>" placeholder="<%t.expense.notePlaceholder%>"></label>
     <div class="actions">

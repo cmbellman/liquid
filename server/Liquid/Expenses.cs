@@ -104,7 +104,7 @@ namespace com.swecial.code {
                 expense.set("status", Inbox);
                 expense.set("createdBy", userId);
                 Db.commit(expense);
-                attachReceipt(expense, upload);
+                attachReceipt(expense, upload, userId);
                 ReceiptReader.queue(expense);
                 return expense;
             }
@@ -257,8 +257,12 @@ namespace com.swecial.code {
             return (upload.contentType ?? "").Split(';')[0].Trim().ToLowerInvariant();
         }
 
-        /// <summary>Stores an uploaded receipt and attaches it to the expense (replacing an earlier one).</summary>
-        public static void attachReceipt(SwecialObject expense, HttpRequest.UploadedFile upload) {
+        /// <summary>
+        /// Stores an uploaded receipt and attaches it to the expense. A receipt it replaces is kept with
+        /// the expense (receiptHistoryJson: file, when and by whom) and the change is logged, so the
+        /// original underlag stays readable for the seven years the law asks.
+        /// </summary>
+        public static void attachReceipt(SwecialObject expense, HttpRequest.UploadedFile upload, string userId) {
             string extension = checkReceipt(upload);
             if (extension == null) return;
             string type = receiptType(upload);
@@ -269,8 +273,28 @@ namespace com.swecial.code {
             file.set("originalName", upload.fileName ?? "");
             file.save(upload.data);
             file.saveNow();
+            string previous = Db.str(expense, "receiptFileId");
+            if (previous.Length > 0) {
+                var history = receiptHistory(expense);
+                history.Add(new ReplacedReceipt { fileId = previous, replacedAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm"), replacedBy = userId ?? "" });
+                expense.set("receiptHistoryJson", Newtonsoft.Json.JsonConvert.SerializeObject(history));
+                Audit.log(Db.str(expense, "companyId"), userId, "receipt", "Underlaget byttes på utgiften " + Db.str(expense, "date") + " " + Db.str(expense, "supplier")
+                    + (Db.str(expense, "voucherId").Length > 0 ? " (verifikation " + Ledger.label(Db.get("voucher", Db.str(expense, "voucherId"))) + ")" : "") + "; det tidigare finns kvar");
+            }
             expense.set("receiptFileId", file.id);
             Db.commit(expense);
+        }
+
+        public class ReplacedReceipt {
+            public string fileId;
+            public string replacedAt;
+            public string replacedBy;
+        }
+
+        /// <summary>The receipts an expense had before its current one, oldest first.</summary>
+        public static List<ReplacedReceipt> receiptHistory(SwecialObject expense) {
+            string json = Db.str(expense, "receiptHistoryJson");
+            return json.Length == 0 ? new List<ReplacedReceipt>() : Newtonsoft.Json.JsonConvert.DeserializeObject<List<ReplacedReceipt>>(json);
         }
 
         public static SwecialFile receipt(string fileId, string companyId) {

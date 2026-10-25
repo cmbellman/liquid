@@ -1,0 +1,16 @@
+<% class=WebLog %>
+<% include=partials/top.part %>
+<div class="heading"><div><h1><%t.log.title%></h1><p class="sub"><%t.log.subtitle%></p></div></div>
+<section class="panel">
+    <swe:condition source="entriesAny">
+    <table>
+        <thead><tr><th><%t.log.col.at%></th><th><%t.log.col.who%></th><th><%t.log.col.what%></th></tr></thead>
+        <tbody><swe:iterator source="entries"><tr class="<%current.class%>"><td class="num"><%current.at%></td><td><%current.who%></td><td><%current.what%></td></tr></swe:iterator></tbody>
+    </table>
+    <else>
+    <p class="empty"><%t.log.empty%></p>
+    </else>
+    </swe:condition>
+    <p class="hint"><%t.log.hint%></p>
+</section>
+<% include=partials/bottom.part %>

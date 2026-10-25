@@ -245,14 +245,18 @@ namespace com.swecial.code {
             return (Db.num(closing, "deficitIn"), Db.num(closing, "capitalLossIn"), false);
         }
 
-        public static void setCarriedIn(SwecialObject company, int year, long deficit, long capitalLoss) {
+        public static void setCarriedIn(SwecialObject company, int year, long deficit, long capitalLoss, string userId) {
             if (deficit < 0 || capitalLoss < 0) throw new LiquidException("Beloppen kan inte vara negativa.", "AMOUNTS CANNOT BE NEGATIVE.");
             lock (Db.Sync) {
                 var closing = findOrCreate(company.id, year);
                 requireUnlocked(closing);
+                string changed = Audit.changes(new[] {
+                    ("Underskott från föregående år", Money.format(Db.num(closing, "deficitIn")), Money.format(deficit)),
+                    ("Sparad förlust på fonder", Money.format(Db.num(closing, "capitalLossIn")), Money.format(capitalLoss)) });
                 closing.set("deficitIn", deficit);
                 closing.set("capitalLossIn", capitalLoss);
                 Db.commit(closing);
+                if (changed.Length > 0) Audit.log(company.id, userId, "closing", "Bokslut " + year + ": " + changed);
             }
         }
 
@@ -287,6 +291,7 @@ namespace com.swecial.code {
                 var left = steps(company, year).First(s => s.key == step);
                 if (left.done) return;
                 string date = end(year);
+                Audit.log(companyId, userId, "closing", "Bokslut " + year + ": steget " + StepNames[step] + " bokfördes (" + Money.format(Math.Abs(left.remaining)) + (step == Receivables ? " fakturor" : " kr") + ")");
                 switch (step) {
                     case Receivables:
                         foreach (var invoice in unpaidInvoices(company, year)) Invoicing.bookAtYearEnd(invoice, date, userId);
@@ -340,7 +345,12 @@ namespace com.swecial.code {
         }
 
         /// <summary>Sets what the user wants booked in an input step (the tax account, the allocation).</summary>
-        public static void setInput(SwecialObject company, int year, string step, long amount) {
+        static readonly Dictionary<string, string> StepNames = new Dictionary<string, string> {
+            { Receivables, "obetalda kundfakturor" }, { Vat, "momsen" }, { PreliminaryTax, "preliminärskatt" }, { VatPaid, "moms från skattekontot" },
+            { ReserveReversal, "återföring av periodiseringsfond" }, { Allocation, "avsättning till periodiseringsfond" }, { Tax, "skatten" }, { Result, "årets resultat" },
+        };
+
+        public static void setInput(SwecialObject company, int year, string step, long amount, string userId) {
             if (amount < 0) throw new LiquidException("Beloppet kan inte vara negativt.", "AMOUNT CANNOT BE NEGATIVE.");
             if (step == Allocation) {
                 long max = tax(company, year).allocationMax;
@@ -351,8 +361,10 @@ namespace com.swecial.code {
             lock (Db.Sync) {
                 var closing = findOrCreate(company.id, year);
                 requireUnlocked(closing);
+                long before = Db.num(closing, step);
                 closing.set(step, amount);
                 Db.commit(closing);
+                if (before != amount) Audit.log(company.id, userId, "closing", "Bokslut " + year + ": " + StepNames[step] + " " + Money.format(before) + " → " + Money.format(amount) + " kr");
             }
         }
 
@@ -374,11 +386,12 @@ namespace com.swecial.code {
                 closing.set("deficitOut", t.deficitOut);
                 closing.set("capitalLossOut", t.capitalLossOut);
                 Db.commit(closing);
+                Audit.log(company.id, userId, "closing", "Bokslutet för " + year + " stängdes (skatt " + Money.format(t.tax) + " kr)");
             }
         }
 
         /// <summary>Opens a locked year again (to correct it); a later year's closing that carried from it must be opened first.</summary>
-        public static void reopen(SwecialObject company, int year) {
+        public static void reopen(SwecialObject company, int year, string userId) {
             lock (Db.Sync) {
                 var closing = find(company.id, year);
                 if (Db.str(closing, "status") != Closed) return;
@@ -386,6 +399,7 @@ namespace com.swecial.code {
                 closing.set("status", Open);
                 closing.set("reopenedAt", Dates.today());
                 Db.commit(closing);
+                Audit.log(company.id, userId, "closing", "Bokslutet för " + year + " öppnades igen");
             }
         }
 

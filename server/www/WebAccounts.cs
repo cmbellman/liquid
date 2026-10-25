@@ -19,10 +19,14 @@ namespace com.swecial.web {
                 if (!Regex.IsMatch(number, "^[1-8][0-9]{3}$")) throw new LiquidException("Kontonumret ska vara fyra siffror, 1000–8999.", "ACCOUNT NUMBER MUST BE FOUR DIGITS, 1000–8999.");
                 if (name.Length == 0) throw new LiquidException("Fyll i kontots namn.", "ACCOUNT NAME REQUIRED.");
                 lock (Db.Sync) {
-                    var account = Bas.find(companyId, number) ?? Db.create("account", companyId);
+                    var existing = Bas.find(companyId, number);
+                    string before = Db.str(existing, "name");
+                    var account = existing ?? Db.create("account", companyId);
                     account.set("number", number);
                     account.set("name", name);
                     Db.commit(account);
+                    if (existing == null) Audit.log(companyId, this.account.id, "account", "Konto " + number + " lades till: " + name);
+                    else if (before != name) Audit.log(companyId, this.account.id, "account", "Konto " + number + " bytte namn: " + before + " → " + name);
                 }
                 redirect(BasePath + "/accounts.html?ok=saved");
                 return;

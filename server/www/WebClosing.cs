@@ -27,16 +27,16 @@ namespace com.swecial.web {
                 if (action == "book") {
                     Closing.book(company, year, form("step"), account.id);
                 } else if (action == "input") {
-                    Closing.setInput(company, year, form("step"), Money.parse(form("amount")));
+                    Closing.setInput(company, year, form("step"), Money.parse(form("amount")), account.id);
                     ok = "saved";
                 } else if (action == "carried") {
-                    Closing.setCarriedIn(company, year, Money.parse(form("deficit")), Money.parse(form("capitalLoss")));
+                    Closing.setCarriedIn(company, year, Money.parse(form("deficit")), Money.parse(form("capitalLoss")), account.id);
                     ok = "saved";
                 } else if (action == "close") {
                     Closing.close(company, year, form("bank") == "1", account.id);
                     ok = "closed";
                 } else if (action == "reopen") {
-                    Closing.reopen(company, year);
+                    Closing.reopen(company, year, account.id);
                     ok = "reopened";
                 }
                 redirect(BasePath + "/closing.html?year=" + year + "&ok=" + ok + "#" + u(form("step").Length > 0 ? form("step") : action));
