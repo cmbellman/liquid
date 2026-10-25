@@ -96,9 +96,18 @@ namespace com.swecial.code {
             public const string Other = "other";
         }
 
-        /// <summary>Starts reading the receipt in the background, if the reader is configured.</summary>
+        /// <summary>
+        /// The company lets Liquid send its receipts to Google to be read (Inställningar; on unless
+        /// turned off, receiptReaderOff). Google is a sub-processor in the data processing agreement.
+        /// </summary>
+        public static bool onFor(SwecialObject company) {
+            return company == null || !company.get<bool>("receiptReaderOff");
+        }
+
+        /// <summary>Starts reading the receipt in the background, if the reader is configured and the company allows it.</summary>
         public static void queue(SwecialObject expense) {
             if (!enabled || Db.str(expense, "receiptFileId").Length == 0) return;
+            if (!onFor(Db.get("company", Db.str(expense, "companyId")))) return;
             expense.set("aiStatus", Reading);
             Db.commit(expense);
             string id = expense.id, companyId = Db.str(expense, "companyId");
@@ -122,6 +131,12 @@ namespace com.swecial.code {
                 byte[] data = file?.data;
                 if (data == null) throw new ReaderException(Problem.Other, "receipt file missing");
                 var company = Db.get("company", companyId);
+                if (!onFor(company)) {
+                    // Turned off after it was queued: nothing leaves Liquid
+                    expense.remove("aiStatus");
+                    Db.commit(expense);
+                    return;
+                }
                 string prompt = instructions(Db.str(company, "name"), Db.str(company, "orgNumber"));
                 var answer = apiKey.Length > 0
                     ? askGemini(data, Db.str(file, "contentType"), prompt)

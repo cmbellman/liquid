@@ -28,6 +28,7 @@ namespace com.swecial.web {
                 if (fullName.Length == 0) throw new LiquidException("Fyll i ditt namn.");
                 if (!isEmail(email)) throw new LiquidException("E-postadressen är inte giltig.");
                 if (password.Length < MinPasswordLength) throw new LiquidException("Lösenordet måste vara minst " + MinPasswordLength + " tecken.");
+                if (form("terms") != "1") throw new LiquidException("Godkänn användarvillkoren och personuppgiftsbiträdesavtalet för att skapa ett konto.", "ACCEPT THE TERMS OF USE AND THE DATA PROCESSING AGREEMENT TO SIGN UP.");
 
                 var users = SwecialData.current.getUsers();
                 SwecialUser user;
@@ -42,6 +43,8 @@ namespace com.swecial.web {
                     user.firstName = fullName;
                     user.spawn();
                     user.set("name", "liquid_" + user.id);
+                    user.set("liquidTermsVersion", Terms.Version);
+                    user.set("liquidTermsAt", System.DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
                     user.save();
                 }
                 signIn(user);

@@ -1,0 +1,47 @@
+<% class=WebTerms %>
+<% include=partials/top.part %>
+<!-- Legal texts are Swedish whatever the theme -->
+<article class="panel legal">
+    <h1>Användarvillkor för Liquid</h1>
+    <p class="hint">Version <%version%>. <a href="/liquid/dpa.html">Personuppgiftsbiträdesavtalet</a> är en del av villkoren.</p>
+
+    <h2>1. Parter och tjänsten</h2>
+    <p>Liquid är en webbtjänst för bokföring, fakturering och bokslut för svenska aktiebolag. Tjänsten tillhandahålls av <%providerName%>, organisationsnummer <%providerOrgNumber%>, <%providerAddress%> (”vi”). Villkoren gäller mellan oss och det bolag som använder Liquid (”kunden”), genom den som skapar ett konto och de användare kunden ger tillgång.</p>
+
+    <h2>2. Konto</h2>
+    <p>Den som registrerar sig intygar att hen får företräda kunden. Användaren ansvarar för att hålla sitt lösenord hemligt och ska meddela oss om någon obehörig kan ha kommit åt kontot.</p>
+
+    <h2>3. Kundens ansvar för bokföringen</h2>
+    <p>Kunden är enligt bokföringslagen och skattelagstiftningen alltid ansvarig för sin bokföring, sina deklarationer, sitt bokslut och sin årsredovisning. Liquid är ett hjälpmedel: kunden ska kontrollera det som bokförs och de underlag tjänsten tar fram (till exempel momsrapporter, skatteberäkningar och bokslut) innan de lämnas till Skatteverket eller Bolagsverket. Förslag som tjänsten gör, även de som tas fram med artificiell intelligens (AI) från kvitton, är förslag som kunden ska granska; inget bokförs från dem utan att kunden godkänner det.</p>
+
+    <h2>4. Tjänstens innehåll och tillgänglighet</h2>
+    <p>Vi utvecklar tjänsten löpande och får ändra, lägga till eller ta bort funktioner. Vi strävar efter att tjänsten ska vara tillgänglig och fungera korrekt, men lämnar inga garantier för att den är fri från fel eller avbrott. Belopp och regler från lagar och Skatteverket uppdateras i tjänsten, men kunden ansvarar för att de stämmer för kundens förhållanden.</p>
+
+    <h2>5. Kundens data, export och arkivering</h2>
+    <p>Kunden äger sin räkenskapsinformation och sina underlag. Kunden kan när som helst exportera bokföringen som SIE-fil och skriva ut eller spara räkenskapsinformationen med underlag (Avancerat → Arkiv). Bokförda verifikationer ändras inte; rättelser görs med nya verifikationer, och andra ändringar loggas. Kunden ansvarar för att räkenskapsinformationen bevaras i sju år efter utgången av det kalenderår då räkenskapsåret avslutades, även om kunden slutar använda Liquid. Efter uppsägning finns kundens data kvar i 90 dagar så att den kan exporteras, därefter raderas den.</p>
+
+    <h2>6. Personuppgifter</h2>
+    <p>När vi behandlar personuppgifter för kundens räkning är vi personuppgiftsbiträde och kunden personuppgiftsansvarig. Behandlingen regleras i <a href="/liquid/dpa.html">personuppgiftsbiträdesavtalet</a>. Uppgifterna lagras i <%dataLocation%>.</p>
+
+    <h2>7. Avgifter</h2>
+    <p>Avgifter gäller enligt den prislista som gäller när tjänsten används. Vi meddelar ändringar av avgifter minst 30 dagar i förväg.</p>
+
+    <h2>8. Ansvarsbegränsning</h2>
+    <p>Vi ansvarar inte för indirekta skador eller följdskador, till exempel utebliven vinst, skattetillägg, förseningsavgifter, kostnadsränta eller andra avgifter och sanktioner från myndigheter, eller förlust av data som kunden kunde ha exporterat. Vårt sammanlagda ansvar för skador med anledning av tjänsten är begränsat till ett belopp som motsvarar de avgifter kunden har betalat för tjänsten under de tolv månader som föregick den händelse som orsakade skadan. Begränsningarna gäller inte om vi har orsakat skadan med uppsåt eller genom grov vårdslöshet, och inte heller i den mån tvingande lag säger annat. Krav ska framställas skriftligen inom sex månader från det att kunden upptäckte eller borde ha upptäckt skadan.</p>
+
+    <h2>9. Uppsägning</h2>
+    <p>Kunden kan när som helst sluta använda tjänsten och säga upp sitt konto. Vi får säga upp avtalet med 30 dagars varsel, och omedelbart om kunden väsentligt bryter mot villkoren eller använder tjänsten för olaglig verksamhet.</p>
+
+    <h2>10. Ändringar av villkoren</h2>
+    <p>Vi får ändra villkoren. Väsentliga ändringar meddelas i tjänsten minst 30 dagar innan de börjar gälla, och kunden godkänner dem nästa gång tjänsten används. Godkänner kunden inte ändringarna kan kunden säga upp avtalet innan de börjar gälla.</p>
+
+    <h2>11. Tillämplig lag och tvister</h2>
+    <p>Svensk lag gäller för villkoren. Tvister avgörs av allmän domstol i Sverige.</p>
+
+    <p>Frågor om villkoren: <%providerEmail%>.</p>
+    <swe:condition source="canAccept">
+    <form method="post" class="inline"><input type="hidden" name="action" value="accept"><button type="submit">Jag godkänner användarvillkoren och personuppgiftsbiträdesavtalet</button></form>
+    </swe:condition>
+    <swe:condition source="hasAccepted"><p class="hint">Du godkände den här versionen <%acceptedAt%>.</p></swe:condition>
+</article>
+<% include=partials/bottom.part %>

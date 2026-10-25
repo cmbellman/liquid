@@ -35,6 +35,8 @@
         <p class="label"><%t.settings.vatPeriod%></p>
         <div class="choices three"><swe:iterator source="vatPeriods"><label class="choice"><input type="radio" name="<%current.name%>" value="<%current.value%>" <%current.checked%>><b><%current.title%></b><span><%current.text%></span><swe:condition source="current.serial"><label><%t.settings.nextSerial%><input type="number" name="nextSerial" value="<%nextSerial%>" min="1" max="<%maxSerial%>"></label></swe:condition></label></swe:iterator></div>
         <p class="hint"><%t.settings.vatPeriodHint%></p>
+        <label class="check"><input type="checkbox" name="receiptReader" value="1" <%receiptReaderChecked%>><span><%t.settings.receiptReader%></span></label>
+        <p class="hint"><%t.settings.receiptReaderHint%></p>
     </section>
     <section class="panel">
         <div class="heading"><div><h2><%t.settings.look.title%></h2><p class="sub"><%t.settings.look.subtitle%></p></div></div>

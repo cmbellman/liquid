@@ -1,0 +1,53 @@
+<% class=WebTerms %>
+<% include=partials/top.part %>
+<!-- Legal texts are Swedish whatever the theme -->
+<article class="panel legal">
+    <h1>Personuppgiftsbiträdesavtal</h1>
+    <p class="hint">Version <%version%>. Bilaga till <a href="/liquid/terms.html">användarvillkoren för Liquid</a>, enligt artikel 28 i dataskyddsförordningen (GDPR).</p>
+
+    <h2>1. Parter och roller</h2>
+    <p>Kunden (det bolag som använder Liquid) är personuppgiftsansvarig för de personuppgifter som finns i kundens bokföring. <%providerName%>, organisationsnummer <%providerOrgNumber%> (”biträdet”), behandlar dem för kundens räkning som personuppgiftsbiträde.</p>
+
+    <h2>2. Ändamål och omfattning</h2>
+    <p>Biträdet behandlar personuppgifterna enbart för att tillhandahålla Liquid: lagra och visa bokföring, fakturor, kvitton och andra underlag, ta fram rapporter, bokslut och exportfiler, samt läsa av kvitton med AI om kunden har det påslaget. Behandlingen pågår så länge kunden använder tjänsten och därefter enligt punkt 9.</p>
+    <p><b>Kategorier av registrerade:</b> kundens företrädare och användare, kunder, leverantörer, kontaktpersoner och deltagare vid representation, samt personer som förekommer på kvitton och fakturor.</p>
+    <p><b>Kategorier av personuppgifter:</b> namn, kontaktuppgifter, organisations- eller personnummer (till exempel för enskilda firmor), adresser, belopp och betalningar, fakturareferenser, uppgifter på kvitton och andra underlag, samt inloggnings- och logguppgifter. Kunden ska inte lägga in känsliga personuppgifter i tjänsten.</p>
+
+    <h2>3. Kundens instruktioner</h2>
+    <p>Biträdet behandlar personuppgifterna bara enligt kundens dokumenterade instruktioner, som utgörs av detta avtal, användarvillkoren och kundens val i tjänsten. Biträdet informerar kunden om en instruktion enligt biträdets bedömning strider mot dataskyddsreglerna.</p>
+
+    <h2>4. Sekretess</h2>
+    <p>Den som behandlar personuppgifterna hos biträdet har tystnadsplikt och får bara behandla dem i den mån det behövs för att tillhandahålla tjänsten, för support som kunden ber om eller för att följa lag.</p>
+
+    <h2>5. Säkerhet</h2>
+    <p>Biträdet vidtar lämpliga tekniska och organisatoriska åtgärder för att skydda personuppgifterna, bland annat krypterad överföring (HTTPS), lösenord som lagras som saltade hashvärden, åtkomst som är begränsad till respektive bolags användare, logg över ändringar samt säkerhetskopiering.</p>
+
+    <h2>6. Underbiträden</h2>
+    <p>Kunden godkänner att biträdet anlitar följande underbiträden:</p>
+    <ul>
+        <li><b>Drift och lagring:</b> biträdets egna servrar i <%dataLocation%>.</li>
+        <li><b>Google (Gemini API)</b>, endast om AI-läsning av kvitton är påslagen för bolaget (Inställningar): kvittobilden och bolagets namn och organisationsnummer skickas till Google för att läsas av, och svaret sparas som ett förslag i Liquid. Google kan behandla uppgifterna utanför EU/EES; överföringen sker med stöd av EU-kommissionens standardavtalsklausuler och EU–US Data Privacy Framework. Kunden kan stänga av AI-läsningen, och då skickas inga kvitton till Google.</li>
+    </ul>
+    <p>Biträdet informerar kunden i tjänsten minst 30 dagar innan ett nytt underbiträde anlitas, och kunden kan invända genom att säga upp avtalet. Biträdet ingår avtal med underbiträden som ger motsvarande skydd som detta avtal.</p>
+
+    <h2>7. Personuppgiftsincidenter</h2>
+    <p>Biträdet underrättar kunden utan onödigt dröjsmål, och senast inom 48 timmar, efter att ha upptäckt en personuppgiftsincident, och lämnar den information kunden behöver för att kunna anmäla incidenten till Integritetsskyddsmyndigheten.</p>
+
+    <h2>8. Bistånd till kunden</h2>
+    <p>Biträdet hjälper kunden, i den utsträckning det är rimligt, att fullgöra sina skyldigheter mot de registrerade (till exempel begäran om tillgång eller radering, med hänsyn till bokföringslagens krav på arkivering), vid konsekvensbedömningar och vid förhandssamråd.</p>
+
+    <h2>9. När avtalet upphör</h2>
+    <p>När kunden säger upp tjänsten kan kunden exportera sina uppgifter (SIE-fil och arkivutskrift med underlag). Biträdet raderar personuppgifterna 90 dagar efter uppsägningen, om inte lag kräver att de sparas längre. Kunden ansvarar för att själv arkivera räkenskapsinformationen i den tid bokföringslagen kräver.</p>
+
+    <h2>10. Granskning</h2>
+    <p>Biträdet ger kunden den information som behövs för att visa att skyldigheterna i detta avtal uppfylls och möjliggör granskning efter skriftlig begäran med rimligt varsel.</p>
+
+    <h2>11. Ansvar</h2>
+    <p>Ansvaret för skador enligt detta avtal regleras av användarvillkoren och artikel 82 i dataskyddsförordningen.</p>
+
+    <p>Kontakt i dataskyddsfrågor: <%providerEmail%>.</p>
+    <swe:condition source="canAccept">
+    <form method="post" class="inline"><input type="hidden" name="action" value="accept"><button type="submit">Jag godkänner användarvillkoren och personuppgiftsbiträdesavtalet</button></form>
+    </swe:condition>
+</article>
+<% include=partials/bottom.part %>

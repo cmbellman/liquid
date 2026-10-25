@@ -7,6 +7,7 @@
         <label><%t.field.name%><input type="text" name="fullName" value="<%fullName%>" autocomplete="name" required autofocus></label>
         <label><%t.field.email%><input type="email" name="email" value="<%email%>" autocomplete="username" required></label>
         <label><%passwordLabel%><input type="password" name="password" autocomplete="new-password" required></label>
+        <label class="check"><input type="checkbox" name="terms" value="1" required><span><%t.signup.terms%> <a href="/liquid/terms.html" target="_blank"><%t.signup.termsLink%></a></span></label>
         <button type="submit"><%t.signup.title%></button>
     </form>
 </section>
