@@ -1,0 +1,23 @@
+<% class=WebSie %>
+<% include=partials/top.part %>
+<div class="heading"><div><h1><%t.sie.title%></h1><p class="sub"><%t.sie.subtitle%></p></div></div>
+<swe:condition source="importedAny"><p class="message"><%importedText%></p></swe:condition>
+<section class="panel">
+    <h2><%t.sie.export.title%></h2>
+    <p class="lead"><%t.sie.export.lead%></p>
+    <ul class="todo"><swe:iterator source="years"><li><a href="<%current.href%>"><%t.sie.export.year%> <%current.year%></a> <span class="hint"><%current.closed%></span></li></swe:iterator></ul>
+</section>
+<section class="panel">
+    <h2><%t.sie.import.title%></h2>
+    <p class="lead"><%t.sie.import.lead%></p>
+    <form method="post" enctype="multipart/form-data">
+        <div class="choices">
+            <label class="choice"><input type="radio" name="mode" value="vouchers" checked><b><%t.sie.import.vouchers%></b><span><%t.sie.import.vouchersHint%></span></label>
+            <label class="choice"><input type="radio" name="mode" value="closing"><b><%t.sie.import.closing%></b><span><%t.sie.import.closingHint%></span></label>
+        </div>
+        <label><%t.sie.import.file%><input type="file" name="file" accept=".se,.si,.sie,text/plain" required></label>
+        <div class="actions"><button type="submit"><%t.sie.import.button%></button></div>
+    </form>
+    <p class="hint"><%t.sie.import.hint%></p>
+</section>
+<% include=partials/bottom.part %>

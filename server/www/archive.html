@@ -1,0 +1,45 @@
+<% class=WebArchive %>
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title><%title%></title>
+    <link href="/liquid/fonts/base.css" rel="stylesheet">
+    <link rel="stylesheet" href="/liquid/style.css">
+    <link rel="icon" href="/liquid/favicon.svg" type="image/svg+xml">
+</head>
+<!-- Räkenskapsinformation is a document: always Swedish and light, whatever the theme -->
+<body class="print archive">
+    <main>
+        <p class="error"><%error%></p>
+        <form method="get" class="inline noprint">
+            <label>Räkenskapsår<select name="year"><swe:iterator source="yearOptions"><option value="<%current.value%>" <%current.selected%>><%current.text%></option></swe:iterator></select></label>
+            <button type="submit" class="secondary">Visa</button>
+            <button type="button" onclick="window.print()">Skriv ut eller spara som PDF</button>
+            <a href="<%sieHref%>">Ladda ner SIE-filen</a>
+            <a href="/liquid/vouchers.html">Tillbaka</a>
+        </form>
+        <header class="archive-head">
+            <h1>Räkenskapsinformation <%year%></h1>
+            <p><%companyName%> · <%orgNumber%></p>
+            <p>Verifikationslista med underlag, <%count%> verifikationer. Utskriven <%generated%> ur Liquid.</p>
+            <swe:condition source="closed"><p><%closedText%></p></swe:condition>
+        </header>
+        <swe:iterator source="vouchers">
+        <section class="voucher-doc">
+            <h2><%current.label%> <span><%current.date%></span></h2>
+            <p class="what"><%current.text%></p>
+            <table>
+                <thead><tr><th>Konto</th><th>Namn</th><th class="num">Debet</th><th class="num">Kredit</th></tr></thead>
+                <tbody><swe:iterator source="current.lines"><tr><td><%current.account%></td><td><%current.name%></td><td class="num"><%current.debit%></td><td class="num"><%current.credit%></td></tr></swe:iterator></tbody>
+                <tfoot><tr class="total"><td colspan="2">Summa</td><td class="num"><%current.sumDebit%></td><td class="num"><%current.sumCredit%></td></tr></tfoot>
+            </table>
+            <p class="meta">Bokförd <%current.booked%>. <%current.correction%> <%current.source%></p>
+            <swe:iterator source="current.files"><p class="meta">Underlag: <a href="<%current.href%>" target="_blank"><%current.caption%></a></p></swe:iterator>
+            <swe:iterator source="current.images"><figure><img src="<%current.src%>" alt="<%current.caption%>"><figcaption><%current.caption%></figcaption></figure></swe:iterator>
+        </section>
+        </swe:iterator>
+    </main>
+</body>
+</html>
