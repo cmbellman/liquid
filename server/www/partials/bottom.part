@@ -1,3 +1,4 @@
+        <p class="legal-links noprint"><a href="/liquid/terms.html">Användarvillkor</a> · <a href="/liquid/dpa.html">Personuppgiftsbiträdesavtal</a></p>
         </main>
     </div>
     <script>document.addEventListener('click',function(e){var r=e.target.closest('tr.link');if(!r||e.target.closest('a,button,input,select,textarea,label,form')||getSelection().toString())return;var h=r.getAttribute('data-href');if(h)location.href=h;});</script>

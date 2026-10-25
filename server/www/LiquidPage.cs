@@ -274,6 +274,7 @@ namespace com.swecial.web {
             set("logo", Icons.Logo);
             set("clock", Themes.setting(theme, t => t.clock) == true);
             set("signedIn", account != null);
+            set("termsPending", account != null && !Terms.accepted(account) && !req.mappedPath.EndsWith("/terms.html") && !req.mappedPath.EndsWith("/dpa.html"));
             set("hasCompany", company != null);
             val("companyName", Db.str(company, "name"));
             var items = new List<SwecialObject>();
@@ -289,7 +290,7 @@ namespace com.swecial.web {
                 items.Add(navItem("/reports.html", "nav.reports", "chart", 0));
                 items.Add(navItem("/closing.html", "nav.closing", "lock", 0));
                 // Accounts and vouchers are there for those who want them, not needed day to day
-                items.Add(navItem("/vouchers.html", "nav.advanced", "book", 0, "/voucher.html", "/accounts.html", "/rules.html"));
+                items.Add(navItem("/vouchers.html", "nav.advanced", "book", 0, "/voucher.html", "/accounts.html", "/rules.html", "/log.html", "/sie.html", "/archive.html"));
                 items.Add(navItem("/company.html", "nav.settings", "gear", 0));
             }
             rows("navItems", items);

@@ -11,6 +11,7 @@ namespace com.swecial.web {
             if (isPost && form("action") == "renumberAll") {
                 if (!isAdmin) throw new LiquidException("Bara administratörer får omnumrera verifikationer.", "ONLY ADMINISTRATORS MAY RENUMBER VOUCHERS.");
                 Ledger.renumberAllSeries(companyId);
+                Audit.log(companyId, account.id, "admin", "Administratören numrerade om alla verifikationsserier");
                 redirect(BasePath + "/vouchers.html?ok=renumbered");
                 return;
             }

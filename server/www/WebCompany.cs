@@ -28,6 +28,7 @@ namespace com.swecial.web {
                     company = Companies.create(account.id, name);
                     foreach (var key in Fields) company.set(key, form(key).Trim());
                     Db.commit(company);
+                    Audit.log(company.id, account.id, "company", "Bolaget skapades: " + name);
                     redirect(BasePath + "/");
                     return;
                 }
@@ -42,7 +43,20 @@ namespace com.swecial.web {
             setValues();
         }
 
+        /// <summary>The company's settings as (name, value) for the change log.</summary>
+        List<(string, string)> snapshot() {
+            var all = Fields.Select(k => ("company.field." + k, Db.str(company, k))).ToList();
+            all.Add(("Betalningsvillkor", Db.num(company, "paymentTerms").ToString()));
+            all.Add(("Fakturanummer", Settings.invoiceNumbering(company)));
+            all.Add(("Bokföringsmetod per år", Db.str(company, "methodsJson")));
+            all.Add(("Momsperiod", Settings.vatPeriod(company)));
+            all.Add(("AI-läsning av kvitton", ReceiptReader.onFor(company) ? "på" : "av"));
+            return all;
+        }
+
         void save(string name) {
+            var before = snapshot();
+            long serialBefore = Settings.highestSerial(companyId) + 1;
             int terms = parseTerms(form("paymentTerms"));
             string numbering = form("invoiceNumbering") == Settings.DateNumbers ? Settings.DateNumbers : Settings.SerialNumbers;
             string vatPeriod = form("vatPeriod");
@@ -53,6 +67,7 @@ namespace com.swecial.web {
             if (numbering == Settings.SerialNumbers && nextSerial.Length > 0 && nextSerial != (Settings.highestSerial(companyId) + 1).ToString()) {
                 if (!long.TryParse(nextSerial, out long next)) throw new LiquidException("Nästa fakturanummer ska vara ett heltal.", "NEXT INVOICE NUMBER MUST BE AN INTEGER.");
                 Settings.setNextSerial(companyId, next);
+                Audit.log(companyId, account.id, "settings", "Nästa fakturanummer: " + serialBefore + " → " + next);
             }
 
             foreach (var key in Fields) company.set(key, form(key).Trim());
@@ -66,7 +81,11 @@ namespace com.swecial.web {
                 if (year != thisYear && form("method" + year).Length > 0) Settings.setAccountingMethod(company, year, form("method" + year));
             }
             company.set("vatPeriod", vatPeriod);
+            company.set("receiptReaderOff", form("receiptReader") != "1");
             Db.commit(company);
+            var after = snapshot();
+            string changed = Audit.changes(before.Zip(after, (b, a) => (b.Item1.StartsWith("company.field.") ? Tr(b.Item1) : b.Item1, b.Item2, a.Item2)));
+            if (changed.Length > 0) Audit.log(companyId, account.id, "settings", changed);
             Themes.set(account, form("theme"));
         }
 
@@ -76,6 +95,7 @@ namespace com.swecial.web {
 
         void setValues() {
             bool creating = company == null;
+            set("receiptReaderChecked", isChecked(isPost ? form("receiptReader") == "1" : ReceiptReader.onFor(company)));
             set("creating", creating);
             rows("fields", Fields.Select(key => row(("name", key), ("label", T("company.field." + key)), ("type", key == "email" ? "email" : "text"),
                 ("value", h(creating ? form(key) : value(key))), ("required", key == "name" ? (creating ? "required autofocus" : "required") : ""),

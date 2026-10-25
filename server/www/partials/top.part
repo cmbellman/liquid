@@ -5,9 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#130d08">
     <title><%title%></title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="/liquid/fonts/base.css" rel="stylesheet">
     <link rel="icon" href="/liquid/favicon.ico" sizes="any">
     <link rel="icon" href="/liquid/favicon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/liquid/apple-touch-icon.png">
@@ -33,5 +31,6 @@
             </swe:condition>
         </aside>
         <main>
+            <swe:condition source="termsPending"><p class="message terms"><%t.terms.pending%> <a href="/liquid/terms.html"><%t.terms.read%></a></p></swe:condition>
             <p class="error"><%error%></p>
             <p class="message"><%message%></p>
