@@ -20,12 +20,13 @@
     <p>Den som behandlar personuppgifterna hos biträdet har tystnadsplikt och får bara behandla dem i den mån det behövs för att tillhandahålla tjänsten, för support som kunden ber om eller för att följa lag.</p>
 
     <h2>5. Säkerhet</h2>
-    <p>Biträdet vidtar lämpliga tekniska och organisatoriska åtgärder för att skydda personuppgifterna, bland annat krypterad överföring (HTTPS), lösenord som lagras som saltade hashvärden, åtkomst som är begränsad till respektive bolags användare, logg över ändringar samt säkerhetskopiering.</p>
+    <p>Biträdet vidtar lämpliga tekniska och organisatoriska åtgärder för att skydda personuppgifterna, bland annat krypterad överföring (HTTPS), lösenord som lagras som saltade hashvärden, åtkomst som är begränsad till respektive bolags användare, logg över ändringar samt löpande krypterad säkerhetskopiering.</p>
 
     <h2>6. Underbiträden</h2>
     <p>Kunden godkänner att biträdet anlitar följande underbiträden:</p>
     <ul>
         <li><b>Drift och lagring:</b> biträdets egna servrar i <%dataLocation%>.</li>
+        <li><b>Backblaze, Inc. (säkerhetskopiering):</b> en krypterad säkerhetskopia av servrarnas data lagras löpande i Backblazes datacenter i USA (US West), så att uppgifterna kan återställas efter ett haveri. Överföringen till USA sker med stöd av EU-kommissionens standardavtalsklausuler och EU–US Data Privacy Framework.</li>
         <li><b>Google (Gemini API)</b>, endast om AI-läsning av kvitton är påslagen för bolaget (Inställningar): kvittobilden och bolagets namn och organisationsnummer skickas till Google för att läsas av, och svaret sparas som ett förslag i Liquid. Google kan behandla uppgifterna utanför EU/EES; överföringen sker med stöd av EU-kommissionens standardavtalsklausuler och EU–US Data Privacy Framework. Kunden kan stänga av AI-läsningen, och då skickas inga kvitton till Google.</li>
     </ul>
     <p>Biträdet informerar kunden i tjänsten minst 30 dagar innan ett nytt underbiträde anlitas, och kunden kan invända genom att säga upp avtalet. Biträdet ingår avtal med underbiträden som ger motsvarande skydd som detta avtal.</p>

@@ -8,10 +8,10 @@ namespace com.swecial.code {
     /// shows until they have (stored on the user: liquidTermsVersion, liquidTermsAt; logged per company).
     /// Raise Version when the texts change in substance. The provider's details and where the data is
     /// kept come from the app's settings.json on the server (providerName, providerOrgNumber,
-    /// providerAddress, providerEmail, dataLocation), so they aren't in the code.
+    /// providerAddress, providerEmail, dataLocation) when set there, otherwise from the defaults here.
     /// </summary>
     public static class Terms {
-        public const string Version = "2026-10-25";
+        public const string Version = "2026-10-26";
 
         static SwecialApplication.Settings settings => Db.app?.settings;
 
@@ -20,10 +20,10 @@ namespace com.swecial.code {
             return value.Length > 0 ? value : fallback;
         }
 
-        public static string providerName => setting("providerName", "[leverantörens namn]");
-        public static string providerOrgNumber => setting("providerOrgNumber", "[organisationsnummer]");
-        public static string providerAddress => setting("providerAddress", "[adress]");
-        public static string providerEmail => setting("providerEmail", "[e-postadress]");
+        public static string providerName => setting("providerName", "Adermark Consulting AB");
+        public static string providerOrgNumber => setting("providerOrgNumber", "559430-7349");
+        public static string providerAddress => setting("providerAddress", "Virkesvägen 17, 120 30 Stockholm");
+        public static string providerEmail => setting("providerEmail", "anders.adermark@gmail.com");
         public static string dataLocation => setting("dataLocation", "Sverige");
 
         public static bool accepted(SwecialUser user) {
