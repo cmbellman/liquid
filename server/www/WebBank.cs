@@ -33,7 +33,17 @@ namespace com.swecial.web {
         void setValues() {
             string today = Dates.today();
             var lines = Reports.generalLedger(companyId, Bas.Bank, "0000-01-01", "9999-12-31", out _);
-            set("balance", Money.format(lines.Count > 0 ? lines.Last().balance : 0));
+            long bankBalance = lines.Count > 0 ? lines.Last().balance : 0;
+            set("balance", Money.format(bankBalance));
+
+            var secLines = Reports.generalLedger(companyId, Bas.Securities, "0000-01-01", "9999-12-31", out _);
+            long secBalance = secLines.Count > 0 ? secLines.Last().balance : 0;
+            bool hasSecurities = secBalance != 0;
+            set("securitiesAny", hasSecurities);
+            if (hasSecurities) {
+                set("securitiesBalance", Money.format(secBalance));
+                set("totalBalance", Money.format(bankBalance + secBalance));
+            }
 
             // The check against the bank
             string date = query("date").Length > 0 ? query("date") : today;

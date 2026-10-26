@@ -2,7 +2,13 @@
 <% include=partials/top.part %>
 <div class="heading"><div><h1><%t.bank.title%></h1><p class="sub"><%t.bank.subtitle%></p></div></div>
 <section class="panel">
-    <div class="tiles"><div class="tile"><small><%t.bank.balance%></small><strong><%balance%> <%t.common.currency%></strong></div></div>
+    <div class="tiles">
+        <div class="tile"><small><swe:condition source="securitiesAny"><%t.bank.tile.account%><else><%t.bank.balance%></else></swe:condition></small><strong><%balance%> <%t.common.currency%></strong></div>
+        <swe:condition source="securitiesAny">
+            <div class="tile"><small><%t.bank.tile.securities%></small><strong><%securitiesBalance%> <%t.common.currency%></strong></div>
+            <div class="tile"><small><%t.bank.tile.total%></small><strong><%totalBalance%> <%t.common.currency%></strong></div>
+        </swe:condition>
+    </div>
     <h2><%t.bank.reconcile%></h2>
     <form method="get" class="inline">
         <label><%t.col.date%><input type="date" name="date" value="<%reconcileDate%>" required></label>
