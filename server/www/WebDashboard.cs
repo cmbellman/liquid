@@ -36,13 +36,15 @@ namespace com.swecial.web {
         void setValues() {
             DateTime today = DateTime.Today;
             string period = query("period");
-            if (period != Flow.Quarter && period != Flow.Year) period = Flow.TwelveMonths;
+            if (period == "allt") period = Flow.FiveYears;
+            if (period != Flow.Quarter && period != Flow.Year && period != Flow.FiveYears) period = Flow.TwelveMonths;
             var buckets = Flow.buckets(companyId, period, today, english ? "en" : "sv");
             var (moneyIn, moneyOut) = Flow.totals(buckets, companyId, today);
 
             set("chipQuarter", period == Flow.Quarter ? "on" : "");
             set("chip12m", period == Flow.TwelveMonths ? "on" : "");
             set("chipYear", period == Flow.Year ? "on" : "");
+            set("chipFiveYears", period == Flow.FiveYears ? "on" : "");
             set("chart", FlowChart.svg(buckets, Tr("bar.chart.label"), Tr("bar.chart.now"), Tr("bar.chart.expected"), Tr("bar.chart.in"), Tr("bar.chart.out"), Tr("bar.chart.accumulated"), Tr("common.currency")));
             set("moneyIn", Money.formatWhole(moneyIn));
             set("moneyOut", Money.formatWhole(moneyOut));

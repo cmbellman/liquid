@@ -38,6 +38,7 @@ namespace com.swecial.code {
         public const string Quarter = "kvartal";
         public const string Year = "ar";
         public const string TwelveMonths = "12m";
+        public const string FiveYears = "5ar";
 
         /// <summary>
         /// Money in (debit) and out (credit) on 1930 per voucher date, without reversal pairs. saving
@@ -68,17 +69,32 @@ namespace com.swecial.code {
 
         /// <summary>
         /// Buckets for a period: "kvartal" is weeks from 12 weeks back to 4 ahead, "ar" the months of
-        /// this year, and "12m" (default) months from 11 back to 3 ahead. Future buckets are a forecast
-        /// of the unpaid invoices by due date; overdue ones are expected in the current bucket.
+        /// this year, "12m" (default) months from 11 back to 3 ahead, and "5ar" months up to 5 years back
+        /// (or all available months since start). Future buckets are a forecast of the unpaid invoices
+        /// by due date; overdue ones are expected in the current bucket.
         /// </summary>
         public static List<FlowBucket> buckets(string companyId, string period, DateTime today, string language = "sv") {
             var culture = CultureInfo.GetCultureInfo(language == "en" ? "en-GB" : "sv-SE");
             var buckets = new List<FlowBucket>();
+            var all = movements(companyId);
             if (period == Quarter) {
                 DateTime monday = today.AddDays(-(((int)today.DayOfWeek + 6) % 7));
                 for (int i = -12; i <= 4; i++) {
                     DateTime start = monday.AddDays(7 * i);
                     buckets.Add(new FlowBucket { start = start, end = start.AddDays(7), label = (language == "en" ? "W" : "v") + ISOWeek.GetWeekOfYear(start) });
+                }
+            } else if (period == FiveYears) {
+                DateTime fiveYearsAgo = new DateTime(today.Year - 5, today.Month, 1);
+                DateTime startMonth = fiveYearsAgo;
+                if (all.Count > 0) {
+                    DateTime earliest = all.Min(m => m.date);
+                    DateTime earliestYearStart = new DateTime(earliest.Year, 1, 1);
+                    if (earliestYearStart > fiveYearsAgo) startMonth = earliestYearStart;
+                }
+                int totalMonths = (today.Year - startMonth.Year) * 12 + (today.Month - startMonth.Month) + 4;
+                for (int i = 0; i < totalMonths; i++) {
+                    DateTime start = startMonth.AddMonths(i);
+                    buckets.Add(new FlowBucket { start = start, end = start.AddMonths(1), label = start.ToString("MMM yyyy", culture).TrimEnd('.') });
                 }
             } else {
                 DateTime month = new DateTime(today.Year, today.Month, 1);
@@ -91,7 +107,6 @@ namespace com.swecial.code {
             }
             foreach (var b in buckets) b.forecast = b.start > today;
 
-            var all = movements(companyId);
             foreach (var (date, moneyIn, moneyOut, saving, _) in all) {
                 var b = buckets.FirstOrDefault(x => date >= x.start && date < x.end);
                 if (b == null || b.forecast) continue;

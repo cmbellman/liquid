@@ -73,14 +73,27 @@ namespace com.swecial.web {
 
             for (int i = 0; i < n; i++) {
                 var b = buckets[i];
-                // Labels: every bucket when few, otherwise every other one
-                if (n <= 16 || i % 2 == 0) {
-                    sb.Append("<text x='" + f(x(i)) + "' y='" + f(H - 8) + "' text-anchor='" + (i == 0 ? "start" : i == n - 1 ? "end" : "middle") + "'>" + LiquidPage.h(b.label) + "</text>");
+                // Labels: year labels when many buckets (5y view), every other when medium, all when few
+                bool showLabel;
+                string labelText;
+                if (n > 24) {
+                    showLabel = b.start.Month == 1 || i == 0;
+                    labelText = b.start.Year.ToString();
+                } else if (n <= 16 || i % 2 == 0) {
+                    showLabel = true;
+                    labelText = b.label;
+                } else {
+                    showLabel = false;
+                    labelText = "";
+                }
+                if (showLabel) {
+                    sb.Append("<text x='" + f(x(i)) + "' y='" + f(H - 8) + "' text-anchor='" + (i == 0 ? "start" : i == n - 1 ? "end" : "middle") + "'>" + LiquidPage.h(labelText) + "</text>");
                 }
                 if (!b.forecast && i <= lastPast) {
-                    sb.Append("<circle class='acc' cx='" + f(x(i)) + "' cy='" + f(y(b.accumulated)) + "' r='3.5'/>");
-                    if (b.moneyIn > 0) sb.Append("<circle class='in' cx='" + f(x(i)) + "' cy='" + f(y(b.moneyIn)) + "' r='3.5'/>");
-                    if (b.moneyOut > 0) sb.Append("<circle class='out' cx='" + f(x(i)) + "' cy='" + f(y(b.moneyOut)) + "' r='3.5'/>");
+                    double r = n > 30 ? 2.5 : 3.5;
+                    sb.Append("<circle class='acc' cx='" + f(x(i)) + "' cy='" + f(y(b.accumulated)) + "' r='" + f(r) + "'/>");
+                    if (b.moneyIn > 0) sb.Append("<circle class='in' cx='" + f(x(i)) + "' cy='" + f(y(b.moneyIn)) + "' r='" + f(r) + "'/>");
+                    if (b.moneyOut > 0) sb.Append("<circle class='out' cx='" + f(x(i)) + "' cy='" + f(y(b.moneyOut)) + "' r='" + f(r) + "'/>");
                 }
                 double hx = Math.Max(0, x(i) - step / 2);
                 string tip = b.label + (b.forecast ? " (" + expected + ")" : "") + ": "
