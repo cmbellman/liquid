@@ -43,7 +43,7 @@ namespace com.swecial.web {
             set("chipQuarter", period == Flow.Quarter ? "on" : "");
             set("chip12m", period == Flow.TwelveMonths ? "on" : "");
             set("chipYear", period == Flow.Year ? "on" : "");
-            set("chart", FlowChart.svg(buckets, Tr("bar.chart.label"), Tr("bar.chart.now"), Tr("bar.chart.expected"), Tr("bar.chart.in"), Tr("bar.chart.out"), Tr("common.currency")));
+            set("chart", FlowChart.svg(buckets, Tr("bar.chart.label"), Tr("bar.chart.now"), Tr("bar.chart.expected"), Tr("bar.chart.in"), Tr("bar.chart.out"), Tr("bar.chart.accumulated"), Tr("common.currency")));
             set("moneyIn", Money.formatWhole(moneyIn));
             set("moneyOut", Money.formatWhole(moneyOut));
             set("periodText", T("bar.amount.period", T("bar.period." + period)));

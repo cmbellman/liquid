@@ -281,19 +281,23 @@ ul.todo li { margin-bottom: 6px; }
 .flow text { fill: var(--faint); font: 600 11px "Manrope", sans-serif; }
 .flow .in { stroke: var(--cyan); filter: drop-shadow(0 0 6px rgba(232, 168, 56, 0.65)); }
 .flow .out { stroke: var(--amber); filter: drop-shadow(0 0 6px rgba(223, 109, 43, 0.6)); }
-.flow .in, .flow .out { fill: none; stroke-width: 3; stroke-linecap: round; }
+.flow .acc { stroke: var(--green); filter: drop-shadow(0 0 6px rgba(94, 196, 126, 0.6)); }
+.flow .acc, .flow .in, .flow .out { fill: none; stroke-width: 3; stroke-linecap: round; }
 .flow .forecast { stroke-dasharray: 2 7; stroke-width: 2.5; opacity: 0.8; }
 .flow .area-in { fill: url(#gradIn); }
 .flow .area-out { fill: url(#gradOut); }
+.flow .area-acc { fill: url(#gradAcc); }
 .flow circle { stroke: var(--bg); stroke-width: 2; }
 .flow circle.in { fill: var(--cyan); }
 .flow circle.out { fill: var(--amber); }
+.flow circle.acc { fill: var(--green); }
 .flow .hit { fill: transparent; stroke: none; }
 .flow .hit:hover { fill: rgba(255, 255, 255, 0.03); }
 .legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; color: var(--muted); }
 .legend i { display: inline-block; width: 18px; height: 3px; border-radius: 3px; vertical-align: middle; margin-right: 6px; }
 .legend .li { background: var(--cyan); box-shadow: 0 0 6px var(--cyan); }
 .legend .lo { background: var(--amber); box-shadow: 0 0 6px var(--amber); }
+.legend .la { background: var(--green); box-shadow: 0 0 6px var(--green); }
 .legend .lf { background: repeating-linear-gradient(90deg, var(--cyan) 0 3px, transparent 3px 7px); }
 
 .inout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; gap: 18px; align-items: end; margin-top: 18px; }
@@ -582,6 +586,7 @@ p.label { margin: 6px 0 8px; font-size: 13px; font-weight: 700; color: var(--mut
 /* Chart and glass colours come from the theme */
 .s-in { stop-color: var(--cyan); }
 .s-out { stop-color: var(--amber); }
+.s-acc { stop-color: var(--green); }
 .s-beer-top { stop-color: var(--beer-top, #ffd35c); }
 .s-beer-bottom { stop-color: var(--beer-bottom, #f59e0b); }
 .clock { display: none; }

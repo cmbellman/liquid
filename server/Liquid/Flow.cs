@@ -12,6 +12,7 @@ namespace com.swecial.code {
         public string label;
         public long moneyIn;
         public long moneyOut;
+        public long accumulated;
         /// <summary>After today: what is expected, not what happened.</summary>
         public bool forecast;
     }
@@ -40,18 +41,27 @@ namespace com.swecial.code {
 
         /// <summary>
         /// Money in (debit) and out (credit) on 1930 per voucher date, without reversal pairs. saving
-        /// marks money moved to or from funds (series V): it isn't spent, so Glaset's pace leaves it out.
+        /// marks money moved to or from funds (series V): it isn't spent, so Glaset's pace and chart out leave it out.
+        /// liquidNet is the net change in liquid assets (1930 Bank + 1350 Securities).
         /// </summary>
-        static List<(DateTime date, long moneyIn, long moneyOut, bool saving)> movements(string companyId) {
-            var result = new List<(DateTime, long, long, bool)>();
+        static List<(DateTime date, long moneyIn, long moneyOut, bool saving, long liquidNet)> movements(string companyId) {
+            var result = new List<(DateTime, long, long, bool, long)>();
             foreach (var voucher in Ledger.vouchers(companyId)) {
                 if (Db.str(voucher, "reversedById").Length > 0 || Db.str(voucher, "reversesId").Length > 0) continue;
                 long moneyIn = 0, moneyOut = 0;
-                foreach (var row in Ledger.rows(voucher).Where(r => r.account == Bas.Bank)) {
-                    moneyIn += row.debit;
-                    moneyOut += row.credit;
+                long secNet = 0;
+                foreach (var row in Ledger.rows(voucher)) {
+                    if (row.account == Bas.Bank) {
+                        moneyIn += row.debit;
+                        moneyOut += row.credit;
+                    } else if (row.account == Bas.Securities) {
+                        secNet += row.debit - row.credit;
+                    }
                 }
-                if (moneyIn != 0 || moneyOut != 0) result.Add((Dates.parse(Db.str(voucher, "date")), moneyIn, moneyOut, Db.str(voucher, "series") == Ledger.Securities));
+                long bankNet = moneyIn - moneyOut;
+                if (moneyIn != 0 || moneyOut != 0 || secNet != 0) {
+                    result.Add((Dates.parse(Db.str(voucher, "date")), moneyIn, moneyOut, Db.str(voucher, "series") == Ledger.Securities, bankNet + secNet));
+                }
             }
             return result;
         }
@@ -81,11 +91,21 @@ namespace com.swecial.code {
             }
             foreach (var b in buckets) b.forecast = b.start > today;
 
-            foreach (var (date, moneyIn, moneyOut, _) in movements(companyId)) {
+            var all = movements(companyId);
+            foreach (var (date, moneyIn, moneyOut, saving, _) in all) {
                 var b = buckets.FirstOrDefault(x => date >= x.start && date < x.end);
                 if (b == null || b.forecast) continue;
-                b.moneyIn += moneyIn;
-                b.moneyOut += moneyOut;
+                if (!saving) {
+                    b.moneyIn += moneyIn;
+                    b.moneyOut += moneyOut;
+                }
+            }
+
+            foreach (var b in buckets) {
+                if (!b.forecast) {
+                    DateTime cutoff = b.end <= today ? b.end : today.AddDays(1);
+                    b.accumulated = all.Where(m => m.date < cutoff).Sum(m => m.liquidNet);
+                }
             }
 
             var current = buckets.FirstOrDefault(x => today >= x.start && today < x.end);
@@ -94,15 +114,24 @@ namespace com.swecial.code {
                 var b = due <= today ? current : buckets.FirstOrDefault(x => due >= x.start && due < x.end);
                 if (b != null && (b.forecast || b == current)) b.moneyIn += Db.num(invoice, "total");
             }
+
+            long runningAcc = current != null ? current.accumulated : 0;
+            long currentPaidIn = all.Where(m => current != null && m.date >= current.start && m.date <= today && !m.saving).Sum(m => m.moneyIn);
+            long currentPendingIn = current != null ? Math.Max(0, current.moneyIn - currentPaidIn) : 0;
+            runningAcc += currentPendingIn;
+            foreach (var b in buckets.Where(x => x.forecast)) {
+                runningAcc += b.moneyIn - b.moneyOut;
+                b.accumulated = runningAcc;
+            }
             return buckets;
         }
 
-        /// <summary>Sums of what actually happened in a period (no forecast).</summary>
+        /// <summary>Sums of what actually happened in a period (no forecast), excluding fund transfers.</summary>
         public static (long moneyIn, long moneyOut) totals(List<FlowBucket> buckets, string companyId, DateTime today) {
             var past = buckets.Where(b => !b.forecast).ToList();
             if (past.Count == 0) return (0, 0);
             DateTime from = past.First().start;
-            var inPeriod = movements(companyId).Where(m => m.date >= from && m.date <= today).ToList();
+            var inPeriod = movements(companyId).Where(m => m.date >= from && m.date <= today && !m.saving).ToList();
             return (inPeriod.Sum(m => m.moneyIn), inPeriod.Sum(m => m.moneyOut));
         }
 

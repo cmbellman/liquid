@@ -17,17 +17,21 @@ namespace com.swecial.web {
 
         static string f(double v) => v.ToString("0.#", CultureInfo.InvariantCulture);
 
-        /// <summary>The chart. The texts (aria label, "now", "expected", "in", "out") come from the theme.</summary>
-        public static string svg(List<FlowBucket> buckets, string label, string now, string expected, string inText, string outText, string currency) {
+        /// <summary>The chart. The texts (aria label, "now", "expected", "in", "out", "accumulated") come from the theme.</summary>
+        public static string svg(List<FlowBucket> buckets, string label, string now, string expected, string inText, string outText, string accText, string currency) {
             int n = buckets.Count;
             if (n < 2) return "";
-            long max = Math.Max(1, buckets.Max(b => Math.Max(b.moneyIn, b.moneyOut)));
+            long maxFlow = buckets.Max(b => Math.Max(b.moneyIn, b.moneyOut));
+            long maxAcc = buckets.Max(b => b.accumulated);
+            long max = Math.Max(1, Math.Max(maxFlow, maxAcc));
+            long min = Math.Min(0, buckets.Min(b => b.accumulated));
             double step = (W - Left - Right) / (n - 1);
             double x(int i) => Left + i * step;
-            double y(long v) => Top + (H - Top - Bottom) * (1 - (double)v / max);
+            double y(long v) => Top + (H - Top - Bottom) * (1 - (double)(v - min) / (max - min));
 
             var inPts = buckets.Select((b, i) => (x(i), y(b.moneyIn))).ToList();
             var outPts = buckets.Select((b, i) => (x(i), y(b.moneyOut))).ToList();
+            var accPts = buckets.Select((b, i) => (x(i), y(b.accumulated))).ToList();
             int firstForecast = buckets.FindIndex(b => b.forecast);
             int lastPast = firstForecast < 0 ? n - 1 : Math.Max(0, firstForecast - 1);
 
@@ -36,6 +40,7 @@ namespace com.swecial.web {
             sb.Append("<defs>");
             sb.Append("<linearGradient id='gradIn' x1='0' y1='0' x2='0' y2='1'><stop class='s-in' offset='0' stop-opacity='0.28'/><stop class='s-in' offset='1' stop-opacity='0'/></linearGradient>");
             sb.Append("<linearGradient id='gradOut' x1='0' y1='0' x2='0' y2='1'><stop class='s-out' offset='0' stop-opacity='0.18'/><stop class='s-out' offset='1' stop-opacity='0'/></linearGradient>");
+            sb.Append("<linearGradient id='gradAcc' x1='0' y1='0' x2='0' y2='1'><stop class='s-acc' offset='0' stop-opacity='0.14'/><stop class='s-acc' offset='1' stop-opacity='0'/></linearGradient>");
             sb.Append("</defs>");
 
             double baseY = y(0);
@@ -51,14 +56,18 @@ namespace com.swecial.web {
             // Areas and lines for what happened, dashed lines for the forecast
             var pastIn = inPts.Take(lastPast + 1).ToList();
             var pastOut = outPts.Take(lastPast + 1).ToList();
+            var pastAcc = accPts.Take(lastPast + 1).ToList();
             if (pastIn.Count > 1) {
+                sb.Append("<path class='area-acc' d='" + curve(pastAcc) + " L" + f(pastAcc.Last().Item1) + "," + f(baseY) + " L" + f(pastAcc[0].Item1) + "," + f(baseY) + " Z'/>");
                 sb.Append("<path class='area-out' d='" + curve(pastOut) + " L" + f(pastOut.Last().Item1) + "," + f(baseY) + " L" + f(pastOut[0].Item1) + "," + f(baseY) + " Z'/>");
                 sb.Append("<path class='area-in' d='" + curve(pastIn) + " L" + f(pastIn.Last().Item1) + "," + f(baseY) + " L" + f(pastIn[0].Item1) + "," + f(baseY) + " Z'/>");
+                sb.Append("<path class='acc' d='" + curve(pastAcc) + "'/>");
                 sb.Append("<path class='out' d='" + curve(pastOut) + "'/>");
                 sb.Append("<path class='in' d='" + curve(pastIn) + "'/>");
             }
             if (firstForecast >= 0) {
                 int from = Math.Max(0, firstForecast - 1);
+                sb.Append("<path class='acc forecast' d='" + curve(accPts.Skip(from).ToList()) + "'/>");
                 sb.Append("<path class='in forecast' d='" + curve(inPts.Skip(from).ToList()) + "'/>");
             }
 
@@ -68,12 +77,16 @@ namespace com.swecial.web {
                 if (n <= 16 || i % 2 == 0) {
                     sb.Append("<text x='" + f(x(i)) + "' y='" + f(H - 8) + "' text-anchor='" + (i == 0 ? "start" : i == n - 1 ? "end" : "middle") + "'>" + LiquidPage.h(b.label) + "</text>");
                 }
-                if (!b.forecast && (b.moneyIn > 0 || b.moneyOut > 0) && i <= lastPast) {
+                if (!b.forecast && i <= lastPast) {
+                    sb.Append("<circle class='acc' cx='" + f(x(i)) + "' cy='" + f(y(b.accumulated)) + "' r='3.5'/>");
                     if (b.moneyIn > 0) sb.Append("<circle class='in' cx='" + f(x(i)) + "' cy='" + f(y(b.moneyIn)) + "' r='3.5'/>");
                     if (b.moneyOut > 0) sb.Append("<circle class='out' cx='" + f(x(i)) + "' cy='" + f(y(b.moneyOut)) + "' r='3.5'/>");
                 }
                 double hx = Math.Max(0, x(i) - step / 2);
-                string tip = b.label + (b.forecast ? " (" + expected + ")" : "") + ": " + inText + " " + Money.format(b.moneyIn) + " " + currency + (b.forecast ? "" : ", " + outText + " " + Money.format(b.moneyOut) + " " + currency);
+                string tip = b.label + (b.forecast ? " (" + expected + ")" : "") + ": "
+                    + inText + " " + Money.format(b.moneyIn) + " " + currency
+                    + (b.forecast ? "" : ", " + outText + " " + Money.format(b.moneyOut) + " " + currency)
+                    + ", " + accText + " " + Money.format(b.accumulated) + " " + currency;
                 sb.Append("<rect class='hit' x='" + f(hx) + "' y='0' width='" + f(Math.Min(step, W - hx)) + "' height='" + f(H - Bottom) + "'><title>" + LiquidPage.h(tip) + "</title></rect>");
             }
             sb.Append("</svg>");
