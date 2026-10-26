@@ -22,7 +22,7 @@ namespace com.swecial.code {
 
         public static string providerName => setting("providerName", "Adermark Consulting AB");
         public static string providerOrgNumber => setting("providerOrgNumber", "559430-7349");
-        public static string providerAddress => setting("providerAddress", "Virkesvägen 17, 120 30 Stockholm");
+        public static string providerAddress => setting("providerAddress", "Virkesvägen 17, 120 78 Stockholm");
         public static string providerEmail => setting("providerEmail", "anders.adermark@gmail.com");
         public static string dataLocation => setting("dataLocation", "Sverige");
 
