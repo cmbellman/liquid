@@ -8,7 +8,7 @@ namespace com.swecial.web {
     /// /liquid/customers.html : the customer list and a form for a new customer. ?id= edits one.
     /// </summary>
     public class WebCustomers : LiquidPage {
-        static readonly string[] Fields = { "name", "orgNumber", "vatNumber", "address", "postalAddress", "email", "reference" };
+        static readonly string[] Fields = { "name", "orgNumber", "vatNumber", "address", "postalAddress", "email", "reference", "hourlyRate" };
 
         SwecialObject customer;
 
@@ -25,7 +25,14 @@ namespace com.swecial.web {
                 string name = form("name").Trim();
                 if (name.Length == 0) throw new LiquidException("Fyll i kundens namn.", "CLIENT NAME REQUIRED.");
                 if (customer == null) customer = Db.create("customer", companyId);
-                foreach (var key in Fields) customer.set(key, form(key).Trim());
+                foreach (var key in Fields) {
+                    if (key == "hourlyRate") {
+                        string r = form(key).Trim();
+                        customer.set("hourlyRate", r.Length > 0 ? Money.parse(r) : 0L);
+                    } else {
+                        customer.set(key, form(key).Trim());
+                    }
+                }
                 string region = form("region");
                 customer.set("region", region == Invoicing.RegionEu || region == Invoicing.RegionOutsideEu ? region : Invoicing.RegionSweden);
                 if (region == Invoicing.RegionEu && form("vatNumber").Trim().Length == 0) {
@@ -46,12 +53,15 @@ namespace com.swecial.web {
 
         void renderPage() {
             rows("customers", Db.forCompany("customer", companyId).OrderBy(c => Db.str(c, "name")).Select(c =>
-                row(("id", u(c.id)), ("name", h(Db.str(c, "name"))), ("orgNumber", h(Db.str(c, "orgNumber"))), ("email", h(Db.str(c, "email"))))));
+                row(("id", u(c.id)), ("name", h(Db.str(c, "name"))), ("orgNumber", h(Db.str(c, "orgNumber"))),
+                    ("email", h(Db.str(c, "email"))), ("hourlyRate", Money.formatOrBlank(Db.num(c, "hourlyRate"))))));
             set("editing", customer != null);
             set("id", customer != null ? h(customer.id) : "");
             set("formTitle", customer == null ? T("customers.new") : T("customers.edit", h(Db.str(customer, "name"))));
-            rows("fields", Fields.Select(key => row(("name", key), ("label", T("field." + key)), ("type", key == "email" ? "email" : "text"),
-                ("value", h(isPost ? form(key) : Db.str(customer, key))), ("required", key == "name" ? "required" : ""))));
+            rows("fields", Fields.Select(key => row(("name", key), ("label", T("field." + key)),
+                ("type", key == "email" ? "email" : "text"),
+                ("value", h(isPost ? form(key) : key == "hourlyRate" ? Money.input(Db.num(customer, "hourlyRate")) : Db.str(customer, key))),
+                ("required", key == "name" ? "required" : ""))));
             string region = isPost ? form("region") : Db.str(customer, "region");
             set("regions", options(new[] { (Invoicing.RegionSweden, Tr("customers.region.se")), (Invoicing.RegionEu, Tr("customers.region.eu")), (Invoicing.RegionOutsideEu, Tr("customers.region.noneu")) },
                 region.Length > 0 ? region : Invoicing.RegionSweden));

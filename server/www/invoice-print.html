@@ -32,7 +32,7 @@
                 <swe:condition source="hasCustomerVat"><span>Momsreg.nr <%customerVat%></span></swe:condition>
             </section>
             <table>
-                <thead><tr><th>Beskrivning</th><th class="num">Antal</th><th class="num">À-pris</th><th class="num">Moms</th><th class="num">Belopp</th></tr></thead>
+                <thead><tr><th>Beskrivning</th><th class="num"><%qtyHeader%></th><th class="num"><%priceHeader%></th><th class="num">Moms</th><th class="num">Belopp</th></tr></thead>
                 <tbody>
                     <swe:iterator source="lines"><tr><td><%current.text%></td><td class="num"><%current.qty%></td><td class="num"><%current.price%></td><td class="num"><%current.vat%> %</td><td class="num"><%current.net%></td></tr></swe:iterator>
                 </tbody>

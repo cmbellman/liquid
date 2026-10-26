@@ -36,6 +36,10 @@ namespace com.swecial.web {
             val("customerName", Db.str(invoice, "customerName"));
             set("customerAddress", spans(customer, "address", "postalAddress"));
 
+            bool isHourly = Db.str(invoice, "isHourly") == "1";
+            set("qtyHeader", isHourly ? "Timmar" : "Antal");
+            set("priceHeader", isHourly ? "Timarvode" : "À-pris");
+
             rows("lines", lines.Select(l => row(("text", h(l.text)), ("qty", Money.formatDecimal(l.quantity)), ("price", Money.formatOrBlank(l.unitPrice)),
                 ("vat", l.vatRate.ToString()), ("net", Money.formatOrBlank(l.net)))));
             set("net", Money.formatOrBlank(totals.net));

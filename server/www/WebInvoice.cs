@@ -81,6 +81,7 @@ namespace com.swecial.web {
             invoice.set("ourReference", form("ourReference").Trim());
             invoice.set("note", form("note").Trim());
             if (Db.str(invoice, "documentFileId").Length > 0) invoice.set("issuedNumber", form("issuedNumber").Trim());
+            invoice.set("isHourly", form("isHourly") == "1" ? "1" : "0");
 
             invoice.set("supplyType", form("supplyType") == Invoicing.Goods ? Invoicing.Goods : Invoicing.Services);
             // Customers abroad get no Swedish VAT
@@ -108,6 +109,12 @@ namespace com.swecial.web {
             var totals = Invoicing.totals(lines);
             long number = Db.num(invoice, "number");
             string value(string key) => isPost ? form(key) : Db.str(invoice, key);
+
+            bool isHourly = (isPost ? form("isHourly") == "1" : Db.str(invoice, "isHourly") == "1");
+            set("isHourly", isHourly);
+            set("isHourlyChecked", isChecked(isHourly));
+            set("qtyLabel", isHourly ? T("invoice.col.hours") : T("invoice.col.quantity"));
+            set("priceLabel", isHourly ? T("invoice.col.hourlyRate") : T("invoice.col.unitPrice"));
 
             set("id", u(invoice.id));
             set("heading", number > 0 ? T("invoice.title", number) : T("invoice.draft"));
@@ -148,17 +155,34 @@ namespace com.swecial.web {
             set("totalDue", Money.format(totals.total));
 
             if (draft) {
-                var customers = Db.forCompany("customer", companyId).OrderBy(c => Db.str(c, "name")).Select(c => (c.id, Db.str(c, "name"))).ToList();
-                set("noCustomers", customers.Count == 0);
-                set("customers", options(customers.Prepend(("", Tr("invoice.chooseCustomer"))), value("customerId")));
+                var customerList = Db.forCompany("customer", companyId).OrderBy(c => Db.str(c, "name")).ToList();
+                set("noCustomers", customerList.Count == 0);
+                string selectedCustId = value("customerId");
+                rows("customers", customerList.Select(c => row(
+                    ("value", u(c.id)),
+                    ("text", h(Db.str(c, "name"))),
+                    ("selected", c.id == selectedCustId ? "selected" : ""),
+                    ("rate", Money.input(Db.num(c, "hourlyRate")))
+                )).Prepend(row(
+                    ("value", ""),
+                    ("text", Tr("invoice.chooseCustomer")),
+                    ("selected", selectedCustId.Length == 0 ? "selected" : ""),
+                    ("rate", "")
+                )));
                 int count = isPost ? rowCount() : lines.Count + BlankRows;
                 set("rowCount", count.ToString());
                 rows("lines", Enumerable.Range(0, count).Select(i => {
                     InvoiceRow line = !isPost && i < lines.Count ? lines[i] : null;
+                    string priceVal = isPost ? form("price" + i) : line != null ? Money.input(line.unitPrice) : "";
+                    if (i == 0 && string.IsNullOrEmpty(priceVal) && isHourly && selectedCustId.Length > 0) {
+                        var cust = Db.getOwned("customer", selectedCustId, companyId);
+                        long r = Db.num(cust, "hourlyRate");
+                        if (r > 0) priceVal = Money.input(r);
+                    }
                     return row(("i", i.ToString()),
                         ("text", h(isPost ? form("text" + i) : line?.text ?? "")),
                         ("qty", h(isPost ? form("qty" + i) : line != null ? Money.formatDecimal(line.quantity) : "")),
-                        ("price", h(isPost ? form("price" + i) : line != null ? Money.input(line.unitPrice) : "")),
+                        ("price", h(priceVal)),
                         ("vatRates", vatOptions(isPost ? form("vat" + i) : (line?.vatRate ?? 25).ToString())),
                         ("net", line != null ? Money.formatOrBlank(line.net) : ""));
                 }));
