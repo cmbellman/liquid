@@ -32,7 +32,7 @@ namespace com.swecial.code {
         public const string Failed = "failed";
 
         const string DefaultModel = "gemini-3.8-flash-low";
-        static readonly TimeSpan Timeout = TimeSpan.FromSeconds(120);
+        static readonly TimeSpan Timeout = TimeSpan.FromSeconds(60);
         static readonly SemaphoreSlim Slots = new SemaphoreSlim(2);
 
         const string Schema = @"{""type"":""object"",""properties"":{
@@ -80,7 +80,7 @@ namespace com.swecial.code {
         static string apiKey => (settings?.get<string>("geminiApiKey") ?? "").Trim();
 
         const string DefaultGeminiModel = "gemini-flash-latest";
-        static readonly HttpClient http = new HttpClient { Timeout = TimeSpan.FromSeconds(120) };
+        static readonly HttpClient http = new HttpClient { Timeout = Timeout };
 
         /// <summary>A reading that failed, with a kind the pages can explain (Problem.*) and a short detail.</summary>
         class ReaderException : Exception {
@@ -109,6 +109,7 @@ namespace com.swecial.code {
             if (!enabled || Db.str(expense, "receiptFileId").Length == 0) return;
             if (!onFor(Db.get("company", Db.str(expense, "companyId")))) return;
             expense.set("aiStatus", Reading);
+            expense.remove("aiProblem");
             Db.commit(expense);
             string id = expense.id, companyId = Db.str(expense, "companyId");
             Task.Run(() => read(id, companyId));
@@ -134,13 +135,40 @@ namespace com.swecial.code {
                 if (!onFor(company)) {
                     // Turned off after it was queued: nothing leaves Liquid
                     expense.remove("aiStatus");
+                    expense.remove("aiProblem");
                     Db.commit(expense);
                     return;
                 }
                 string prompt = instructions(Db.str(company, "name"), Db.str(company, "orgNumber"));
-                var answer = apiKey.Length > 0
-                    ? askGemini(data, Db.str(file, "contentType"), prompt)
-                    : askAgy(data, file.fileType, prompt);
+                JObject answer = null;
+                Exception lastEx = null;
+                const int maxAttempts = 2;
+                for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+                    try {
+                        if (apiKey.Length > 0) {
+                            try {
+                                answer = askGemini(data, Db.str(file, "contentType"), prompt);
+                            } catch (Exception ex) when (command.Length > 0) {
+                                SwecialData.current.log.write("liquid: gemini API failed for " + expenseId + ", falling back to agy: " + ex.Message);
+                                answer = askAgy(data, file.fileType, prompt);
+                            }
+                        } else {
+                            answer = askAgy(data, file.fileType, prompt);
+                        }
+                        lastEx = null;
+                        break;
+                    } catch (Exception ex) {
+                        lastEx = ex;
+                        var problem = ex as ReaderException ?? new ReaderException(ex is TaskCanceledException ? Problem.Timeout : Problem.Other, ex.Message);
+                        bool isTransient = problem.kind == Problem.Timeout || ex is TaskCanceledException || ex is HttpRequestException
+                            || problem.Message.Contains("HTTP 5") || problem.Message.Contains("HTTP 429");
+                        if (!isTransient || attempt >= maxAttempts) break;
+                        SwecialData.current.log.write("liquid: receipt reading attempt " + attempt + " failed for " + expenseId + " (" + problem.kind + "), retrying: " + problem.Message);
+                        Thread.Sleep(2000);
+                    }
+                }
+                if (lastEx != null) throw lastEx;
+
                 store(expenseId, companyId, answer);
                 setProblem(companyId, null, null);
             } catch (Exception ex) {
@@ -227,7 +255,7 @@ namespace com.swecial.code {
                             error += " " + status + ": " + (string)json["error"]?["message"];
                         } catch { }
                         int code = (int)response.StatusCode;
-                        string kind = code == 429 || status == "RESOURCE_EXHAUSTED" ? Problem.Quota
+                        string kind = code == 429 || code == 402 || status == "RESOURCE_EXHAUSTED" ? Problem.Quota
                             : code == 401 || code == 403 || error.Contains("API key") || error.Contains("API_KEY") ? Problem.BadKey
                             : Problem.Other;
                         throw new ReaderException(kind, error);
@@ -314,6 +342,7 @@ namespace com.swecial.code {
                 var expense = Db.getOwned("expense", expenseId, companyId);
                 // Sorted or thrown away while it was being read: the suggestion isn't needed any more
                 if (expense == null || Db.str(expense, "status") != Expenses.Inbox) return;
+                expense.remove("aiProblem");
 
                 string supplier = ((string)a["supplier"] ?? "").Trim();
                 if (supplier.Length > 0) expense.set("aiSupplier", supplier.Length > 100 ? supplier.Substring(0, 100) : supplier);
