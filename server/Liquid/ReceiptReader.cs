@@ -42,7 +42,7 @@ namespace com.swecial.code {
  ""vat"":{""type"":""number"",""description"":""VAT amount on the receipt, 0 if none""},
  ""vatRate"":{""type"":""integer"",""description"":""Main VAT rate: 25, 12, 6 or 0""},
  ""currency"":{""type"":""string"",""description"":""ISO code, e.g. SEK""},
- ""category"":{""type"":""string""},
+ ""category"":{""type"":""string"",""enum"":[""software"",""equipment"",""phone"",""internet"",""office"",""rent"",""travel"",""hotel"",""representation"",""marketing"",""consulting"",""accounting"",""insurance"",""postage"",""literature"",""education"",""membership"",""goods"",""bankfees"",""other""]},
  ""foreign"":{""type"":""boolean"",""description"":""True if the seller is outside Sweden (whether or not it charged its own country's VAT)""},
  ""goods"":{""type"":""boolean"",""description"":""True if physical goods were bought, false for services, subscriptions, travel, hotels and meals""},
  ""alcohol"":{""type"":""boolean"",""description"":""True if the receipt lists alcoholic drinks (beer, wine, cider, spirits)""},
@@ -352,7 +352,8 @@ namespace com.swecial.code {
                     expense.set("aiDate", Dates.format(date));
                 }
 
-                string category = ((string)a["category"] ?? "").Trim();
+                string category = ((string)a["category"] ?? "").Trim().ToLowerInvariant();
+                if (category == "electronics" || category == "hardware" || category == "computer") category = "equipment";
                 expense.set("aiCategory", Categories.find(category) != null ? category : "other");
 
                 expense.set("aiAlcohol", a["alcohol"]?.Type == JTokenType.Boolean && (bool)a["alcohol"]);
