@@ -181,6 +181,7 @@
     "company.field.phone": "Telephone",
     "company.field.postalAddress": "Postal code and city",
     "company.field.vatNumber": "VAT registration no.",
+    "company.fskatt": "Company is approved for Swedish F-tax (F-skatt)",
     "customers.edit": "Amend {0}",
     "customers.empty": "No clients on record. Register the first below.",
     "customers.new": "New client",

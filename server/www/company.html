@@ -5,6 +5,7 @@
 <section class="panel">
     <form method="post" class="grid">
         <swe:iterator source="fields"><label><%current.label%><input type="<%current.type%>" name="<%current.name%>" value="<%current.value%>" <%current.required%>></label></swe:iterator>
+        <label class="check"><input type="checkbox" name="fskatt" value="1" <%fskattChecked%>><span><%t.company.fskatt%></span></label>
         <div class="actions"><button type="submit"><%t.settings.create.button%></button></div>
     </form>
 </section>
@@ -17,6 +18,7 @@
             <swe:iterator source="fields"><label><%current.label%><input type="<%current.type%>" name="<%current.name%>" value="<%current.value%>" <%current.required%>><swe:condition source="current.vat"><button type="button" class="link" id="vatSuggest" data-label="<%t.settings.vatSuggest%>" hidden></button></swe:condition></label></swe:iterator>
         </div>
         <p class="hint"><%t.settings.vatHint%></p>
+        <label class="check"><input type="checkbox" name="fskatt" value="1" <%fskattChecked%>><span><%t.company.fskatt%></span></label>
     </section>
     <section class="panel">
         <div class="heading"><div><h2><%t.settings.invoices.title%></h2><p class="sub"><%t.settings.invoices.subtitle%></p></div></div>

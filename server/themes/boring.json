@@ -184,6 +184,7 @@
     "company.field.phone": "Telefon",
     "company.field.postalAddress": "Postnummer och ort",
     "company.field.vatNumber": "Momsregistreringsnummer",
+    "company.fskatt": "Företaget är godkänt för F-skatt",
     "customers.edit": "Ändra {0}",
     "customers.empty": "Inga kunder än. Lägg till din första kund nedan.",
     "customers.new": "Ny kund",

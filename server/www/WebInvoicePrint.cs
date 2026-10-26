@@ -59,9 +59,15 @@ namespace com.swecial.web {
             val("note", Db.str(invoice, "note"));
             set("paid", Db.str(invoice, "status") == Invoicing.Paid);
             val("paidDate", Db.str(invoice, "paidDate"));
-            rows("footer", new[] { ("Bankgiro", "bankgiro"), ("Org.nr", "orgNumber"), ("Momsreg.nr", "vatNumber"), ("E-post", "email"), ("Telefon", "phone") }
-                .Where(f => Db.str(company, f.Item2).Length > 0)
-                .Select(f => row(("label", f.Item1), ("value", h(Db.str(company, f.Item2))))));
+            var footer = new List<(string label, string value)>();
+            if (Db.str(company, "fskatt") != "0") footer.Add(("F-skatt", "Godkänd för F-skatt"));
+            if (Db.str(company, "orgNumber").Length > 0) footer.Add(("Org.nr", Db.str(company, "orgNumber")));
+            if (Db.str(company, "vatNumber").Length > 0) footer.Add(("Momsreg.nr", Db.str(company, "vatNumber")));
+            if (Db.str(company, "bankgiro").Length > 0) footer.Add(("Bankgiro", Db.str(company, "bankgiro")));
+            if (Db.str(company, "email").Length > 0) footer.Add(("E-post", Db.str(company, "email")));
+            if (Db.str(company, "phone").Length > 0) footer.Add(("Telefon", Db.str(company, "phone")));
+
+            rows("footer", footer.Select(f => row(("label", f.label), ("value", h(f.value)))));
         }
 
         static string spans(SwecialObject o, params string[] keys) {

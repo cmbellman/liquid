@@ -27,6 +27,7 @@ namespace com.swecial.web {
                 if (company == null) {
                     company = Companies.create(account.id, name);
                     foreach (var key in Fields) company.set(key, form(key).Trim());
+                    company.set("fskatt", form("fskatt") == "1" || !isPost ? "1" : "0");
                     Db.commit(company);
                     Audit.log(company.id, account.id, "company", "Bolaget skapades: " + name);
                     redirect(BasePath + "/");
@@ -50,6 +51,7 @@ namespace com.swecial.web {
             all.Add(("Fakturanummer", Settings.invoiceNumbering(company)));
             all.Add(("Bokföringsmetod per år", Db.str(company, "methodsJson")));
             all.Add(("Momsperiod", Settings.vatPeriod(company)));
+            all.Add(("Godkänd för F-skatt", Db.str(company, "fskatt") != "0" ? "ja" : "nej"));
             all.Add(("AI-läsning av kvitton", ReceiptReader.onFor(company) ? "på" : "av"));
             return all;
         }
@@ -81,6 +83,7 @@ namespace com.swecial.web {
                 if (year != thisYear && form("method" + year).Length > 0) Settings.setAccountingMethod(company, year, form("method" + year));
             }
             company.set("vatPeriod", vatPeriod);
+            company.set("fskatt", form("fskatt") == "1" ? "1" : "0");
             company.set("receiptReaderOff", form("receiptReader") != "1");
             Db.commit(company);
             var after = snapshot();
@@ -95,6 +98,7 @@ namespace com.swecial.web {
 
         void setValues() {
             bool creating = company == null;
+            set("fskattChecked", isChecked(isPost ? form("fskatt") == "1" : (company == null || Db.str(company, "fskatt") != "0")));
             set("receiptReaderChecked", isChecked(isPost ? form("receiptReader") == "1" : ReceiptReader.onFor(company)));
             set("creating", creating);
             rows("fields", Fields.Select(key => row(("name", key), ("label", T("company.field." + key)), ("type", key == "email" ? "email" : "text"),
