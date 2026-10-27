@@ -281,7 +281,7 @@ namespace com.swecial.web {
             if (company != null) {
                 int bag = Expenses.inbox(companyId).Count;
                 items.Add(navItem("/", "nav.bar", "bar", 0, "/index.html"));
-                items.Add(navItem("/invoices.html", "nav.invoices", "invoice", 0, "/invoice.html", "/invoice-print.html"));
+                items.Add(navItem("/invoices.html", "nav.invoices", "invoice", 0, "/invoice.html", "/invoice-print.html", "/invoice-pdf.html"));
                 items.Add(navItem("/expenses.html", "nav.expenses", "receipt", 0, "/expense.html"));
                 items.Add(navItem("/pant.html", "nav.pant", "bag", bag));
                 items.Add(navItem("/bank.html", "nav.bank", "wallet", 0));

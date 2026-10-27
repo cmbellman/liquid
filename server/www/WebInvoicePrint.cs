@@ -5,9 +5,8 @@ using System.Linq;
 
 namespace com.swecial.web {
     /// <summary>
-    /// /liquid/invoice-print.html?id= : the invoice as a printable A4 page. The server has no PDF
-    /// library, so the browser's print dialog makes the PDF. Only sent invoices have one. The
-    /// invoice is a document for the customer, so it is Swedish and neutral whatever the theme.
+    /// /liquid/invoice-print.html?id= : the invoice as a printable A4 page. Only sent invoices have one.
+    /// The invoice is a document for the customer, so it is Swedish and neutral whatever the theme.
     /// </summary>
     public class WebInvoicePrint : LiquidPage {
         public override void processPage() {

@@ -4,7 +4,7 @@
     <div class="heading">
         <h1><%heading%></h1>
         <span class="status <%statusClass%>"><%status%></span>
-        <swe:condition source="draft"><else><a class="button secondary" href="/liquid/invoice-print.html?id=<%id%>" target="_blank"><%t.invoice.print%></a></else></swe:condition>
+        <swe:condition source="draft"><else><a class="button" href="/liquid/invoice-pdf.html?id=<%id%>"><%t.invoice.pdf%></a> <a class="button secondary" href="/liquid/invoice-print.html?id=<%id%>" target="_blank"><%t.invoice.print%></a></else></swe:condition>
     </div>
     <swe:condition source="hasDocument"><p class="hint"><a href="<%documentSrc%>" target="_blank"><%t.invoice.original%></a></p></swe:condition>
     <swe:condition source="draft">
