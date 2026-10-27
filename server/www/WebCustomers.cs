@@ -8,7 +8,7 @@ namespace com.swecial.web {
     /// /liquid/customers.html : the customer list and a form for a new customer. ?id= edits one.
     /// </summary>
     public class WebCustomers : LiquidPage {
-        static readonly string[] Fields = { "name", "orgNumber", "vatNumber", "address", "postalAddress", "email", "reference", "hourlyRate" };
+        static readonly string[] Fields = { "name", "orgNumber", "vatNumber", "address", "postalAddress", "email", "reference", "orderRefLabel", "orderRef", "hourlyRate" };
 
         SwecialObject customer;
 
@@ -58,10 +58,21 @@ namespace com.swecial.web {
             set("editing", customer != null);
             set("id", customer != null ? h(customer.id) : "");
             set("formTitle", customer == null ? T("customers.new") : T("customers.edit", h(Db.str(customer, "name"))));
-            rows("fields", Fields.Select(key => row(("name", key), ("label", T("field." + key)),
-                ("type", key == "email" ? "email" : "text"),
-                ("value", h(isPost ? form(key) : key == "hourlyRate" ? Money.input(Db.num(customer, "hourlyRate")) : Db.str(customer, key))),
-                ("required", key == "name" ? "required" : ""))));
+            rows("fields", Fields.Select(key => {
+                string ph = "";
+                if (key == "orderRefLabel") ph = "PO#";
+                else if (key == "orderRef") ph = Tr("field.orderRefPlaceholder");
+                return row(
+                    ("name", key),
+                    ("label", T("field." + key)),
+                    ("type", key == "email" ? "email" : "text"),
+                    ("value", h(isPost ? form(key) : key == "hourlyRate" ? Money.input(Db.num(customer, "hourlyRate")) : Db.str(customer, key))),
+                    ("required", key == "name" ? "required" : ""),
+                    ("placeholder", ph),
+                    ("hasList", key == "orderRefLabel"),
+                    ("list", key == "orderRefLabel" ? "orderRefSuggestions" : "")
+                );
+            }));
             string region = isPost ? form("region") : Db.str(customer, "region");
             set("regions", options(new[] { (Invoicing.RegionSweden, Tr("customers.region.se")), (Invoicing.RegionEu, Tr("customers.region.eu")), (Invoicing.RegionOutsideEu, Tr("customers.region.noneu")) },
                 region.Length > 0 ? region : Invoicing.RegionSweden));

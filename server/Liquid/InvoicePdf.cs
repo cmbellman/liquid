@@ -119,7 +119,13 @@ namespace com.swecial.code {
             if (yourRef.Length == 0 && customer != null) yourRef = Db.str(customer, "reference");
             if (yourRef.Length > 0) meta.Add(("Er referens", yourRef));
             string poNumber = Db.str(invoice, "poNumber");
-            if (poNumber.Length > 0) meta.Add(("PO#", poNumber));
+            if (poNumber.Length == 0 && customer != null) poNumber = Db.str(customer, "orderRef");
+            if (poNumber.Length > 0) {
+                string poLabel = Db.str(invoice, "poLabel");
+                if (poLabel.Length == 0 && customer != null) poLabel = Db.str(customer, "orderRefLabel");
+                if (poLabel.Length == 0) poLabel = "PO#";
+                meta.Add((poLabel, poNumber));
+            }
             string ourRef = Db.str(invoice, "ourReference");
             if (ourRef.Length > 0) meta.Add(("Vår referens", ourRef));
 

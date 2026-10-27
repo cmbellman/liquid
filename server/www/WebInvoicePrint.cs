@@ -37,8 +37,13 @@ namespace com.swecial.web {
             set("hasYourReference", yourRef.Length > 0);
             val("yourReference", yourRef);
             string poNumber = Db.str(invoice, "poNumber");
+            if (poNumber.Length == 0 && customer != null) poNumber = Db.str(customer, "orderRef");
             set("hasPoNumber", poNumber.Length > 0);
             val("poNumber", poNumber);
+            string poLabel = Db.str(invoice, "poLabel");
+            if (poLabel.Length == 0 && customer != null) poLabel = Db.str(customer, "orderRefLabel");
+            if (poLabel.Length == 0) poLabel = "PO#";
+            val("poLabel", poLabel);
             set("hasBankgiro", Db.str(company, "bankgiro").Length > 0);
             val("bankgiro", Db.str(company, "bankgiro"));
             val("customerName", Db.str(invoice, "customerName"));

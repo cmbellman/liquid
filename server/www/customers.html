@@ -18,7 +18,14 @@
     <h2><%formTitle%></h2>
     <form method="post" class="grid">
         <swe:condition source="editing"><input type="hidden" name="id" value="<%id%>"></swe:condition>
-        <swe:iterator source="fields"><label><%current.label%><input type="<%current.type%>" name="<%current.name%>" value="<%current.value%>" <%current.required%>></label></swe:iterator>
+        <swe:iterator source="fields"><label><%current.label%><input type="<%current.type%>" name="<%current.name%>" value="<%current.value%>" <%current.required%> placeholder="<%current.placeholder%>"<swe:condition source="current.hasList"> list="<%current.list%>"</swe:condition>></label></swe:iterator>
+        <datalist id="orderRefSuggestions">
+            <option value="PO#">
+            <option value="Inköpsorder">
+            <option value="Projektkod">
+            <option value="Kostnadsställe">
+            <option value="Avtalsnummer">
+        </datalist>
         <label><%t.customers.region.label%><select name="region"><swe:iterator source="regions"><option value="<%current.value%>" <%current.selected%>><%current.text%></option></swe:iterator></select></label>
         <p class="hint"><%t.customers.region.hint%></p>
         <swe:condition source="noVatWarning"><p class="error"><%t.customers.region.noVat%></p></swe:condition>

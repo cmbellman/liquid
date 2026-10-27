@@ -84,6 +84,7 @@ namespace com.swecial.web {
             invoice.set("dueDate", Dates.clean(form("dueDate")));
             invoice.set("ourReference", form("ourReference").Trim());
             invoice.set("yourReference", form("yourReference").Trim());
+            invoice.set("poLabel", form("poLabel").Trim());
             invoice.set("poNumber", form("poNumber").Trim());
             invoice.set("note", form("note").Trim());
             if (Db.str(invoice, "documentFileId").Length > 0) invoice.set("issuedNumber", form("issuedNumber").Trim());
@@ -134,7 +135,6 @@ namespace com.swecial.web {
             val("dueDate", value("dueDate"));
             val("ourReference", value("ourReference"));
             val("yourReference", value("yourReference"));
-            val("poNumber", value("poNumber"));
             string customerId = Db.str(invoice, "customerId");
             var customer = customerId.Length > 0 ? Db.getOwned("customer", customerId, companyId) : null;
             string customerReference = customer != null ? Db.str(customer, "reference") : "";
@@ -143,7 +143,16 @@ namespace com.swecial.web {
             string effectiveYourRef = value("yourReference").Length > 0 ? value("yourReference") : customerReference;
             set("hasYourReference", effectiveYourRef.Length > 0);
             if (value("yourReference").Length == 0 && effectiveYourRef.Length > 0) val("yourReference", effectiveYourRef);
-            set("hasPoNumber", value("poNumber").Length > 0);
+
+            string customerOrderRef = customer != null ? Db.str(customer, "orderRef") : "";
+            string customerOrderRefLabel = customer != null ? Db.str(customer, "orderRefLabel") : "";
+            if (customerOrderRefLabel.Length == 0) customerOrderRefLabel = "PO#";
+
+            string effectivePoNumber = value("poNumber").Length > 0 ? value("poNumber") : customerOrderRef;
+            string effectivePoLabel = value("poLabel").Length > 0 ? value("poLabel") : customerOrderRefLabel;
+            val("poNumber", effectivePoNumber);
+            val("poLabel", effectivePoLabel);
+            set("hasPoNumber", effectivePoNumber.Length > 0);
             val("note", value("note"));
             val("customerName", Db.str(invoice, "customerName"));
             val("paidDate", Db.str(invoice, "paidDate"));
@@ -179,12 +188,18 @@ namespace com.swecial.web {
                     ("value", u(c.id)),
                     ("text", h(Db.str(c, "name"))),
                     ("selected", c.id == selectedCustId ? "selected" : ""),
-                    ("rate", Money.input(Db.num(c, "hourlyRate")))
+                    ("rate", Money.input(Db.num(c, "hourlyRate"))),
+                    ("ref", h(Db.str(c, "reference"))),
+                    ("poLabel", h(Db.str(c, "orderRefLabel").Length > 0 ? Db.str(c, "orderRefLabel") : "PO#")),
+                    ("poNumber", h(Db.str(c, "orderRef")))
                 )).Prepend(row(
                     ("value", ""),
                     ("text", Tr("invoice.chooseCustomer")),
                     ("selected", selectedCustId.Length == 0 ? "selected" : ""),
-                    ("rate", "")
+                    ("rate", ""),
+                    ("ref", ""),
+                    ("poLabel", "PO#"),
+                    ("poNumber", "")
                 )));
                 int count = isPost ? rowCount() : lines.Count + BlankRows;
                 set("rowCount", count.ToString());

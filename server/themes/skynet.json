@@ -218,6 +218,8 @@
     "invoice.draft": "Staged extraction order",
     "invoice.dueDate": "Compliance deadline",
     "invoice.invoiceDate": "Deployment date",
+    "invoice.orderRef": "Reference # / PO#",
+    "invoice.orderRefLabel": "Identifier type",
     "invoice.pdf": "Download PDF",
     "invoice.poNumber": "PO#",
     "invoice.previewPdf": "Preview PDF",

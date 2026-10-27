@@ -12,13 +12,21 @@
     <form method="post">
         <input type="hidden" name="id" value="<%id%>">
         <div class="grid">
-            <label><%t.col.customer%><select name="customerId" id="customerId"><swe:iterator source="customers"><option value="<%current.value%>" data-rate="<%current.rate%>" <%current.selected%>><%current.text%></option></swe:iterator></select></label>
+            <label><%t.col.customer%><select name="customerId" id="customerId"><swe:iterator source="customers"><option value="<%current.value%>" data-rate="<%current.rate%>" data-ref="<%current.ref%>" data-po-label="<%current.poLabel%>" data-po-number="<%current.poNumber%>" <%current.selected%>><%current.text%></option></swe:iterator></select></label>
             <label><%t.invoice.invoiceDate%><input type="date" name="invoiceDate" value="<%invoiceDate%>" required></label>
             <label><%t.invoice.dueDate%><input type="date" name="dueDate" value="<%dueDate%>" required></label>
             <label><%t.invoice.ourReference%><input type="text" name="ourReference" value="<%ourReference%>"></label>
-            <label><%t.invoice.yourReference%><input type="text" name="yourReference" value="<%yourReference%>" placeholder="<%customerReference%>"></label>
-            <label><%t.invoice.poNumber%><input type="text" name="poNumber" value="<%poNumber%>"></label>
+            <label><%t.invoice.yourReference%><input type="text" name="yourReference" id="yourReference" value="<%yourReference%>" placeholder="<%customerReference%>"></label>
+            <label><%t.invoice.orderRefLabel%><input type="text" name="poLabel" id="poLabel" list="orderRefSuggestions" value="<%poLabel%>" placeholder="PO#"></label>
+            <label><%t.invoice.orderRef%><input type="text" name="poNumber" id="poNumber" value="<%poNumber%>"></label>
         </div>
+        <datalist id="orderRefSuggestions">
+            <option value="PO#">
+            <option value="Inköpsorder">
+            <option value="Projektkod">
+            <option value="Kostnadsställe">
+            <option value="Avtalsnummer">
+        </datalist>
         <label class="check"><input type="checkbox" name="isHourly" id="isHourly" value="1" <%isHourlyChecked%> data-hours="<%t.invoice.col.hours%>" data-qty="<%t.invoice.col.quantity%>" data-rate="<%t.invoice.col.hourlyRate%>" data-price="<%t.invoice.col.unitPrice%>"><span><%t.invoice.isHourly%></span></label>
         <swe:condition source="foreignVat">
         <p class="hint"><%treatmentText%></p>
@@ -73,24 +81,46 @@
         var ph = document.getElementById('priceHeader');
         if (!chk || !cust) return;
 
-        function fillRate() {
-            if (!chk.checked) return;
+        function fillCustomer() {
             var opt = cust.options[cust.selectedIndex];
-            if (opt && opt.dataset.rate) {
+            if (!opt) return;
+            if (chk.checked && opt.dataset.rate) {
                 var p0 = document.querySelector('input[name="price0"]');
                 if (p0 && (!p0.value.trim() || p0.value.trim() === '0')) {
                     p0.value = opt.dataset.rate;
                 }
             }
+            var yr = document.getElementById('yourReference');
+            if (yr && (!yr.value.trim() || yr.dataset.fromCust === '1')) {
+                yr.value = opt.dataset.ref || '';
+                yr.dataset.fromCust = '1';
+            }
+            var pl = document.getElementById('poLabel');
+            if (pl && (!pl.value.trim() || pl.dataset.fromCust === '1')) {
+                pl.value = opt.dataset.poLabel || 'PO#';
+                pl.dataset.fromCust = '1';
+            }
+            var pn = document.getElementById('poNumber');
+            if (pn && (!pn.value.trim() || pn.dataset.fromCust === '1')) {
+                pn.value = opt.dataset.poNumber || '';
+                pn.dataset.fromCust = '1';
+            }
         }
+
+        var yrInput = document.getElementById('yourReference');
+        if (yrInput) yrInput.addEventListener('input', function() { delete yrInput.dataset.fromCust; });
+        var plInput = document.getElementById('poLabel');
+        if (plInput) plInput.addEventListener('input', function() { delete plInput.dataset.fromCust; });
+        var pnInput = document.getElementById('poNumber');
+        if (pnInput) pnInput.addEventListener('input', function() { delete pnInput.dataset.fromCust; });
 
         chk.addEventListener('change', function() {
             if (qh) qh.textContent = chk.checked ? chk.dataset.hours : chk.dataset.qty;
             if (ph) ph.textContent = chk.checked ? chk.dataset.rate : chk.dataset.price;
-            fillRate();
+            fillCustomer();
         });
 
-        cust.addEventListener('change', fillRate);
+        cust.addEventListener('change', fillCustomer);
     })();
     </script>
     <else>
@@ -101,7 +131,7 @@
         <dt><%t.invoice.dueDate%></dt><dd><%dueDate%></dd>
         <swe:condition source="hasOurReference"><dt><%t.invoice.ourReference%></dt><dd><%ourReference%></dd></swe:condition>
         <swe:condition source="hasYourReference"><dt><%t.invoice.yourReference%></dt><dd><%yourReference%></dd></swe:condition>
-        <swe:condition source="hasPoNumber"><dt><%t.invoice.poNumber%></dt><dd><%poNumber%></dd></swe:condition>
+        <swe:condition source="hasPoNumber"><dt><%poLabel%></dt><dd><%poNumber%></dd></swe:condition>
         <swe:condition source="paid"><dt><%t.status.paid%></dt><dd><%paidDate%></dd></swe:condition>
         <swe:condition source="foreignVat"><dt><%t.invoice.supply.label%></dt><dd><%supplyText%></dd></swe:condition>
         <dt><%t.invoice.bookkeeping%></dt><dd><%bookkeeping%></dd>
