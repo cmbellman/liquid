@@ -121,6 +121,9 @@
         });
 
         cust.addEventListener('change', fillCustomer);
+        if (cust.selectedIndex >= 0 && cust.options[cust.selectedIndex].value) {
+            fillCustomer();
+        }
     })();
     </script>
     <else>

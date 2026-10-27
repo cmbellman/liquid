@@ -133,23 +133,50 @@ namespace com.swecial.web {
             set("isPaid", status == Invoicing.Paid);
             val("invoiceDate", value("invoiceDate"));
             val("dueDate", value("dueDate"));
-            val("ourReference", value("ourReference"));
-            val("yourReference", value("yourReference"));
-            string customerId = Db.str(invoice, "customerId");
+
+            string customerId = isPost ? form("customerId") : Db.str(invoice, "customerId");
+            var customerList = draft ? Db.forCompany("customer", companyId).OrderBy(c => Db.str(c, "name")).ToList() : null;
+            if (draft && string.IsNullOrEmpty(customerId) && customerList.Count == 1) {
+                customerId = customerList[0].id;
+                if (string.IsNullOrEmpty(Db.str(invoice, "customerId"))) {
+                    invoice.set("customerId", customerId);
+                    invoice.set("customerName", Db.str(customerList[0], "name"));
+                    Db.commit(invoice);
+                }
+            }
             var customer = customerId.Length > 0 ? Db.getOwned("customer", customerId, companyId) : null;
+
+            string ourRef = value("ourReference");
+            if (string.IsNullOrEmpty(ourRef)) {
+                ourRef = account?.fullName ?? account?.firstName ?? "";
+                if (string.IsNullOrEmpty(ourRef)) {
+                    var prev = Db.forCompany("invoice", companyId).OrderByDescending(i => i.createdAt).FirstOrDefault(i => Db.str(i, "ourReference").Length > 0);
+                    if (prev != null) ourRef = Db.str(prev, "ourReference");
+                }
+                if (draft && ourRef.Length > 0 && string.IsNullOrEmpty(Db.str(invoice, "ourReference"))) {
+                    invoice.set("ourReference", ourRef);
+                    Db.commit(invoice);
+                }
+            }
+            val("ourReference", ourRef);
+            set("hasOurReference", ourRef.Length > 0);
+
             string customerReference = customer != null ? Db.str(customer, "reference") : "";
             val("customerReference", customerReference);
-            set("hasOurReference", value("ourReference").Length > 0);
-            string effectiveYourRef = value("yourReference").Length > 0 ? value("yourReference") : customerReference;
-            set("hasYourReference", effectiveYourRef.Length > 0);
-            if (value("yourReference").Length == 0 && effectiveYourRef.Length > 0) val("yourReference", effectiveYourRef);
+            string yourRef = value("yourReference");
+            if (string.IsNullOrEmpty(yourRef) && customerReference.Length > 0) yourRef = customerReference;
+            val("yourReference", yourRef);
+            set("hasYourReference", yourRef.Length > 0);
 
             string customerOrderRef = customer != null ? Db.str(customer, "orderRef") : "";
             string customerOrderRefLabel = customer != null ? Db.str(customer, "orderRefLabel") : "";
             if (customerOrderRefLabel.Length == 0) customerOrderRefLabel = "PO#";
 
-            string effectivePoNumber = value("poNumber").Length > 0 ? value("poNumber") : customerOrderRef;
-            string effectivePoLabel = value("poLabel").Length > 0 ? value("poLabel") : customerOrderRefLabel;
+            string effectivePoNumber = value("poNumber");
+            if (string.IsNullOrEmpty(effectivePoNumber) && customerOrderRef.Length > 0) effectivePoNumber = customerOrderRef;
+            string effectivePoLabel = value("poLabel");
+            if (string.IsNullOrEmpty(effectivePoLabel)) effectivePoLabel = customerOrderRefLabel;
+
             val("poNumber", effectivePoNumber);
             val("poLabel", effectivePoLabel);
             set("hasPoNumber", effectivePoNumber.Length > 0);
@@ -181,10 +208,9 @@ namespace com.swecial.web {
             set("totalDue", Money.format(totals.total));
 
             if (draft) {
-                var customerList = Db.forCompany("customer", companyId).OrderBy(c => Db.str(c, "name")).ToList();
                 set("noCustomers", customerList.Count == 0);
-                string selectedCustId = value("customerId");
-                rows("customers", customerList.Select(c => row(
+                string selectedCustId = customerId;
+                var custRows = customerList.Select(c => row(
                     ("value", u(c.id)),
                     ("text", h(Db.str(c, "name"))),
                     ("selected", c.id == selectedCustId ? "selected" : ""),
@@ -192,15 +218,20 @@ namespace com.swecial.web {
                     ("ref", h(Db.str(c, "reference"))),
                     ("poLabel", h(Db.str(c, "orderRefLabel").Length > 0 ? Db.str(c, "orderRefLabel") : "PO#")),
                     ("poNumber", h(Db.str(c, "orderRef")))
-                )).Prepend(row(
-                    ("value", ""),
-                    ("text", Tr("invoice.chooseCustomer")),
-                    ("selected", selectedCustId.Length == 0 ? "selected" : ""),
-                    ("rate", ""),
-                    ("ref", ""),
-                    ("poLabel", "PO#"),
-                    ("poNumber", "")
-                )));
+                )).ToList();
+
+                if (customerList.Count != 1) {
+                    custRows.Insert(0, row(
+                        ("value", ""),
+                        ("text", Tr("invoice.chooseCustomer")),
+                        ("selected", string.IsNullOrEmpty(selectedCustId) ? "selected" : ""),
+                        ("rate", ""),
+                        ("ref", ""),
+                        ("poLabel", "PO#"),
+                        ("poNumber", "")
+                    ));
+                }
+                rows("customers", custRows);
                 int count = isPost ? rowCount() : lines.Count + BlankRows;
                 set("rowCount", count.ToString());
                 rows("lines", Enumerable.Range(0, count).Select(i => {
