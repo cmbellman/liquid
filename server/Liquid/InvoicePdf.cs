@@ -258,11 +258,35 @@ namespace com.swecial.code {
             if (Db.str(company, "phone").Length > 0) footer.Add(("Telefon", Db.str(company, "phone")));
 
             if (footer.Count > 0) {
-                double colW = width / footer.Count;
-                for (int i = 0; i < footer.Count; i++) {
-                    double colX = left + i * colW;
-                    gfx.DrawString(footer[i].label, fontTiny, brushMuted, new XPoint(colX, footerY + 6));
-                    gfx.DrawString(footer[i].val, fontSmall, brushText, new XPoint(colX, footerY + 18));
+                var measured = footer.Select(f => {
+                    double w1 = gfx.MeasureString(f.label, fontTiny).Width;
+                    double w2 = gfx.MeasureString(f.val, fontSmall).Width;
+                    return (f.label, f.val, width: Math.Max(w1, w2));
+                }).ToList();
+
+                double minGap = 10;
+                double totalItemW = measured.Sum(m => m.width);
+                bool fitsOneLine = measured.Count > 1 && totalItemW + (measured.Count - 1) * minGap <= width;
+
+                if (fitsOneLine) {
+                    double gap = (width - totalItemW) / (measured.Count - 1);
+                    double curX = left;
+                    foreach (var item in measured) {
+                        gfx.DrawString(item.label, fontTiny, brushMuted, new XPoint(curX, footerY + 6));
+                        gfx.DrawString(item.val, fontSmall, brushText, new XPoint(curX, footerY + 18));
+                        curX += item.width + gap;
+                    }
+                } else {
+                    int cols = Math.Min(3, measured.Count);
+                    double colW = width / cols;
+                    for (int i = 0; i < measured.Count; i++) {
+                        int row = i / cols;
+                        int col = i % cols;
+                        double curX = left + col * colW;
+                        double curY = footerY + row * 24;
+                        gfx.DrawString(measured[i].label, fontTiny, brushMuted, new XPoint(curX, curY + 6));
+                        gfx.DrawString(measured[i].val, fontSmall, brushText, new XPoint(curX, curY + 18));
+                    }
                 }
             }
         }
