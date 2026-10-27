@@ -22,8 +22,9 @@
                         <dt>Fakturanummer</dt><dd><%number%></dd>
                         <dt>Fakturadatum</dt><dd><%invoiceDate%></dd>
                         <dt>Förfallodatum</dt><dd><%dueDate%></dd>
-                        <swe:condition source="hasOurReference"><dt>Vår referens</dt><dd><%ourReference%></dd></swe:condition>
                         <swe:condition source="hasYourReference"><dt>Er referens</dt><dd><%yourReference%></dd></swe:condition>
+                        <swe:condition source="hasPoNumber"><dt>PO#</dt><dd><%poNumber%></dd></swe:condition>
+                        <swe:condition source="hasOurReference"><dt>Vår referens</dt><dd><%ourReference%></dd></swe:condition>
                     </dl>
                 </div>
             </header>
@@ -42,6 +43,7 @@
                     <tr class="total"><td colspan="4">Att betala (SEK)</td><td class="num"><%total%></td></tr>
                 </tfoot>
             </table>
+            <swe:condition source="hasBankgiro"><p class="note"><strong>Betalas till bankgiro:</strong> <%bankgiro%> senast <%dueDate%></p></swe:condition>
             <swe:condition source="hasVatNote"><p class="note"><%vatNote%></p></swe:condition>
             <swe:condition source="hasNote"><p class="note"><%note%></p></swe:condition>
             <swe:condition source="paid"><p class="paid">Betald <%paidDate%></p></swe:condition>

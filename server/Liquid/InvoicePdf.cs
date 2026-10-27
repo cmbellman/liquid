@@ -115,10 +115,13 @@ namespace com.swecial.code {
                 ("Fakturadatum", invDate),
                 ("Förfallodatum", dueDate)
             };
+            string yourRef = Db.str(invoice, "yourReference");
+            if (yourRef.Length == 0 && customer != null) yourRef = Db.str(customer, "reference");
+            if (yourRef.Length > 0) meta.Add(("Er referens", yourRef));
+            string poNumber = Db.str(invoice, "poNumber");
+            if (poNumber.Length > 0) meta.Add(("PO#", poNumber));
             string ourRef = Db.str(invoice, "ourReference");
             if (ourRef.Length > 0) meta.Add(("Vår referens", ourRef));
-            string yourRef = customer != null ? Db.str(customer, "reference") : "";
-            if (yourRef.Length > 0) meta.Add(("Er referens", yourRef));
 
             foreach (var item in meta) {
                 gfx.DrawString(item.label, fontRegular, brushMuted, new XPoint(380, yRight));
@@ -128,6 +131,8 @@ namespace com.swecial.code {
 
             // 2. Customer section ("to")
             double y = Math.Max(yLeft, yRight) + 20;
+            gfx.DrawString("Fakturaadress", fontHeader, brushMuted, new XPoint(left, y));
+            y += 14;
             string custName = Db.str(invoice, "customerName");
             if (custName.Length == 0 && customer != null) custName = Db.str(customer, "name");
             if (custName.Length > 0) {
@@ -218,6 +223,13 @@ namespace com.swecial.code {
             gfx.DrawLine(penTotal, left, y, right, y);
             y += 18;
 
+            string bankgiro = Db.str(company, "bankgiro");
+            if (bankgiro.Length > 0) {
+                string payInfo = "Betalas till bankgiro " + bankgiro + " senast " + dueDate;
+                gfx.DrawString(payInfo, fontBold, brushText, new XPoint(left, y + 2));
+                y += 18;
+            }
+
             // 4. Notes
             string treatment = Db.str(invoice, "vatTreatment");
             bool goods = Invoicing.isGoods(invoice);
@@ -244,49 +256,67 @@ namespace com.swecial.code {
                 y += 18;
             }
 
-            // 5. Footer (pinned at bottom)
-            double footerY = 780;
+            // 5. Footer (pinned at bottom, structured 4-column multiline)
+            double footerY = 765;
             gfx.DrawLine(penLine, left, footerY, right, footerY);
             footerY += 8;
 
-            var footer = new List<(string label, string val)>();
-            if (Db.str(company, "fskatt") != "0") footer.Add(("F-skatt", "Godkänd för F-skatt"));
-            if (Db.str(company, "orgNumber").Length > 0) footer.Add(("Org.nr", Db.str(company, "orgNumber")));
-            if (Db.str(company, "vatNumber").Length > 0) footer.Add(("Momsreg.nr", Db.str(company, "vatNumber")));
-            if (Db.str(company, "bankgiro").Length > 0) footer.Add(("Bankgiro", Db.str(company, "bankgiro")));
-            if (Db.str(company, "email").Length > 0) footer.Add(("E-post", Db.str(company, "email")));
-            if (Db.str(company, "phone").Length > 0) footer.Add(("Telefon", Db.str(company, "phone")));
+            var col1Lines = new List<string>();
+            if (compName.Length > 0) col1Lines.Add(compName);
+            if (compAddr.Length > 0) col1Lines.Add(compAddr);
+            if (compPostal.Length > 0) col1Lines.Add(compPostal);
 
-            if (footer.Count > 0) {
-                var measured = footer.Select(f => {
-                    double w1 = gfx.MeasureString(f.label, fontTiny).Width;
-                    double w2 = gfx.MeasureString(f.val, fontSmall).Width;
-                    return (f.label, f.val, width: Math.Max(w1, w2));
+            var col2Lines = new List<string>();
+            string phone = Db.str(company, "phone");
+            string email = Db.str(company, "email");
+            if (phone.Length > 0) col2Lines.Add(phone);
+            if (email.Length > 0) col2Lines.Add(email);
+
+            var col3Lines = new List<string>();
+            string orgNr = Db.str(company, "orgNumber");
+            string vatNr = Db.str(company, "vatNumber");
+            bool fskatt = Db.str(company, "fskatt") != "0";
+            if (orgNr.Length > 0) col3Lines.Add("Org.nr: " + orgNr);
+            if (vatNr.Length > 0) col3Lines.Add("Momsreg.nr: " + vatNr);
+            if (fskatt) col3Lines.Add("Godkänd för F-skatt");
+
+            var col4Lines = new List<string>();
+            if (bankgiro.Length > 0) {
+                col4Lines.Add(bankgiro);
+            }
+
+            var cols = new List<(string header, List<string> lines)> {
+                ("Adress", col1Lines),
+                ("Kontakt", col2Lines),
+                ("Företagsuppgifter", col3Lines),
+                ("Bankgiro", col4Lines)
+            }.Where(c => c.lines.Count > 0).ToList();
+
+            if (cols.Count > 0) {
+                var colWidths = cols.Select(c => {
+                    double maxW = gfx.MeasureString(c.header, fontHeader).Width;
+                    foreach (var l in c.lines) {
+                        double lw = gfx.MeasureString(l, fontRegular).Width;
+                        if (lw > maxW) maxW = lw;
+                    }
+                    return maxW;
                 }).ToList();
 
-                double minGap = 10;
-                double totalItemW = measured.Sum(m => m.width);
-                bool fitsOneLine = measured.Count > 1 && totalItemW + (measured.Count - 1) * minGap <= width;
+                double totalW = colWidths.Sum();
+                double gap = cols.Count > 1 ? Math.Max(10, (width - totalW) / (cols.Count - 1)) : 0;
 
-                if (fitsOneLine) {
-                    double gap = (width - totalItemW) / (measured.Count - 1);
-                    double curX = left;
-                    foreach (var item in measured) {
-                        gfx.DrawString(item.label, fontTiny, brushMuted, new XPoint(curX, footerY + 6));
-                        gfx.DrawString(item.val, fontSmall, brushText, new XPoint(curX, footerY + 18));
-                        curX += item.width + gap;
+                double curX = left;
+                for (int i = 0; i < cols.Count; i++) {
+                    var col = cols[i];
+                    double x = (i == cols.Count - 1) ? Math.Max(curX, right - colWidths[i]) : curX;
+                    gfx.DrawString(col.header, fontHeader, brushMuted, new XPoint(x, footerY + 6));
+                    double lineY = footerY + 18;
+                    for (int j = 0; j < col.lines.Count; j++) {
+                        var f = (i == cols.Count - 1) ? fontBold : fontRegular;
+                        gfx.DrawString(col.lines[j], f, brushText, new XPoint(x, lineY));
+                        lineY += 11;
                     }
-                } else {
-                    int cols = Math.Min(3, measured.Count);
-                    double colW = width / cols;
-                    for (int i = 0; i < measured.Count; i++) {
-                        int row = i / cols;
-                        int col = i % cols;
-                        double curX = left + col * colW;
-                        double curY = footerY + row * 24;
-                        gfx.DrawString(measured[i].label, fontTiny, brushMuted, new XPoint(curX, curY + 6));
-                        gfx.DrawString(measured[i].val, fontSmall, brushText, new XPoint(curX, curY + 18));
-                    }
+                    curX += colWidths[i] + gap;
                 }
             }
         }

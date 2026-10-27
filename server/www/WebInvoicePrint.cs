@@ -32,8 +32,15 @@ namespace com.swecial.web {
             val("dueDate", Db.str(invoice, "dueDate"));
             set("hasOurReference", Db.str(invoice, "ourReference").Length > 0);
             val("ourReference", Db.str(invoice, "ourReference"));
-            set("hasYourReference", Db.str(customer, "reference").Length > 0);
-            val("yourReference", Db.str(customer, "reference"));
+            string yourRef = Db.str(invoice, "yourReference");
+            if (yourRef.Length == 0 && customer != null) yourRef = Db.str(customer, "reference");
+            set("hasYourReference", yourRef.Length > 0);
+            val("yourReference", yourRef);
+            string poNumber = Db.str(invoice, "poNumber");
+            set("hasPoNumber", poNumber.Length > 0);
+            val("poNumber", poNumber);
+            set("hasBankgiro", Db.str(company, "bankgiro").Length > 0);
+            val("bankgiro", Db.str(company, "bankgiro"));
             val("customerName", Db.str(invoice, "customerName"));
             set("customerAddress", spans(customer, "address", "postalAddress"));
 

@@ -83,6 +83,8 @@ namespace com.swecial.web {
             invoice.set("invoiceDate", Dates.clean(form("invoiceDate")));
             invoice.set("dueDate", Dates.clean(form("dueDate")));
             invoice.set("ourReference", form("ourReference").Trim());
+            invoice.set("yourReference", form("yourReference").Trim());
+            invoice.set("poNumber", form("poNumber").Trim());
             invoice.set("note", form("note").Trim());
             if (Db.str(invoice, "documentFileId").Length > 0) invoice.set("issuedNumber", form("issuedNumber").Trim());
             invoice.set("isHourly", form("isHourly") == "1" ? "1" : "0");
@@ -131,6 +133,17 @@ namespace com.swecial.web {
             val("invoiceDate", value("invoiceDate"));
             val("dueDate", value("dueDate"));
             val("ourReference", value("ourReference"));
+            val("yourReference", value("yourReference"));
+            val("poNumber", value("poNumber"));
+            string customerId = Db.str(invoice, "customerId");
+            var customer = customerId.Length > 0 ? Db.getOwned("customer", customerId, companyId) : null;
+            string customerReference = customer != null ? Db.str(customer, "reference") : "";
+            val("customerReference", customerReference);
+            set("hasOurReference", value("ourReference").Length > 0);
+            string effectiveYourRef = value("yourReference").Length > 0 ? value("yourReference") : customerReference;
+            set("hasYourReference", effectiveYourRef.Length > 0);
+            if (value("yourReference").Length == 0 && effectiveYourRef.Length > 0) val("yourReference", effectiveYourRef);
+            set("hasPoNumber", value("poNumber").Length > 0);
             val("note", value("note"));
             val("customerName", Db.str(invoice, "customerName"));
             val("paidDate", Db.str(invoice, "paidDate"));
