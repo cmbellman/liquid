@@ -1,6 +1,6 @@
 <form method="post" enctype="multipart/form-data" action="<%bagAction%>" class="bag-form">
     <input type="hidden" name="action" value="bag">
-    <label class="drop"><%icons.drop%><div><strong><%t.pant.drop%></strong><span><%t.pant.dropHint%></span></div>
+    <label class="drop" tabindex="0"><%icons.drop%><div><strong><%t.pant.drop%></strong><span><%t.pant.dropHint%></span></div>
         <input type="file" name="receipts" accept="image/*,application/pdf" multiple></label>
     <label class="button secondary camera"><%icons.camera%><%t.pant.camera%><input type="file" name="photo" accept="image/*" capture="environment"></label>
 </form>
@@ -12,6 +12,40 @@
     ['dragenter', 'dragover'].forEach(function (e) { drop.addEventListener(e, function (ev) { ev.preventDefault(); drop.classList.add('over'); }); });
     ['dragleave', 'drop'].forEach(function (e) { drop.addEventListener(e, function (ev) { ev.preventDefault(); drop.classList.remove('over'); }); });
     drop.addEventListener('drop', function (ev) { if (ev.dataTransfer.files.length) { input.files = ev.dataTransfer.files; f.submit(); } });
+
+    function handlePaste(ev) {
+      var target = ev.target;
+      if (target && (target.tagName === 'TEXTAREA' || (target.tagName === 'INPUT' && target.type !== 'file') || target.isContentEditable)) return;
+      var cd = ev.clipboardData;
+      if (!cd) return;
+      var dt = new DataTransfer();
+      if (cd.files && cd.files.length > 0) {
+        for (var i = 0; i < cd.files.length; i++) dt.items.add(cd.files[i]);
+      } else if (cd.items && cd.items.length > 0) {
+        for (var j = 0; j < cd.items.length; j++) {
+          var item = cd.items[j];
+          if (item.kind === 'file') {
+            var file = item.getAsFile();
+            if (file) {
+              if (!file.name || file.name === 'image.png' || file.name === 'blob') {
+                var d = new Date(), pad = function (n) { return (n < 10 ? '0' : '') + n; };
+                var ext = file.type === 'image/jpeg' ? '.jpg' : file.type === 'application/pdf' ? '.pdf' : '.png';
+                var name = 'Skärmdump ' + d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + ' ' + pad(d.getHours()) + '.' + pad(d.getMinutes()) + '.' + pad(d.getSeconds()) + ext;
+                file = new File([file], name, { type: file.type || 'image/png' });
+              }
+              dt.items.add(file);
+            }
+          }
+        }
+      }
+      if (dt.files.length > 0) {
+        ev.preventDefault();
+        input.files = dt.files;
+        drop.classList.add('over');
+        f.submit();
+      }
+    }
+    window.addEventListener('paste', handlePaste);
   });
 })();
 </script>
