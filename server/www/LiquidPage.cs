@@ -45,6 +45,7 @@ namespace com.swecial.web {
             set("title", "Liquid");
             set("error", "");
             set("message", h(messageText(query("ok"))));
+            val("userName", account?.fullName ?? account?.firstName ?? "");
             try {
                 processPage();
             } catch (LiquidException ex) {

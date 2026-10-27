@@ -15,7 +15,7 @@
             <label><%t.col.customer%><select name="customerId" id="customerId"><swe:iterator source="customers"><option value="<%current.value%>" data-rate="<%current.rate%>" data-ref="<%current.ref%>" data-po-label="<%current.poLabel%>" data-po-number="<%current.poNumber%>" <%current.selected%>><%current.text%></option></swe:iterator></select></label>
             <label><%t.invoice.invoiceDate%><input type="date" name="invoiceDate" value="<%invoiceDate%>" required></label>
             <label><%t.invoice.dueDate%><input type="date" name="dueDate" value="<%dueDate%>" required></label>
-            <label><%t.invoice.ourReference%><input type="text" name="ourReference" value="<%ourReference%>"></label>
+            <label><%t.invoice.ourReference%><input type="text" name="ourReference" id="ourReference" value="<%ourReference%>" data-default="<%userName%>"></label>
             <label><%t.invoice.yourReference%><input type="text" name="yourReference" id="yourReference" value="<%yourReference%>" placeholder="<%customerReference%>"></label>
             <label><%t.invoice.orderRefLabel%><input type="text" name="poLabel" id="poLabel" list="orderRefSuggestions" value="<%poLabel%>" placeholder="PO#"></label>
             <label><%t.invoice.orderRef%><input type="text" name="poNumber" id="poNumber" value="<%poNumber%>"></label>
@@ -77,13 +77,25 @@
     (function() {
         var chk = document.getElementById('isHourly');
         var cust = document.getElementById('customerId');
+        var ourRef = document.getElementById('ourReference');
         var qh = document.getElementById('qtyHeader');
         var ph = document.getElementById('priceHeader');
         if (!chk || !cust) return;
 
+        if (ourRef && !ourRef.value.trim() && ourRef.dataset.default) {
+            ourRef.value = ourRef.dataset.default;
+        }
+
+        if (cust.value === '') {
+            var realOpts = Array.from(cust.options).filter(function(o) { return o.value; });
+            if (realOpts.length === 1) {
+                cust.value = realOpts[0].value;
+            }
+        }
+
         function fillCustomer() {
             var opt = cust.options[cust.selectedIndex];
-            if (!opt) return;
+            if (!opt || !opt.value) return;
             if (chk.checked && opt.dataset.rate) {
                 var p0 = document.querySelector('input[name="price0"]');
                 if (p0 && (!p0.value.trim() || p0.value.trim() === '0')) {
