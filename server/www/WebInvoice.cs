@@ -48,6 +48,10 @@ namespace com.swecial.web {
                 }
                 readForm();
                 Db.commit(invoice);
+                if (action == "preview") {
+                    redirect(BasePath + "/invoice-pdf.html?id=" + u(invoice.id) + "&inline=1");
+                    return;
+                }
                 if (action == "send") {
                     Invoicing.send(invoice, account.id);
                     redirect(here() + "&ok=sent");

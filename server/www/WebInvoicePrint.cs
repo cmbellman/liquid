@@ -13,18 +13,19 @@ namespace com.swecial.web {
             set("found", false);
             if (!requireCompany()) return;
             var invoice = Db.getOwned("invoice", query("id"), companyId);
-            if (invoice == null || Db.str(invoice, "status") == Invoicing.Draft) {
+            if (invoice == null) {
                 redirect(BasePath + "/invoices.html");
                 return;
             }
+            bool isDraft = Db.str(invoice, "status") == Invoicing.Draft || Db.num(invoice, "number") == 0;
             long number = Db.num(invoice, "number");
-            title("Faktura " + number);
+            title(isDraft ? "Fakturautkast" : "Faktura " + number);
             var customer = Db.getOwned("customer", Db.str(invoice, "customerId"), companyId);
             var lines = Invoicing.rows(invoice);
             var totals = Invoicing.totals(lines);
 
             set("found", true);
-            set("number", number.ToString());
+            set("number", isDraft ? "Utkast" : number.ToString());
             val("companyName", Db.str(company, "name"));
             set("companyAddress", spans(company, "address", "postalAddress"));
             val("invoiceDate", Db.str(invoice, "invoiceDate"));

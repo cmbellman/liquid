@@ -134,9 +134,9 @@ namespace com.swecial.web {
             set(key + "Any", list.Count > 0);
         }
 
-        /// <summary>Options for a &lt;select&gt;: value, text (both encoded) and selected ("selected" or "").</summary>
+        /// <summary>Options for a &lt;select&gt;: value, text, label (all encoded) and selected ("selected" or "").</summary>
         protected static List<SwecialObject> options(IEnumerable<(string value, string text)> items, string current) {
-            return items.Select(o => row(("value", h(o.value)), ("text", h(o.text)), ("selected", o.value == current ? "selected" : ""))).ToList();
+            return items.Select(o => row(("value", h(o.value)), ("text", h(o.text)), ("label", h(o.text)), ("selected", o.value == current ? "selected" : ""))).ToList();
         }
 
         protected static string selected(bool on) => on ? "selected" : "";

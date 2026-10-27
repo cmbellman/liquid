@@ -4,7 +4,7 @@
     <div class="heading">
         <h1><%heading%></h1>
         <span class="status <%statusClass%>"><%status%></span>
-        <swe:condition source="draft"><else><a class="button" href="/liquid/invoice-pdf.html?id=<%id%>"><%t.invoice.pdf%></a> <a class="button secondary" href="/liquid/invoice-print.html?id=<%id%>" target="_blank"><%t.invoice.print%></a></else></swe:condition>
+        <swe:condition source="draft"><a class="button secondary" href="/liquid/invoice-pdf.html?id=<%id%>&inline=1" target="_blank"><%t.invoice.previewPdf%></a><else><a class="button" href="/liquid/invoice-pdf.html?id=<%id%>"><%t.invoice.pdf%></a> <a class="button secondary" href="/liquid/invoice-pdf.html?id=<%id%>&inline=1" target="_blank"><%t.invoice.previewPdf%></a> <a class="button secondary" href="/liquid/invoice-print.html?id=<%id%>" target="_blank"><%t.invoice.print%></a></else></swe:condition>
     </div>
     <swe:condition source="hasDocument"><p class="hint"><a href="<%documentSrc%>" target="_blank"><%t.invoice.original%></a></p></swe:condition>
     <swe:condition source="draft">
@@ -31,7 +31,7 @@
                     <td><input type="text" name="text<%current.i%>" value="<%current.text%>"></td>
                     <td><input type="text" name="qty<%current.i%>" value="<%current.qty%>" inputmode="decimal" class="num" placeholder="1"></td>
                     <td><input type="text" name="price<%current.i%>" value="<%current.price%>" inputmode="decimal" class="num"></td>
-                    <td><select name="vat<%current.i%>"><swe:iterator source="current.vatRates"><option value="<%current.value%>" <%current.selected%>><%current.text%></option></swe:iterator></select></td>
+                    <td><select name="vat<%current.i%>"><swe:iterator source="current.vatRates"><option value="<%current.value%>" <%current.selected%>><%current.label%></option></swe:iterator></select></td>
                     <td class="num"><%current.net%></td>
                 </tr>
                 </swe:iterator>
@@ -48,12 +48,14 @@
         </div>
         <div class="actions">
             <button type="submit" name="action" value="save" class="secondary"><%t.common.save%></button>
+            <button type="submit" name="action" value="preview" formtarget="_blank" class="secondary"><%t.invoice.previewPdf%></button>
             <button type="submit" name="action" value="registerIssued"><%t.invoice.issued.register%></button>
             <button type="submit" name="action" value="delete" class="danger" formnovalidate><%t.invoice.deleteDraft%></button>
         </div>
         <else>
         <div class="actions">
             <button type="submit" name="action" value="save" class="secondary"><%t.common.save%></button>
+            <button type="submit" name="action" value="preview" formtarget="_blank" class="secondary"><%t.invoice.previewPdf%></button>
             <button type="submit" name="action" value="send"><%t.invoice.send%></button>
             <button type="submit" name="action" value="delete" class="danger" formnovalidate><%t.invoice.deleteDraft%></button>
         </div>

@@ -274,6 +274,7 @@
     "invoice.paymentHint.cash": "Register when {0} SEK has been received. Sale and VAT are then committed.",
     "invoice.paymentHint.closing": "Register when {0} SEK has been received. Invoice dates from {1} and was outstanding at year end: sale and VAT are committed as a receivable on 31 December {1}, and the payment clears it.",
     "invoice.pdf": "Download PDF",
+    "invoice.previewPdf": "Preview PDF",
     "invoice.print": "Print",
     "invoice.registerPayment": "Register payment",
     "invoice.undoPayment.confirm": "Undo payment? The voucher will be voided with a reversal entry.",

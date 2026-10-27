@@ -26,8 +26,11 @@ namespace com.swecial.code {
             List<InvoiceRow> lines,
             InvoiceTotals totals) {
 
+            bool isDraft = Db.str(invoice, "status") == Invoicing.Draft || Db.num(invoice, "number") == 0;
+            long number = Db.num(invoice, "number");
+
             var doc = new PdfDocument();
-            doc.Info.Title = "Faktura " + Db.num(invoice, "number");
+            doc.Info.Title = isDraft ? "Fakturautkast" : "Faktura " + number;
             doc.Info.Author = Db.str(company, "name");
 
             var page = doc.AddPage();
@@ -91,13 +94,26 @@ namespace com.swecial.code {
 
             // Right header
             double yRight = 50;
-            gfx.DrawString("FAKTURA", fontTitle, brushBrand, new XPoint(380, yRight));
+            bool isDraft = Db.str(invoice, "status") == Invoicing.Draft || Db.num(invoice, "number") == 0;
+            string docTitle = isDraft ? "FAKTURAUTKAST" : "FAKTURA";
+            gfx.DrawString(docTitle, fontTitle, brushBrand, new XPoint(380, yRight));
             yRight += 22;
 
+            string invDate = Db.str(invoice, "invoiceDate");
+            if (invDate.Length == 0) invDate = Dates.today();
+            string dueDate = Db.str(invoice, "dueDate");
+            if (dueDate.Length == 0) {
+                try {
+                    dueDate = Dates.format(Dates.parse(invDate).AddDays(30));
+                } catch {
+                    dueDate = invDate;
+                }
+            }
+
             var meta = new List<(string label, string val)> {
-                ("Fakturanummer", Db.num(invoice, "number").ToString()),
-                ("Fakturadatum", Db.str(invoice, "invoiceDate")),
-                ("Förfallodatum", Db.str(invoice, "dueDate"))
+                ("Fakturanummer", isDraft ? "Utkast" : Db.num(invoice, "number").ToString()),
+                ("Fakturadatum", invDate),
+                ("Förfallodatum", dueDate)
             };
             string ourRef = Db.str(invoice, "ourReference");
             if (ourRef.Length > 0) meta.Add(("Vår referens", ourRef));
@@ -113,6 +129,7 @@ namespace com.swecial.code {
             // 2. Customer section ("to")
             double y = Math.Max(yLeft, yRight) + 20;
             string custName = Db.str(invoice, "customerName");
+            if (custName.Length == 0 && customer != null) custName = Db.str(customer, "name");
             if (custName.Length > 0) {
                 gfx.DrawString(custName, fontBold, brushText, new XPoint(left, y));
                 y += 14;

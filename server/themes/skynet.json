@@ -219,6 +219,7 @@
     "invoice.dueDate": "Compliance deadline",
     "invoice.invoiceDate": "Deployment date",
     "invoice.pdf": "Download PDF",
+    "invoice.previewPdf": "Preview PDF",
     "invoice.print": "Print hardcopy",
     "invoice.registerPayment": "Confirm extraction",
     "invoice.send": "Lock and deploy",

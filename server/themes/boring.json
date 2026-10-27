@@ -277,6 +277,7 @@
     "invoice.paymentHint.cash": "Registrera när {0} kr har kommit in på företagskontot. Då bokförs försäljningen och momsen.",
     "invoice.paymentHint.closing": "Registrera när {0} kr har kommit in på företagskontot. Fakturan är från {1} och var obetald vid årsskiftet: försäljningen och momsen bokförs som kundfordran den 31 december {1}, och betalningen bokförs mot kundfordran.",
     "invoice.pdf": "Ladda ner PDF",
+    "invoice.previewPdf": "Förhandsgranska PDF",
     "invoice.print": "Skriv ut",
     "invoice.registerPayment": "Registrera betalning",
     "invoice.undoPayment.confirm": "Ångra betalningen? Verifikationen makuleras med en rättelse.",
