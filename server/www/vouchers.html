@@ -22,7 +22,7 @@
         <table>
             <thead><tr><th><%t.reports.col.voucher%></th><th><%t.col.date%></th><th><%t.reports.col.text%></th><th class="num"><%t.col.amount%></th></tr></thead>
             <tbody>
-                <swe:iterator source="vouchers"><tr class="link <%current.class%>" data-href="/liquid/voucher.html?id=<%current.id%>"><td><a href="/liquid/voucher.html?id=<%current.id%>"><%current.label%></a></td><td><%current.date%></td><td><%current.text%> <swe:condition source="current.reversed"><span class="status"><%t.voucher.voided%></span></swe:condition></td><td class="num"><%current.total%></td></tr></swe:iterator>
+                <swe:iterator source="vouchers"><tr class="link <%current.class%>" data-href="/liquid/voucher.html?id=<%current.id%>"><td><a href="/liquid/voucher.html?id=<%current.id%>"><%current.label%></a></td><td class="date"><%current.date%></td><td><%current.text%> <swe:condition source="current.reversed"><span class="status"><%t.voucher.voided%></span></swe:condition></td><td class="num"><%current.total%></td></tr></swe:iterator>
             </tbody>
         </table>
     <else>

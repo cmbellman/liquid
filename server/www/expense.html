@@ -18,24 +18,66 @@
         <swe:condition source="ai">
             <if value="reading"><p class="ai reading"><%icons.ai%><%t.ai.reading.full%></p>
                 <script>document.addEventListener('DOMContentLoaded',function(){var t=setTimeout(function(){location.reload();},3000);document.getElementById('expense').addEventListener('input',function(){clearTimeout(t);});});</script></if>
-            <if value="done"><swe:condition source="isSale"><p class="ai sale"><%icons.ai%><span><%t.ai.sale%></span></p><else><p class="ai"><%icons.ai%><span><%t.ai.done%> <%aiCurrency%> <%aiForeignKind%></span></p></else></swe:condition></if>
+            <if value="done">
+                <swe:condition source="isTaxPayment">
+                    <p class="ai tax"><%icons.ai%><span><%t.ai.taxPayment%></span></p>
+                <else>
+                    <swe:condition source="isSale"><p class="ai sale"><%icons.ai%><span><%t.ai.sale%></span></p><else><p class="ai"><%icons.ai%><span><%t.ai.done%> <%aiCurrency%> <%aiForeignKind%></span></p></else></swe:condition>
+                </else>
+                </swe:condition>
+            </if>
             <if value="failed"><p class="ai failed"><%t.ai.failed.full%></p></if>
         </swe:condition>
-        <form method="post" class="sale-choice">
-            <input type="hidden" name="id" value="<%id%>">
-            <swe:condition source="isSale">
-                <button type="submit" name="action" value="toInvoice"><%t.expense.toInvoice%></button>
-                <span class="hint"><%t.expense.toInvoiceHint%></span>
-            <else>
-                <button type="submit" name="action" value="toInvoice" class="link"><%t.expense.isOurInvoice%></button>
-            </else>
-            </swe:condition>
-            <swe:condition source="canReread"><button type="submit" name="action" value="reread" class="link"><%t.expense.reread%></button></swe:condition>
-        </form>
-        <swe:condition source="isSale">
+        <swe:condition source="isTaxPayment">
+            <form method="post" class="tax-choice">
+                <input type="hidden" name="id" value="<%id%>">
+                <swe:condition source="isMultipleTaxPayments">
+                    <p><strong><%taxPaymentCount%> inbetalningar till skattekontot (totalt <%taxPaymentTotal%> kr):</strong></p>
+                    <ul class="todo">
+                        <swe:iterator source="taxPaymentRows">
+                            <li><%current.date%>: <strong><%current.amount%> kr</strong> <swe:condition source="current.isFuture"><span class="hint">(framtida)</span></swe:condition></li>
+                        </swe:iterator>
+                    </ul>
+                    <div class="actions">
+                        <button type="submit" name="action" value="toTaxPayment"><%t.expense.tax.savePlan%></button>
+                    </div>
+                <else>
+                    <div class="grid">
+                        <label><%t.col.date%><input type="date" name="taxDate" value="<%taxDate%>" required></label>
+                        <label><%t.bank.amount%><input type="text" name="taxAmount" value="<%taxAmount%>" inputmode="decimal" class="num" required></label>
+                    </div>
+                    <label><%t.expense.note%><input type="text" name="taxNote" value="Preliminärskatt"></label>
+                    <div class="actions">
+                        <swe:condition source="taxHasFuture">
+                            <button type="submit" name="action" value="toTaxPayment"><%t.expense.tax.queueFuture%></button>
+                            <button type="submit" name="action" value="toTaxPaymentToday" class="secondary"><%t.expense.tax.bookToday%></button>
+                        <else>
+                            <button type="submit" name="action" value="toTaxPayment"><%t.expense.tax.bookNow%></button>
+                        </else>
+                        </swe:condition>
+                    </div>
+                </else>
+                </swe:condition>
+            </form>
             <details class="purchase-anyway"><summary><%t.expense.purchaseAnyway%></summary><% include=partials/expense-form.part %></details>
         <else>
-            <% include=partials/expense-form.part %>
+            <form method="post" class="sale-choice">
+                <input type="hidden" name="id" value="<%id%>">
+                <swe:condition source="isSale">
+                    <button type="submit" name="action" value="toInvoice"><%t.expense.toInvoice%></button>
+                    <span class="hint"><%t.expense.toInvoiceHint%></span>
+                <else>
+                    <button type="submit" name="action" value="toInvoice" class="link"><%t.expense.isOurInvoice%></button>
+                </else>
+                </swe:condition>
+                <swe:condition source="canReread"><button type="submit" name="action" value="reread" class="link"><%t.expense.reread%></button></swe:condition>
+            </form>
+            <swe:condition source="isSale">
+                <details class="purchase-anyway"><summary><%t.expense.purchaseAnyway%></summary><% include=partials/expense-form.part %></details>
+            <else>
+                <% include=partials/expense-form.part %>
+            </else>
+            </swe:condition>
         </else>
         </swe:condition>
     </section>

@@ -44,6 +44,32 @@
     })();
     </script>
 </section>
+<swe:condition source="pendingAny">
+<section class="panel">
+    <h2><%t.bank.pending.title%></h2>
+    <p class="lead"><%t.bank.pending.lead%></p>
+    <table>
+        <thead><tr><th><%t.col.date%></th><th><%t.bank.col.what%></th><th class="num"><%t.bar.out%></th><th><%t.col.status%></th><th></th></tr></thead>
+        <tbody>
+            <swe:iterator source="pendingEvents">
+            <tr>
+                <td class="date"><%current.date%></td>
+                <td><strong><%current.name%></strong> <span class="hint"><%current.note%></span></td>
+                <td class="num"><%current.amount%> <%t.common.currency%></td>
+                <td><span class="badge"><%current.statusText%></span></td>
+                <td>
+                    <form method="post" class="row-action">
+                        <input type="hidden" name="id" value="<%current.id%>">
+                        <button type="submit" name="action" value="bookPending"><%t.bank.pending.bookNow%></button>
+                        <button type="submit" name="action" value="remove" class="link danger"><%t.common.remove%></button>
+                    </form>
+                </td>
+            </tr>
+            </swe:iterator>
+        </tbody>
+    </table>
+</section>
+</swe:condition>
 <section class="panel">
     <h2><%t.bank.movements%></h2>
     <swe:condition source="movementsAny">
@@ -52,7 +78,7 @@
             <tbody>
                 <swe:iterator source="movements">
                 <tr class="link" data-href="<%current.href%>">
-                    <td><%current.date%></td>
+                    <td class="date"><%current.date%></td>
                     <td><a href="<%current.href%>"><%current.text%></a></td>
                     <td class="num"><%current.in%></td>
                     <td class="num"><%current.out%></td>

@@ -48,6 +48,8 @@ namespace com.swecial.web {
         List<(string, string)> snapshot() {
             var all = Fields.Select(k => ("company.field." + k, Db.str(company, k))).ToList();
             all.Add(("Betalningsvillkor", Db.num(company, "paymentTerms").ToString()));
+            all.Add(("Fakturamall", Settings.invoiceStyle(company)));
+            all.Add(("Färgaccent", Settings.invoiceAccent(company)));
             all.Add(("Fakturanummer", Settings.invoiceNumbering(company)));
             all.Add(("Bokföringsmetod per år", Db.str(company, "methodsJson")));
             all.Add(("Momsperiod", Settings.vatPeriod(company)));
@@ -61,6 +63,8 @@ namespace com.swecial.web {
             long serialBefore = Settings.highestSerial(companyId) + 1;
             int terms = parseTerms(form("paymentTerms"));
             string numbering = form("invoiceNumbering") == Settings.DateNumbers ? Settings.DateNumbers : Settings.SerialNumbers;
+            string invStyle = Settings.cleanStyle(form("invoiceStyle"));
+            string invAccent = Settings.cleanAccent(form("invoiceAccent"));
             string vatPeriod = form("vatPeriod");
             if (vatPeriod != Settings.VatQuarter && vatPeriod != Settings.VatMonth) vatPeriod = Settings.VatYear;
 
@@ -75,6 +79,8 @@ namespace com.swecial.web {
             foreach (var key in Fields) company.set(key, form(key).Trim());
             company.set("name", name);
             company.set("paymentTerms", terms);
+            company.set("invoiceStyle", invStyle);
+            company.set("invoiceAccent", invAccent);
             company.set("invoiceNumbering", numbering);
             // The method is chosen per fiscal year: this year's on the cards, the others in the list
             int thisYear = DateTime.Today.Year;
@@ -107,6 +113,21 @@ namespace com.swecial.web {
             if (creating) return;
 
             set("subtitle", T("settings.subtitle", h(Db.str(company, "name"))));
+            string currentTheme = isPost ? form("theme") : theme.id;
+            string invStyle = isPost ? Settings.cleanStyle(form("invoiceStyle")) : Settings.invoiceStyle(company);
+            rows("invoiceStyles", new[] { Settings.StyleNordic, Settings.StyleExecutive, Settings.StyleStudio }.Select(s =>
+                choice("invoiceStyle", s, invStyle, T("settings.invoiceStyle." + s), T("settings.invoiceStyle." + s + "Text"))));
+            string invAccent = isPost ? Settings.cleanAccent(form("invoiceAccent")) : Settings.invoiceAccent(company);
+            rows("invoiceAccents", new[] {
+                Settings.AccentTheme, Settings.AccentTeal, Settings.AccentNavy, Settings.AccentSlate, Settings.AccentBurgundy, Settings.AccentForest
+            }.Select(a => row(
+                ("name", "invoiceAccent"),
+                ("value", h(a)),
+                ("checked", isChecked(a == invAccent)),
+                ("title", T("settings.invoiceAccent." + a)),
+                ("color", h(InvoicePdf.paletteFor(a, currentTheme).primaryHex))
+            )));
+
             string numbering = isPost ? (form("invoiceNumbering") == Settings.DateNumbers ? Settings.DateNumbers : Settings.SerialNumbers) : Settings.invoiceNumbering(company);
             string example = DateTime.Today.ToString("yyyyMMdd") + "01";
             val("nextSerial", isPost ? form("nextSerial") : (Settings.highestSerial(companyId) + 1).ToString());

@@ -13,8 +13,8 @@
                 <tr class="link" data-href="/liquid/invoice.html?id=<%current.id%>">
                     <td><a href="/liquid/invoice.html?id=<%current.id%>"><%current.number%></a></td>
                     <td><%current.customer%></td>
-                    <td><%current.invoiceDate%></td>
-                    <td><%current.dueDate%></td>
+                    <td class="date"><%current.invoiceDate%></td>
+                    <td class="date"><%current.dueDate%></td>
                     <td><span class="status <%current.statusClass%>"><%current.status%></span></td>
                     <td class="num"><%current.total%></td>
                 </tr>

@@ -49,7 +49,7 @@ namespace com.swecial.web {
                 readForm();
                 Db.commit(invoice);
                 if (action == "preview") {
-                    redirect(BasePath + "/invoice-pdf.html?id=" + u(invoice.id) + "&inline=1");
+                    redirect(BasePath + "/invoice-pdf.html?id=" + u(invoice.id) + "&inline=1&v=" + System.DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
                     return;
                 }
                 if (action == "send") {
@@ -124,6 +124,8 @@ namespace com.swecial.web {
             set("priceLabel", isHourly ? T("invoice.col.hourlyRate") : T("invoice.col.unitPrice"));
 
             set("id", u(invoice.id));
+            string pdfVersion = invoice.rev.ToString() + "_" + (company?.rev.ToString() ?? "") + "_" + System.DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            set("pdfVersion", pdfVersion);
             set("heading", number > 0 ? T("invoice.title", number) : T("invoice.draft"));
             set("statusClass", h(status));
             set("status", T("status." + status));

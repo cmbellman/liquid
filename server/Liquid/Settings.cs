@@ -24,6 +24,19 @@ namespace com.swecial.code {
         public const string VatQuarter = "quarter";
         public const string VatMonth = "month";
 
+        /// <summary>Invoice visual layouts.</summary>
+        public const string StyleNordic = "nordic";
+        public const string StyleExecutive = "executive";
+        public const string StyleStudio = "studio";
+
+        /// <summary>Invoice colour accents (AccentTheme adapts to the user's active theme).</summary>
+        public const string AccentTheme = "theme";
+        public const string AccentTeal = "teal";
+        public const string AccentNavy = "navy";
+        public const string AccentSlate = "slate";
+        public const string AccentBurgundy = "burgundy";
+        public const string AccentForest = "forest";
+
         /// <summary>The counter behind serial invoice numbers.</summary>
         public const string SerialCounter = "invoice";
         /// <summary>Serial numbers stay below the date numbers (2000010101 and up), so the two never collide.</summary>
@@ -31,6 +44,23 @@ namespace com.swecial.code {
 
         public static string invoiceNumbering(SwecialObject company) {
             return Db.str(company, "invoiceNumbering") == DateNumbers ? DateNumbers : SerialNumbers;
+        }
+
+        public static string invoiceStyle(SwecialObject company) {
+            return cleanStyle(Db.str(company, "invoiceStyle"));
+        }
+
+        public static string cleanStyle(string style) {
+            return style == StyleExecutive || style == StyleStudio ? style : StyleNordic;
+        }
+
+        public static string invoiceAccent(SwecialObject company) {
+            return cleanAccent(Db.str(company, "invoiceAccent"));
+        }
+
+        public static string cleanAccent(string accent) {
+            return accent == AccentTeal || accent == AccentNavy || accent == AccentSlate || accent == AccentBurgundy || accent == AccentForest
+                ? accent : AccentTheme;
         }
 
         /// <summary>

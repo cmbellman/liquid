@@ -109,6 +109,8 @@ namespace com.swecial.web {
             int missingReceipts = Expenses.list(companyId).Count(e => Db.str(e, "receiptFileId").Length == 0);
             int bag = Expenses.inbox(companyId).Count;
             var items = new System.Collections.Generic.List<SwecialObject>();
+            int dueBankEvents = BankEvents.due(companyId).Count;
+            if (dueBankEvents > 0) items.Add(row(("href", BasePath + "/bank.html"), ("link", Tn("bar.todo.dueBankEvents", dueBankEvents)), ("rest", T("bar.todo.dueBankEventsRest"))));
             if (bag > 0) items.Add(row(("href", BasePath + "/pant.html"), ("link", Tn("bar.todo.bag", bag)), ("rest", T("bar.todo.bagRest"))));
             if (drafts > 0) items.Add(row(("href", BasePath + "/invoices.html"), ("link", Tn("bar.todo.drafts", drafts)), ("rest", T("bar.todo.draftsRest"))));
             if (missingReceipts > 0) items.Add(row(("href", BasePath + "/expenses.html"), ("link", Tn("bar.todo.receipts", missingReceipts)), ("rest", T("bar.todo.receiptsRest"))));

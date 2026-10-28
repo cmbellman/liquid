@@ -35,6 +35,49 @@ namespace com.swecial.web {
                     redirect(BasePath + "/invoice.html?id=" + u(invoice.id) + "&ok=imported");
                     return;
                 }
+                if (sorting && (form("action") == "toTaxPayment" || form("action") == "toTaxPaymentToday")) {
+                    bool forceToday = form("action") == "toTaxPaymentToday";
+                    string today = Dates.today();
+                    string note = (form("taxNote") ?? "").Trim();
+                    if (note.Length == 0) note = "Preliminärskatt";
+
+                    var taxPayments = new System.Collections.Generic.List<(string date, long amount)>();
+                    string json = Db.str(expense, "aiTaxPaymentsJson");
+                    if (json.Length > 0) {
+                        try {
+                            var arr = Newtonsoft.Json.Linq.JArray.Parse(json);
+                            foreach (var item in arr) {
+                                taxPayments.Add(((string)item["date"], (long)item["amount"]));
+                            }
+                        } catch { }
+                    }
+                    if (taxPayments.Count == 0) {
+                        string d = (form("taxDate") ?? "").Trim();
+                        if (d.Length == 0) d = today;
+                        long a = Money.parse(form("taxAmount"));
+                        if (a > 0) taxPayments.Add((d, a));
+                    }
+
+                    int scheduledCount = 0;
+                    foreach (var (pDate, pAmount) in taxPayments) {
+                        string actualDate = forceToday ? today : pDate;
+                        if (string.CompareOrdinal(actualDate, today) <= 0) {
+                            BankEvents.book(companyId, "taxPayment", actualDate, pAmount, note, account.id);
+                        } else {
+                            BankEvents.schedule(companyId, "taxPayment", actualDate, pAmount, note, account.id, Db.str(expense, "receiptFileId"));
+                            scheduledCount++;
+                        }
+                    }
+
+                    Expenses.remove(expense, account.id);
+                    var next = Expenses.inbox(companyId).FirstOrDefault();
+                    if (next != null) {
+                        redirect(BasePath + "/expense.html?id=" + u(next.id) + "&ok=sorted");
+                    } else {
+                        redirect(BasePath + (scheduledCount > 0 ? "/bank.html?ok=saved" : "/pant.html?ok=sorted"));
+                    }
+                    return;
+                }
                 if (sorting && form("action") == "reread") {
                     ReceiptReader.queue(expense);
                     redirect(BasePath + "/expense.html?id=" + u(expense.id));
@@ -134,6 +177,45 @@ namespace com.swecial.web {
                 set("sortLeft", Tn("expense.sortLeft", left));
                 set("ai", Db.str(expense, "aiStatus"));
                 set("isSale", Db.str(expense, "aiKind") == "sales");
+                bool isTax = Db.str(expense, "aiKind") == "taxPayment"
+                    || Db.str(expense, "aiSupplier").IndexOf("Skatteverket", System.StringComparison.OrdinalIgnoreCase) >= 0;
+                set("isTaxPayment", isTax);
+
+                var taxPayments = new System.Collections.Generic.List<(string date, long amount)>();
+                string taxJson = Db.str(expense, "aiTaxPaymentsJson");
+                if (taxJson.Length > 0) {
+                    try {
+                        var arr = Newtonsoft.Json.Linq.JArray.Parse(taxJson);
+                        foreach (var item in arr) {
+                            taxPayments.Add(((string)item["date"], (long)item["amount"]));
+                        }
+                    } catch { }
+                }
+                if (taxPayments.Count == 0) {
+                    long tot = Db.num(expense, "aiTotal");
+                    if (tot == 0) tot = Db.num(expense, "total");
+                    string d = Db.str(expense, "aiDate");
+                    if (d.Length == 0) d = Db.str(expense, "date");
+                    if (d.Length == 0) d = Dates.today();
+                    if (tot > 0) taxPayments.Add((d, tot));
+                }
+
+                set("taxPaymentCount", taxPayments.Count);
+                set("isMultipleTaxPayments", taxPayments.Count > 1);
+                set("taxPaymentTotal", Money.format(taxPayments.Sum(p => p.amount)));
+                string todayStr = Dates.today();
+                rows("taxPaymentRows", taxPayments.Select(p => row(
+                    ("date", h(p.date)),
+                    ("amount", Money.format(p.amount)),
+                    ("isFuture", string.CompareOrdinal(p.date, todayStr) > 0)
+                )));
+                bool hasFuture = taxPayments.Any(p => string.CompareOrdinal(p.date, todayStr) > 0);
+                set("taxHasFuture", hasFuture);
+                string firstDate = taxPayments.Count > 0 ? taxPayments[0].date : todayStr;
+                long firstAmount = taxPayments.Count > 0 ? taxPayments[0].amount : 0;
+                val("taxDate", firstDate);
+                val("taxAmount", Money.input(firstAmount));
+
                 set("canReread", ReceiptReader.enabled && Db.str(expense, "aiStatus") != ReceiptReader.Reading);
                 string currency = Db.str(expense, "aiCurrency");
                 set("aiCurrency", currency.Length > 0 && currency != "SEK" && currency != "KR" ? T("ai.currency", h(currency)) : "");

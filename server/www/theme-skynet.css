@@ -155,7 +155,7 @@ body.theme-skynet::after {
     box-shadow: var(--glow);
     padding: 18px 20px;
 }
-.theme-skynet .heading > div:first-child, .theme-skynet .tap-head > div {
+.theme-skynet .heading > div:first-child, .theme-skynet .tap-head > div:first-child {
     display: flex;
     flex-wrap: wrap;
     align-items: baseline;
@@ -273,4 +273,6 @@ body.theme-skynet::after {
     .theme-skynet .side nav a, .theme-skynet .side .who a { font-size: 9px; border: none; }
     .theme-skynet .side nav a.active::after { display: none; }
     .theme-skynet .clock { display: none; }
+    .theme-skynet .brand { flex-wrap: nowrap; }
+    .theme-skynet .brand::after { display: none; }
 }

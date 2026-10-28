@@ -35,7 +35,7 @@
             <thead><tr><th><%t.reports.col.voucher%></th><th><%t.col.date%></th><th><%t.reports.col.text%></th><th class="num"><%t.reports.col.debit%></th><th class="num"><%t.reports.col.credit%></th><th class="num"><%t.bank.col.balance%></th></tr></thead>
             <tbody>
                 <tr><td></td><td><%from%></td><td><%t.reports.openingBalance%></td><td></td><td></td><td class="num"><%opening%></td></tr>
-                <swe:iterator source="ledgerLines"><tr><td><a href="/liquid/voucher.html?id=<%current.id%>"><%current.label%></a></td><td><%current.date%></td><td><%current.text%></td><td class="num"><%current.debit%></td><td class="num"><%current.credit%></td><td class="num"><%current.balance%></td></tr></swe:iterator>
+                <swe:iterator source="ledgerLines"><tr><td><a href="/liquid/voucher.html?id=<%current.id%>"><%current.label%></a></td><td class="date"><%current.date%></td><td><%current.text%></td><td class="num"><%current.debit%></td><td class="num"><%current.credit%></td><td class="num"><%current.balance%></td></tr></swe:iterator>
             </tbody>
             <tfoot><tr class="total"><td colspan="3"><%t.reports.closingBalance%></td><td class="num"><%sumDebit%></td><td class="num"><%sumCredit%></td><td class="num"><%closing%></td></tr></tfoot>
         </table>

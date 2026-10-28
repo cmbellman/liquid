@@ -27,7 +27,7 @@
     <swe:condition source="unpaidAny">
         <table>
             <thead><tr><th><%t.closing.col.invoice%></th><th><%t.col.customer%></th><th><%t.col.date%></th><th class="num"><%t.col.amount%></th></tr></thead>
-            <tbody><swe:iterator source="unpaid"><tr><td><a href="/liquid/invoice.html?id=<%current.id%>"><%current.number%></a></td><td><%current.customer%></td><td><%current.date%></td><td class="num"><%current.total%></td></tr></swe:iterator></tbody>
+            <tbody><swe:iterator source="unpaid"><tr><td><a href="/liquid/invoice.html?id=<%current.id%>"><%current.number%></a></td><td><%current.customer%></td><td class="date"><%current.date%></td><td class="num"><%current.total%></td></tr></swe:iterator></tbody>
         </table>
         <form method="post" class="inline"><input type="hidden" name="year" value="<%year%>"><input type="hidden" name="action" value="book"><input type="hidden" name="step" value="receivables"><button type="submit" <%disabled%>><%t.closing.receivables.book%></button></form>
     </swe:condition>

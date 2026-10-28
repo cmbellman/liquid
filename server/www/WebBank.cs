@@ -19,6 +19,12 @@ namespace com.swecial.web {
                     redirect(BasePath + "/bank.html?ok=deleted");
                     return;
                 }
+                if (form("action") == "bookPending") {
+                    var bankEvent = Db.getOwned("bank_event", form("id"), companyId) ?? throw new LiquidException("Händelsen finns inte.", "EVENT NOT FOUND.");
+                    BankEvents.bookPending(bankEvent, account.id);
+                    redirect(BasePath + "/bank.html?ok=saved");
+                    return;
+                }
                 BankEvents.book(companyId, form("kind"), form("date"), Money.parse(form("amount")), form("note"), account.id);
                 redirect(BasePath + "/bank.html?ok=saved");
                 return;
@@ -69,6 +75,23 @@ namespace com.swecial.web {
             val("date", isPost ? form("date") : today);
             val("amount", form("amount"));
             val("note", form("note"));
+
+            var pending = BankEvents.pending(companyId);
+            set("pendingAny", pending.Count > 0);
+            rows("pendingEvents", pending.Select(e => {
+                string pDate = Db.str(e, "date");
+                bool isDue = string.CompareOrdinal(pDate, today) <= 0;
+                var kind = BankEvents.find(Db.str(e, "kind"));
+                return row(
+                    ("id", h(e.id)),
+                    ("date", h(pDate)),
+                    ("name", h(kind?.name ?? Db.str(e, "kind"))),
+                    ("note", h(Db.str(e, "note"))),
+                    ("amount", Money.format(Db.num(e, "amount"))),
+                    ("isDue", isDue),
+                    ("statusText", T(isDue ? "bank.pending.due" : "bank.pending.scheduled"))
+                );
+            }));
 
             // A changed or removed expense/event leaves a voucher and its reversal on the same date;
             // they cancel out, so only what still counts is listed (the balances include everything)

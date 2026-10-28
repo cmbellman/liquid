@@ -6,47 +6,108 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><%title%></title>
     <link href="/liquid/fonts/base.css" rel="stylesheet">
+    <link href="/liquid/fonts/inter.css" rel="stylesheet">
+    <link href="/liquid/fonts/mono.css" rel="stylesheet">
+    <%themeFonts%>
     <link rel="stylesheet" href="/liquid/style.css">
 </head>
 <body class="print">
     <main>
         <p class="error"><%error%></p>
         <swe:condition source="found">
-        <!-- The invoice is a legal document for the customer: always Swedish and neutral, whatever the theme -->
-        <article class="invoice">
-            <header>
-                <div><h1><%companyName%></h1><%companyAddress%></div>
+        <!-- The invoice is a legal document for the customer: always Swedish, styled with the company's layout, accent and subtle theme kinship -->
+        <article class="invoice inv-theme-<%invoiceTheme%> inv-style-<%invoiceStyle%> inv-accent-<%invoiceAccent%>">
+            <header class="inv-head">
+                <div class="inv-brand">
+                    <div class="inv-monogram" aria-hidden="true"><%monogram%></div>
+                    <div class="inv-company">
+                        <h1><%companyName%></h1>
+                        <div class="inv-company-addr"><%companyAddress%></div>
+                    </div>
+                </div>
                 <div class="doc">
-                    <h2>Faktura</h2>
-                    <dl>
+                    <h2><%docTitle%></h2>
+                    <span class="inv-num-sub">Nr <%number%></span>
+                </div>
+            </header>
+
+            <swe:condition source="isStudio">
+            <div class="inv-strip">
+                <div><small>Fakturadatum</small><strong><%invoiceDate%></strong></div>
+                <div><small>Förfallodatum</small><strong><%dueDate%></strong></div>
+                <div><small>Bankgiro</small><strong><%bankgiro%></strong></div>
+                <div class="inv-strip-total"><small>Att betala (SEK)</small><strong><%total%> kr</strong></div>
+            </div>
+            </swe:condition>
+
+            <div class="inv-parties">
+                <section class="to">
+                    <small class="inv-eyebrow">Fakturamottagare</small>
+                    <strong><%customerName%></strong>
+                    <%customerAddress%>
+                    <swe:condition source="hasCustomerOrg"><span class="inv-muted">Org.nr <%customerOrg%></span></swe:condition>
+                    <swe:condition source="hasCustomerVat"><span class="inv-muted">Momsreg.nr <%customerVat%></span></swe:condition>
+                </section>
+
+                <div class="inv-meta-wrap">
+                    <swe:condition source="isNordic">
+                    <div class="inv-pill">
+                        <div><small>Att betala (SEK)</small><strong><%total%> kr</strong></div>
+                        <div><small>Förfallodatum</small><strong><%dueDate%></strong></div>
+                    </div>
+                    </swe:condition>
+                    <dl class="inv-meta">
                         <dt>Fakturanummer</dt><dd><%number%></dd>
                         <dt>Fakturadatum</dt><dd><%invoiceDate%></dd>
                         <dt>Förfallodatum</dt><dd><%dueDate%></dd>
+                        <swe:condition source="hasOurReference"><dt>Vår referens</dt><dd><%ourReference%></dd></swe:condition>
                         <swe:condition source="hasYourReference"><dt>Er referens</dt><dd><%yourReference%></dd></swe:condition>
                         <swe:condition source="hasPoNumber"><dt><%poLabel%></dt><dd><%poNumber%></dd></swe:condition>
-                        <swe:condition source="hasOurReference"><dt>Vår referens</dt><dd><%ourReference%></dd></swe:condition>
                     </dl>
                 </div>
-            </header>
-            <section class="to">
-                <strong><%customerName%></strong><%customerAddress%>
-                <swe:condition source="hasCustomerVat"><span>Momsreg.nr <%customerVat%></span></swe:condition>
-            </section>
-            <table>
+            </div>
+
+            <table class="inv-table">
                 <thead><tr><th>Beskrivning</th><th class="num"><%qtyHeader%></th><th class="num"><%priceHeader%></th><th class="num">Moms</th><th class="num">Belopp</th></tr></thead>
                 <tbody>
-                    <swe:iterator source="lines"><tr><td><%current.text%></td><td class="num"><%current.qty%></td><td class="num"><%current.price%></td><td class="num"><%current.vat%> %</td><td class="num"><%current.net%></td></tr></swe:iterator>
+                    <swe:iterator source="lines"><tr><td><%current.text%></td><td class="num"><%current.qty%></td><td class="num"><%current.price%></td><td class="num"><%current.vat%> %</td><td class="num"><strong><%current.net%></strong></td></tr></swe:iterator>
                 </tbody>
-                <tfoot>
-                    <tr><td colspan="4">Summa exkl. moms</td><td class="num"><%net%></td></tr>
-                    <swe:iterator source="vatLines"><tr><td colspan="4">Moms <%current.rate%> %</td><td class="num"><%current.vat%></td></tr></swe:iterator>
-                    <tr class="total"><td colspan="4">Att betala (SEK)</td><td class="num"><%total%></td></tr>
-                </tfoot>
             </table>
-            <swe:condition source="hasBankgiro"><p class="note"><strong>Betalas till bankgiro:</strong> <%bankgiro%> senast <%dueDate%></p></swe:condition>
-            <swe:condition source="hasVatNote"><p class="note"><%vatNote%></p></swe:condition>
-            <swe:condition source="hasNote"><p class="note"><%note%></p></swe:condition>
-            <swe:condition source="paid"><p class="paid">Betald <%paidDate%></p></swe:condition>
+
+            <div class="inv-summary">
+                <div class="inv-notes">
+                    <swe:condition source="hasVatNote"><p class="note vat-note"><%vatNote%></p></swe:condition>
+                    <swe:condition source="hasNote">
+                    <div class="inv-note-box">
+                        <small class="inv-eyebrow">Meddelande</small>
+                        <p class="note"><%note%></p>
+                    </div>
+                    </swe:condition>
+                </div>
+                <div class="inv-totals">
+                    <div class="inv-tot-row"><span>Summa exkl. moms</span><span class="num"><%net%> kr</span></div>
+                    <swe:iterator source="vatLines"><div class="inv-tot-row"><span>Moms <%current.rate%> % (på <%current.base%> kr)</span><span class="num"><%current.vat%> kr</span></div></swe:iterator>
+                    <div class="inv-tot-grand"><span>Att betala (SEK)</span><span class="num"><%total%> kr</span></div>
+                </div>
+            </div>
+
+            <section class="inv-paycard">
+                <small class="inv-eyebrow">Betalningsuppgifter — ange fakturanummer vid betalning</small>
+                <div class="inv-paygrid">
+                    <div><span>Bankgiro</span><strong class="inv-pay-big"><%bankgiro%></strong></div>
+                    <div><span>Fakturanr / Referens</span><strong><%number%></strong></div>
+                    <div><span>Förfallodatum</span><strong><%dueDate%></strong></div>
+                    <div>
+                        <swe:condition source="paid">
+                        <span class="paid-badge">Betald <%paidDate%></span>
+                        <else>
+                        <span>Att betala (SEK)</span><strong class="inv-pay-big inv-pay-accent"><%total%> kr</strong>
+                        </else>
+                        </swe:condition>
+                    </div>
+                </div>
+            </section>
+
             <footer>
                 <swe:iterator source="footer"><div><small><%current.label%></small><%current.value%></div></swe:iterator>
             </footer>

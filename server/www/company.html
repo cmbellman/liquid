@@ -21,7 +21,14 @@
         <label class="check"><input type="checkbox" name="fskatt" value="1" <%fskattChecked%>><span><%t.company.fskatt%></span></label>
     </section>
     <section class="panel">
-        <div class="heading"><div><h2><%t.settings.invoices.title%></h2><p class="sub"><%t.settings.invoices.subtitle%></p></div></div>
+        <div class="heading">
+            <div><h2><%t.settings.invoices.title%></h2><p class="sub"><%t.settings.invoices.subtitle%></p></div>
+            <a class="button secondary" id="invoiceSamplePreview" href="/liquid/invoice-pdf.html?sample=1" target="_blank"><%t.settings.invoicePreview%></a>
+        </div>
+        <p class="label"><%t.settings.invoiceStyle.label%></p>
+        <div class="choices three"><swe:iterator source="invoiceStyles"><label class="choice"><input type="radio" name="<%current.name%>" value="<%current.value%>" <%current.checked%>><b><%current.title%></b><span><%current.text%></span></label></swe:iterator></div>
+        <p class="label"><%t.settings.invoiceAccent.label%></p>
+        <div class="choices five"><swe:iterator source="invoiceAccents"><label class="choice"><input type="radio" name="<%current.name%>" value="<%current.value%>" <%current.checked%>><b class="swatch-title"><i class="swatch-dot" style="background:<%current.color%>"></i><%current.title%></b></label></swe:iterator></div>
         <p class="label"><%t.settings.numbering.label%></p>
         <div class="choices"><swe:iterator source="numbering"><label class="choice"><input type="radio" name="<%current.name%>" value="<%current.value%>" <%current.checked%>><b><%current.title%></b><span><%current.text%></span><swe:condition source="current.serial"><label><%t.settings.nextSerial%><input type="number" name="nextSerial" value="<%nextSerial%>" min="1" max="<%maxSerial%>"></label></swe:condition></label></swe:iterator></div>
         <p class="hint"><%t.settings.numberingHint%></p>
@@ -59,6 +66,26 @@
   f.orgNumber.addEventListener('input', suggest); f.vatNumber.addEventListener('input', suggest); suggest();
   function serial() { f.nextSerial.disabled = !f.querySelector('input[name=invoiceNumbering][value=serial]').checked; }
   f.querySelectorAll('input[name=invoiceNumbering]').forEach(function (r) { r.addEventListener('change', serial); }); serial();
+  var prev = document.getElementById('invoiceSamplePreview');
+  var themeDots = { boring: '#1e40af', puben: '#965a14', nostromo: '#156228', skynet: '#b02312' };
+  function updatePreview() {
+    if (!prev) return;
+    var st = f.querySelector('input[name=invoiceStyle]:checked');
+    var ac = f.querySelector('input[name=invoiceAccent]:checked');
+    var th = f.querySelector('input[name=theme]:checked');
+    var thVal = th ? th.value : 'boring';
+    var themeRadio = f.querySelector('input[name=invoiceAccent][value=theme]');
+    if (themeRadio) {
+      var dot = themeRadio.parentElement.querySelector('.swatch-dot');
+      if (dot && themeDots[thVal]) dot.style.background = themeDots[thVal];
+    }
+    prev.href = '/liquid/invoice-pdf.html?sample=1&style=' + encodeURIComponent(st ? st.value : 'nordic')
+      + '&accent=' + encodeURIComponent(ac ? ac.value : 'theme')
+      + '&theme=' + encodeURIComponent(thVal)
+      + '&v=' + Date.now();
+  }
+  f.querySelectorAll('input[name=invoiceStyle], input[name=invoiceAccent], input[name=theme]').forEach(function (r) { r.addEventListener('change', updatePreview); });
+  updatePreview();
 })();
 </script>
 </else>

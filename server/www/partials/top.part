@@ -22,6 +22,7 @@
             <nav>
                 <swe:iterator source="navItems"><a href="<%current.href%>" class="<%current.active%>"><%current.icon%><span><%current.text%></span><swe:condition source="current.hasBadge"><b class="badge"><%current.badge%></b></swe:condition></a></swe:iterator>
             </nav>
+            <script>(function(){var n=document.querySelector('.side nav'),a=n&&n.querySelector('a.active');if(a&&n.scrollWidth>n.clientWidth)n.scrollLeft=a.offsetLeft-(n.clientWidth-a.offsetWidth)/2;})();</script>
             </swe:condition>
             <swe:condition source="signedIn">
             <div class="who">

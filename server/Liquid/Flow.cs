@@ -129,6 +129,15 @@ namespace com.swecial.code {
                 var b = due <= today ? current : buckets.FirstOrDefault(x => due >= x.start && due < x.end);
                 if (b != null && (b.forecast || b == current)) b.moneyIn += Db.num(invoice, "total");
             }
+            foreach (var pe in BankEvents.pending(companyId)) {
+                DateTime d = Dates.parse(Db.str(pe, "date"));
+                var kind = BankEvents.find(Db.str(pe, "kind"));
+                var b = d <= today ? current : buckets.FirstOrDefault(x => d >= x.start && d < x.end);
+                if (b != null && (b.forecast || b == current)) {
+                    if (kind?.incoming == true) b.moneyIn += Db.num(pe, "amount");
+                    else b.moneyOut += Db.num(pe, "amount");
+                }
+            }
 
             long runningAcc = current != null ? current.accumulated : 0;
             long currentPaidIn = all.Where(m => current != null && m.date >= current.start && m.date <= today && !m.saving).Sum(m => m.moneyIn);
