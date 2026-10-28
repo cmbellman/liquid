@@ -195,9 +195,10 @@ namespace com.swecial.code {
                 e.set("gain", gain);
                 e.set("note", note);
                 e.set("status", "booked");
+                Db.linkUser(e, "createdBy", userId);
                 if (rows != null) {
                     var voucher = Ledger.book(companyId, Ledger.Securities, date, text, rows, userId, "security_event", e.id);
-                    e.set("voucherId", voucher.id);
+                    Db.link(e, "voucher", voucher);
                 }
                 Db.commit(e);
                 return e;
@@ -208,10 +209,10 @@ namespace com.swecial.code {
         public static void remove(SwecialObject e, string userId) {
             lock (Db.Sync) {
                 if (Db.str(e, "status") != "booked") return;
-                var list = events(Db.str(e, "companyId"));
+                var list = events(Db.companyId(e));
                 if (list.Last().id != e.id) throw new LiquidException("Bara den senaste händelsen kan tas bort. Ta bort de senare först.", "ONLY THE LATEST EVENT CAN BE REMOVED. REMOVE LATER EVENTS FIRST.");
-                var voucher = Db.getOwned("voucher", Db.str(e, "voucherId"), Db.str(e, "companyId"));
-                if (voucher != null && Db.str(voucher, "reversedById").Length == 0) {
+                var voucher = Db.linked(e, "voucher", "voucher");
+                if (voucher != null && Db.linkedId(voucher, "reversedBy").Length == 0) {
                     Ledger.reverse(voucher, Db.str(voucher, "date"), userId, fromSource: true);
                 }
                 e.set("status", "removed");

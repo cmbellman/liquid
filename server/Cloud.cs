@@ -20,6 +20,7 @@ namespace com.swecial.code {
 
         /// <summary>Gives every company the accounts added to the starter chart since it was created.</summary>
         public override void onStartUp() {
+            Db.migrateLinks();
             foreach (var company in Db.all("company")) {
                 Bas.seed(company.id);
             }

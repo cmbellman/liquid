@@ -109,12 +109,12 @@ namespace com.swecial.code {
 
         /// <summary>Starts reading the receipt in the background, if the reader is configured and the company allows it.</summary>
         public static void queue(SwecialObject expense) {
-            if (!enabled || Db.str(expense, "receiptFileId").Length == 0) return;
-            if (!onFor(Db.get("company", Db.str(expense, "companyId")))) return;
+            if (!enabled || Db.linkedId(expense, "receiptFile").Length == 0) return;
+            if (!onFor(Db.company(expense))) return;
             expense.set("aiStatus", Reading);
             expense.remove("aiProblem");
             Db.commit(expense);
-            string id = expense.id, companyId = Db.str(expense, "companyId");
+            string id = expense.id, companyId = Db.companyId(expense);
             Task.Run(() => read(id, companyId));
         }
 
@@ -122,7 +122,7 @@ namespace com.swecial.code {
         public static void resume() {
             if (!enabled) return;
             foreach (var expense in Db.all("expense").Where(e => Db.str(e, "aiStatus") == Reading && Db.str(e, "status") == Expenses.Inbox)) {
-                string id = expense.id, companyId = Db.str(expense, "companyId");
+                string id = expense.id, companyId = Db.companyId(expense);
                 Task.Run(() => read(id, companyId));
             }
         }
@@ -131,7 +131,7 @@ namespace com.swecial.code {
             Slots.Wait();
             try {
                 var expense = Db.getOwned("expense", expenseId, companyId);
-                var file = expense == null ? null : Expenses.receipt(Db.str(expense, "receiptFileId"), companyId);
+                var file = expense == null ? null : Expenses.receipt(Db.linkedId(expense, "receiptFile"), companyId);
                 byte[] data = file?.data;
                 if (data == null) throw new ReaderException(Problem.Other, "receipt file missing");
                 var company = Db.get("company", companyId);

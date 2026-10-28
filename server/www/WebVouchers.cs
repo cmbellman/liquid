@@ -19,7 +19,7 @@ namespace com.swecial.web {
             var vouchers = Ledger.vouchers(companyId);
             vouchers.Reverse();
             rows("vouchers", vouchers.Select(v => {
-                bool reversed = Db.str(v, "reversedById").Length > 0;
+                bool reversed = Db.linkedId(v, "reversedBy").Length > 0;
                 return row(("id", u(v.id)), ("label", h(Ledger.label(v))), ("date", h(Db.str(v, "date"))), ("text", h(Db.str(v, "text"))),
                     ("reversed", reversed), ("class", reversed ? "reversed" : ""), ("total", Money.formatOrBlank(Db.num(v, "total"))));
             }));

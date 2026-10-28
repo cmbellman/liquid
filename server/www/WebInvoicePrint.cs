@@ -24,7 +24,7 @@ namespace com.swecial.web {
             bool isDraft = Db.str(invoice, "status") == Invoicing.Draft || Db.num(invoice, "number") == 0;
             long number = Db.num(invoice, "number");
             title(isDraft ? "Fakturautkast" : "Faktura " + number);
-            var customer = Db.getOwned("customer", Db.str(invoice, "customerId"), companyId);
+            var customer = Db.linked(invoice, "customer", "customer");
             var lines = Invoicing.rows(invoice);
             var totals = Invoicing.totals(lines);
 

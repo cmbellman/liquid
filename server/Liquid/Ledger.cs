@@ -91,10 +91,12 @@ namespace com.swecial.code {
                 voucher.set("text", text);
                 voucher.set("rowsJson", JsonConvert.SerializeObject(rows));
                 voucher.set("total", debit);
-                voucher.set("createdBy", userId);
+                Db.linkUser(voucher, "createdBy", userId);
                 if (sourceType != null) {
                     voucher.set("sourceType", sourceType);
-                    voucher.set("sourceId", sourceId);
+                    if (!string.IsNullOrEmpty(sourceId)) {
+                        Db.link(voucher, "source", Db.getOwned(sourceType, sourceId, companyId));
+                    }
                 }
                 Db.commit(voucher);
                 return voucher;
@@ -108,16 +110,16 @@ namespace com.swecial.code {
         /// </summary>
         public static SwecialObject reverse(SwecialObject original, string date, string userId, bool fromSource = false) {
             lock (Db.Sync) {
-                if (Db.str(original, "reversedById").Length > 0) throw new LiquidException("Verifikationen är redan makulerad.", "VOUCHER ALREADY VOIDED.");
-                if (Db.str(original, "reversesId").Length > 0) throw new LiquidException("En rättelse kan inte makuleras.", "A REVERSAL ENTRY CANNOT BE VOIDED.");
+                if (Db.linkedId(original, "reversedBy").Length > 0) throw new LiquidException("Verifikationen är redan makulerad.", "VOUCHER ALREADY VOIDED.");
+                if (Db.linkedId(original, "reverses").Length > 0) throw new LiquidException("En rättelse kan inte makuleras.", "A REVERSAL ENTRY CANNOT BE VOIDED.");
                 // The invoice's status would no longer match its vouchers (credit notes come later)
                 if (!fromSource && Db.str(original, "sourceType").Length > 0) throw new LiquidException("Verifikationen är bokförd från en faktura, utgift, bankhändelse eller fondhändelse. Ändra eller ta bort den där i stället.", "VOUCHER ORIGINATES FROM AN INVOICE, EXPENDITURE, TREASURY OR SECURITIES EVENT. AMEND IT AT THE SOURCE.");
                 var swapped = rows(original).Select(r => new VoucherRow { account = r.account, debit = r.credit, credit = r.debit }).ToList();
-                var reversal = book(Db.str(original, "companyId"), Db.str(original, "series"), date,
+                var reversal = book(Db.companyId(original), Db.str(original, "series"), date,
                     "Rättelse av " + label(original) + ": " + Db.str(original, "text"), swapped, userId);
-                reversal.set("reversesId", original.id);
+                Db.link(reversal, "reverses", original);
                 Db.commit(reversal);
-                original.set("reversedById", reversal.id);
+                Db.link(original, "reversedBy", reversal);
                 Db.commit(original);
                 return reversal;
             }
@@ -147,21 +149,15 @@ namespace com.swecial.code {
 
                 var toDelete = new List<SwecialObject> { voucher };
                 if (deleteLinked) {
-                    string revId = Db.str(voucher, "reversedById");
-                    if (revId.Length > 0) {
-                        var linked = Db.getOwned("voucher", revId, companyId);
-                        if (linked != null) {
-                            Closing.requireOpen(companyId, Db.str(linked, "date"));
-                            toDelete.Add(linked);
-                        }
+                    var linkedRev = Db.linked(voucher, "reversedBy", "voucher");
+                    if (linkedRev != null) {
+                        Closing.requireOpen(companyId, Db.str(linkedRev, "date"));
+                        toDelete.Add(linkedRev);
                     }
-                    string origId = Db.str(voucher, "reversesId");
-                    if (origId.Length > 0) {
-                        var linked = Db.getOwned("voucher", origId, companyId);
-                        if (linked != null && !toDelete.Any(v => v.id == linked.id)) {
-                            Closing.requireOpen(companyId, Db.str(linked, "date"));
-                            toDelete.Add(linked);
-                        }
+                    var linkedOrig = Db.linked(voucher, "reverses", "voucher");
+                    if (linkedOrig != null && !toDelete.Any(v => v.id == linkedOrig.id)) {
+                        Closing.requireOpen(companyId, Db.str(linkedOrig, "date"));
+                        toDelete.Add(linkedOrig);
                     }
                 }
 
@@ -178,12 +174,12 @@ namespace com.swecial.code {
                     foreach (var other in Db.forCompany("voucher", companyId)) {
                         if (toDelete.Any(d => d.id == other.id)) continue;
                         bool changed = false;
-                        if (Db.str(other, "reversedById") == v.id) {
-                            other.set("reversedById", "");
+                        if (Db.linkedId(other, "reversedBy") == v.id) {
+                            Db.unlink(other, "reversedBy");
                             changed = true;
                         }
-                        if (Db.str(other, "reversesId") == v.id) {
-                            other.set("reversesId", "");
+                        if (Db.linkedId(other, "reverses") == v.id) {
+                            Db.unlink(other, "reverses");
                             changed = true;
                         }
                         if (changed) Db.commit(other);
@@ -205,15 +201,15 @@ namespace com.swecial.code {
 
         static void cleanSourceReferences(SwecialObject v, string companyId) {
             string vId = v.id;
-            string sourceId = Db.str(v, "sourceId");
+            string sourceId = Db.linkedId(v, "source");
 
-            // Expenses: if an expense was removed or points to this voucher, delete it if removed or clear voucherId
+            // Expenses: if an expense was removed or points to this voucher, delete it if removed or clear voucher
             foreach (var expense in Db.forCompany("expense", companyId)) {
-                if (expense.id == sourceId || Db.str(expense, "voucherId") == vId) {
+                if (expense.id == sourceId || Db.linkedId(expense, "voucher") == vId) {
                     if (Db.str(expense, "status") == "removed") {
                         Db.delete(expense);
                     } else {
-                        expense.set("voucherId", "");
+                        Db.unlink(expense, "voucher");
                         Db.commit(expense);
                     }
                 }
@@ -222,24 +218,24 @@ namespace com.swecial.code {
             // Invoices: clear any matching voucher pointers
             foreach (var invoice in Db.forCompany("invoice", companyId)) {
                 bool changed = false;
-                if (Db.str(invoice, "voucherId") == vId) { invoice.set("voucherId", ""); changed = true; }
-                if (Db.str(invoice, "paymentVoucherId") == vId) { invoice.set("paymentVoucherId", ""); changed = true; }
-                if (Db.str(invoice, "closingVoucherId") == vId) { invoice.set("closingVoucherId", ""); changed = true; }
+                if (Db.linkedId(invoice, "voucher") == vId) { Db.unlink(invoice, "voucher"); changed = true; }
+                if (Db.linkedId(invoice, "paymentVoucher") == vId) { Db.unlink(invoice, "paymentVoucher"); changed = true; }
+                if (Db.linkedId(invoice, "closingVoucher") == vId) { Db.unlink(invoice, "closingVoucher"); changed = true; }
                 if (changed) Db.commit(invoice);
             }
 
-            // Bank events: clear voucherId or delete if matching sourceId
+            // Bank events: clear voucher or delete if matching sourceId
             foreach (var be in Db.forCompany("bank_event", companyId)) {
-                if (be.id == sourceId || Db.str(be, "voucherId") == vId) {
-                    be.set("voucherId", "");
+                if (be.id == sourceId || Db.linkedId(be, "voucher") == vId) {
+                    Db.unlink(be, "voucher");
                     Db.commit(be);
                 }
             }
 
-            // Security events: clear voucherId
+            // Security events: clear voucher
             foreach (var se in Db.forCompany("security_event", companyId)) {
-                if (se.id == sourceId || Db.str(se, "voucherId") == vId) {
-                    se.set("voucherId", "");
+                if (se.id == sourceId || Db.linkedId(se, "voucher") == vId) {
+                    Db.unlink(se, "voucher");
                     Db.commit(se);
                 }
             }
@@ -271,19 +267,16 @@ namespace com.swecial.code {
                         changed = true;
                     }
                     // Update text if it references an original that might have changed number
-                    string origId = Db.str(v, "reversesId");
-                    if (origId.Length > 0) {
-                        var orig = Db.getOwned("voucher", origId, companyId);
-                        if (orig != null) {
-                            string text = Db.str(v, "text");
-                            if (text.StartsWith("Rättelse av ")) {
-                                int colon = text.IndexOf(": ");
-                                if (colon >= 0) {
-                                    string newText = "Rättelse av " + label(orig) + ": " + text.Substring(colon + 2);
-                                    if (text != newText) {
-                                        v.set("text", newText);
-                                        changed = true;
-                                    }
+                    var orig = Db.linked(v, "reverses", "voucher");
+                    if (orig != null) {
+                        string text = Db.str(v, "text");
+                        if (text.StartsWith("Rättelse av ")) {
+                            int colon = text.IndexOf(": ");
+                            if (colon >= 0) {
+                                string newText = "Rättelse av " + label(orig) + ": " + text.Substring(colon + 2);
+                                if (text != newText) {
+                                    v.set("text", newText);
+                                    changed = true;
                                 }
                             }
                         }

@@ -64,7 +64,7 @@ namespace com.swecial.web {
                         if (string.CompareOrdinal(actualDate, today) <= 0) {
                             BankEvents.book(companyId, "taxPayment", actualDate, pAmount, note, account.id);
                         } else {
-                            BankEvents.schedule(companyId, "taxPayment", actualDate, pAmount, note, account.id, Db.str(expense, "receiptFileId"));
+                            BankEvents.schedule(companyId, "taxPayment", actualDate, pAmount, note, account.id, Db.linkedId(expense, "receiptFile"));
                             scheduledCount++;
                         }
                     }
@@ -154,7 +154,7 @@ namespace com.swecial.web {
         }
 
         void setValues() {
-            string receiptId = Db.str(expense, "receiptFileId");
+            string receiptId = Db.linkedId(expense, "receiptFile");
             var file = receiptId.Length > 0 ? Expenses.receipt(receiptId, companyId) : null;
             string type = file?.fileType ?? "";
             bool exists = expense != null;

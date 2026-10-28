@@ -102,7 +102,7 @@ namespace com.swecial.code {
             lock (Db.Sync) {
                 var expense = Db.create("expense", companyId);
                 expense.set("status", Inbox);
-                expense.set("createdBy", userId);
+                Db.linkUser(expense, "createdBy", userId);
                 Db.commit(expense);
                 attachReceipt(expense, upload, userId);
                 ReceiptReader.queue(expense);
@@ -184,7 +184,7 @@ namespace com.swecial.code {
                 if (expense != null && Db.str(expense, "status") == Removed) throw new LiquidException("Utgiften är borttagen.", "EXPENDITURE RECORD HAS BEEN PURGED.");
                 if (expense == null) {
                     expense = Db.create("expense", companyId);
-                    expense.set("createdBy", userId);
+                    Db.linkUser(expense, "createdBy", userId);
                 } else if (Db.str(expense, "status") == Booked && Db.str(expense, "date") == date && Db.str(expense, "supplier") == supplier && Db.str(expense, "category") == category.key
                         && Db.num(expense, "total") == input.total && Db.num(expense, "vat") == vat
                         && Db.num(expense, "vatRate") == input.vatRate && Db.str(expense, "foreign") == foreign && Db.num(expense, "importBase") == importBase
@@ -213,7 +213,7 @@ namespace com.swecial.code {
                 expense.set("purpose", purpose);
                 setRepresentation(expense, kind, attendees, alcohol);
                 var voucher = Ledger.book(companyId, Ledger.Expenses, date, text, rows, userId, "expense", expense.id);
-                expense.set("voucherId", voucher.id);
+                Db.link(expense, "voucher", voucher);
                 Db.commit(expense);
                 return expense;
             }
@@ -236,8 +236,8 @@ namespace com.swecial.code {
         }
 
         static void reverseVoucher(SwecialObject expense, string userId) {
-            var voucher = Db.getOwned("voucher", Db.str(expense, "voucherId"), Db.str(expense, "companyId"));
-            if (voucher != null && Db.str(voucher, "reversedById").Length == 0) {
+            var voucher = Db.linked(expense, "voucher", "voucher");
+            if (voucher != null && Db.linkedId(voucher, "reversedBy").Length == 0) {
                 // Dated like the original, so the period's figures come out right
                 Ledger.reverse(voucher, Db.str(voucher, "date"), userId, fromSource: true);
             }
@@ -268,20 +268,21 @@ namespace com.swecial.code {
             string type = receiptType(upload);
             var file = SwecialFile.create(Db.app);
             file.fileType = extension;
-            file.set("companyId", Db.str(expense, "companyId"));
+            Db.link(file, "company", Db.company(expense));
             file.set("contentType", type);
             file.set("originalName", upload.fileName ?? "");
             file.save(upload.data);
             file.saveNow();
-            string previous = Db.str(expense, "receiptFileId");
+            string previous = Db.linkedId(expense, "receiptFile");
             if (previous.Length > 0) {
                 var history = receiptHistory(expense);
                 history.Add(new ReplacedReceipt { fileId = previous, replacedAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm"), replacedBy = userId ?? "" });
                 expense.set("receiptHistoryJson", Newtonsoft.Json.JsonConvert.SerializeObject(history));
-                Audit.log(Db.str(expense, "companyId"), userId, "receipt", "Underlaget byttes på utgiften " + Db.str(expense, "date") + " " + Db.str(expense, "supplier")
-                    + (Db.str(expense, "voucherId").Length > 0 ? " (verifikation " + Ledger.label(Db.get("voucher", Db.str(expense, "voucherId"))) + ")" : "") + "; det tidigare finns kvar");
+                var voucher = Db.linked(expense, "voucher", "voucher");
+                Audit.log(Db.companyId(expense), userId, "receipt", "Underlaget byttes på utgiften " + Db.str(expense, "date") + " " + Db.str(expense, "supplier")
+                    + (voucher != null ? " (verifikation " + Ledger.label(voucher) + ")" : "") + "; det tidigare finns kvar");
             }
-            expense.set("receiptFileId", file.id);
+            Db.link(expense, "receiptFile", file);
             Db.commit(expense);
         }
 

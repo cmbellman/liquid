@@ -281,7 +281,7 @@ namespace com.swecial.code {
                 import.set("mode", mode);
                 import.set("yearStart", p.yearStart);
                 import.set("yearEnd", p.yearEnd);
-                import.set("importedBy", userId);
+                Db.linkUser(import, "importedBy", userId);
                 Db.commit(import);
                 foreach (var b in toBook) Ledger.book(companyId, Series, b.date, b.text, b.rows, userId, "sie_import", import.id);
 

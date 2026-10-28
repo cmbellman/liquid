@@ -78,14 +78,11 @@ namespace com.swecial.web {
             val("text", Db.str(voucher, "text"));
             set("source", sourceLink());
             set("hasSource", ((string)get("source")).Length > 0);
-            set("reverses", linked("reversesId"));
+            set("reverses", linked("reverses"));
             set("hasReverses", ((string)get("reverses")).Length > 0);
-            set("reversedBy", linked("reversedById"));
+            set("reversedBy", linked("reversedBy"));
             set("hasReversedBy", ((string)get("reversedBy")).Length > 0);
-            string revId = Db.str(voucher, "reversedById");
-            string origId = Db.str(voucher, "reversesId");
-            string linkedId = revId.Length > 0 ? revId : origId;
-            var linkedVoucher = linkedId.Length > 0 ? Db.getOwned("voucher", linkedId, companyId) : null;
+            var linkedVoucher = Db.linked(voucher, "reversedBy", "voucher") ?? Db.linked(voucher, "reverses", "voucher");
             set("hasLinked", linkedVoucher != null);
             val("linkedLabel", linkedVoucher != null ? Ledger.label(linkedVoucher) : "");
             var lines = Ledger.rows(voucher);
@@ -93,22 +90,21 @@ namespace com.swecial.web {
                 ("debit", Money.formatOrBlank(l.debit)), ("credit", Money.formatOrBlank(l.credit)))));
             set("sumDebit", Money.formatOrBlank(lines.Sum(l => l.debit)));
             set("sumCredit", Money.formatOrBlank(lines.Sum(l => l.credit)));
-            set("canReverse", Db.str(voucher, "sourceType").Length == 0 && Db.str(voucher, "reversedById").Length == 0 && Db.str(voucher, "reversesId").Length == 0);
+            set("canReverse", Db.str(voucher, "sourceType").Length == 0 && Db.linkedId(voucher, "reversedBy").Length == 0 && Db.linkedId(voucher, "reverses").Length == 0);
             val("reverseDate", isPost ? form("date") : Dates.today());
         }
 
         /// <summary>The invoice, expense or bank event the voucher was booked from, as a link.</summary>
         string sourceLink() {
-            string sourceId = Db.str(voucher, "sourceId");
             switch (Db.str(voucher, "sourceType")) {
                 case "invoice":
-                    var invoice = Db.getOwned("invoice", sourceId, companyId);
+                    var invoice = Db.linked(voucher, "source", "invoice");
                     return invoice == null ? "" : "<a href='" + BasePath + "/invoice.html?id=" + u(invoice.id) + "'>" + T("invoice.title", Db.num(invoice, "number")) + "</a>";
                 case "expense":
-                    var expense = Db.getOwned("expense", sourceId, companyId);
+                    var expense = Db.linked(voucher, "source", "expense");
                     if (expense == null) return "";
                     string link = "<a href='" + BasePath + "/expense.html?id=" + u(expense.id) + "'>" + T("expense.title") + "</a>";
-                    string receipt = Db.str(expense, "receiptFileId");
+                    string receipt = Db.linkedId(expense, "receiptFile");
                     return receipt.Length == 0 ? link : link + " (<a href='" + BasePath + "/receipt.html?id=" + u(expense.id) + "&amp;v=" + u(receipt) + "' target='_blank'>" + T("expense.receipt") + "</a>)";
                 case "bank_event":
                     return "<a href='" + BasePath + "/bank.html'>" + T("voucher.bankEvent") + "</a>";
@@ -118,7 +114,7 @@ namespace com.swecial.web {
         }
 
         string linked(string key) {
-            var other = Db.getOwned("voucher", Db.str(voucher, key), companyId);
+            var other = Db.linked(voucher, key, "voucher");
             return other == null ? "" : "<a href='" + BasePath + "/voucher.html?id=" + u(other.id) + "'>" + h(Ledger.label(other)) + "</a>";
         }
     }

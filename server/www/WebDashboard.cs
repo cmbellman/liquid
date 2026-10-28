@@ -106,7 +106,7 @@ namespace com.swecial.web {
 
         void setTodo() {
             int drafts = Db.forCompany("invoice", companyId).Count(i => Db.str(i, "status") == Invoicing.Draft);
-            int missingReceipts = Expenses.list(companyId).Count(e => Db.str(e, "receiptFileId").Length == 0);
+            int missingReceipts = Expenses.list(companyId).Count(e => Db.linkedId(e, "receiptFile").Length == 0);
             int bag = Expenses.inbox(companyId).Count;
             var items = new System.Collections.Generic.List<SwecialObject>();
             int dueBankEvents = BankEvents.due(companyId).Count;

@@ -15,7 +15,7 @@ namespace com.swecial.web {
             // An expense's receipt (?id=), or the original document of an invoice issued outside Liquid (?invoice=)
             var expense = Db.getOwned("expense", query("id"), companyId);
             var invoice = Db.getOwned("invoice", query("invoice"), companyId);
-            string fileId = expense != null ? Db.str(expense, "receiptFileId") : Db.str(invoice, "documentFileId");
+            string fileId = expense != null ? Db.linkedId(expense, "receiptFile") : Db.linkedId(invoice, "documentFile");
             // A receipt the expense had before (?file=), kept when it was replaced
             if (expense != null && query("file").Length > 0) {
                 fileId = Expenses.receiptHistory(expense).Any(r => r.fileId == query("file")) ? query("file") : "";

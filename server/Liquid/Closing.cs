@@ -380,7 +380,7 @@ namespace com.swecial.code {
                 if (steps(company, year).Any(s => !s.done)) throw new LiquidException("Bokför alla steg först.", "BOOK EVERY STEP FIRST.");
                 closing.set("status", Closed);
                 closing.set("closedAt", Dates.today());
-                closing.set("closedBy", userId);
+                Db.linkUser(closing, "closedBy", userId);
                 closing.set("taxable", t.taxable);
                 closing.set("tax", t.tax);
                 closing.set("deficitOut", t.deficitOut);
@@ -408,7 +408,7 @@ namespace com.swecial.code {
         }
 
         static void voucher(SwecialObject closing, string date, string text, List<VoucherRow> rows, string userId) {
-            Ledger.book(Db.str(closing, "companyId"), Ledger.YearEnd, date, text, rows, userId, "closing", closing.id);
+            Ledger.book(Db.companyId(closing), Ledger.YearEnd, date, text, rows, userId, "closing", closing.id);
         }
 
         /// <summary>A row with a debit-positive amount: positive is debit, negative credit.</summary>

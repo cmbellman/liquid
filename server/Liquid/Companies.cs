@@ -8,8 +8,9 @@ namespace com.swecial.code {
     /// </summary>
     public static class Companies {
         public static SwecialObject forUser(string userId) {
-            var membership = Db.all("membership").FirstOrDefault(m => Db.str(m, "userId") == userId);
-            return membership == null ? null : Db.get("company", Db.str(membership, "companyId"));
+            if (string.IsNullOrEmpty(userId)) return null;
+            var membership = Db.all("membership").FirstOrDefault(m => Db.linkedId(m, "user") == userId);
+            return Db.company(membership);
         }
 
         public static SwecialObject create(string userId, string name) {
@@ -18,12 +19,11 @@ namespace com.swecial.code {
                 var company = Db.create("company", null);
                 company.set("name", name);
                 company.set("paymentTerms", 30);
-                company.set("createdBy", userId);
+                Db.linkUser(company, "createdBy", userId);
                 Db.commit(company);
 
-                var membership = Db.create("membership", null);
-                membership.set("companyId", company.id);
-                membership.set("userId", userId);
+                var membership = Db.create("membership", company.id);
+                Db.linkUser(membership, "user", userId);
                 membership.set("role", "owner");
                 Db.commit(membership);
 

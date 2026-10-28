@@ -96,9 +96,9 @@ namespace com.swecial.web {
             // A changed or removed expense/event leaves a voucher and its reversal on the same date;
             // they cancel out, so only what still counts is listed (the balances include everything)
             rows("movements", Enumerable.Reverse(lines)
-                .Where(l => Db.str(l.voucher, "reversedById").Length == 0 && Db.str(l.voucher, "reversesId").Length == 0)
+                .Where(l => Db.linkedId(l.voucher, "reversedBy").Length == 0 && Db.linkedId(l.voucher, "reverses").Length == 0)
                 .Select(l => {
-                    var bankEvent = Db.str(l.voucher, "sourceType") == "bank_event" ? Db.getOwned("bank_event", Db.str(l.voucher, "sourceId"), companyId) : null;
+                    var bankEvent = Db.str(l.voucher, "sourceType") == "bank_event" ? Db.linked(l.voucher, "source", "bank_event") : null;
                     return row(("date", h(Db.str(l.voucher, "date"))), ("href", source(l.voucher)), ("text", h(Db.str(l.voucher, "text"))),
                         ("in", Money.formatOrBlank(l.debit)), ("out", Money.formatOrBlank(l.credit)), ("balance", Money.format(l.balance)),
                         ("removable", bankEvent != null && Db.str(bankEvent, "status") != "removed"), ("eventId", h(bankEvent?.id ?? "")));
@@ -107,7 +107,7 @@ namespace com.swecial.web {
 
         /// <summary>Where a bank movement came from: the invoice, expense, fund event or voucher.</summary>
         static string source(SwecialObject voucher) {
-            string sourceId = Db.str(voucher, "sourceId");
+            string sourceId = Db.linkedId(voucher, "source");
             switch (Db.str(voucher, "sourceType")) {
                 case "invoice": return BasePath + "/invoice.html?id=" + u(sourceId);
                 case "expense": return BasePath + "/expense.html?id=" + u(sourceId);

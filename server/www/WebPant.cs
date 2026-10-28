@@ -55,7 +55,7 @@ namespace com.swecial.web {
             set("firstId", items.Count > 0 ? u(items[0].id) : "");
             set("reading", items.Any(i => Db.str(i, "aiStatus") == ReceiptReader.Reading));
             rows("items", items.Select(item => {
-                string fileId = Db.str(item, "receiptFileId");
+                string fileId = Db.linkedId(item, "receiptFile");
                 var file = Expenses.receipt(fileId, companyId);
                 string type = file?.fileType ?? "";
                 string amount = item.hasValue("aiTotal") ? Money.format(Db.num(item, "aiTotal")) + " " + Tr("common.currency") : "";

@@ -78,8 +78,13 @@ namespace com.swecial.web {
 
         void readForm() {
             string customerId = form("customerId");
-            if (customerId.Length > 0 && Db.getOwned("customer", customerId, companyId) == null) throw new LiquidException("Kunden finns inte.", "CLIENT NOT FOUND.");
-            invoice.set("customerId", customerId);
+            SwecialObject customer = null;
+            if (customerId.Length > 0) {
+                customer = Db.getOwned("customer", customerId, companyId) ?? throw new LiquidException("Kunden finns inte.", "CLIENT NOT FOUND.");
+                Db.link(invoice, "customer", customer);
+            } else {
+                Db.unlink(invoice, "customer");
+            }
             invoice.set("invoiceDate", Dates.clean(form("invoiceDate")));
             invoice.set("dueDate", Dates.clean(form("dueDate")));
             invoice.set("ourReference", form("ourReference").Trim());
@@ -87,7 +92,7 @@ namespace com.swecial.web {
             invoice.set("poLabel", form("poLabel").Trim());
             invoice.set("poNumber", form("poNumber").Trim());
             invoice.set("note", form("note").Trim());
-            if (Db.str(invoice, "documentFileId").Length > 0) invoice.set("issuedNumber", form("issuedNumber").Trim());
+            if (Db.linkedId(invoice, "documentFile").Length > 0) invoice.set("issuedNumber", form("issuedNumber").Trim());
             invoice.set("isHourly", form("isHourly") == "1" ? "1" : "0");
 
             invoice.set("supplyType", form("supplyType") == Invoicing.Goods ? Invoicing.Goods : Invoicing.Services);
@@ -136,12 +141,12 @@ namespace com.swecial.web {
             val("invoiceDate", value("invoiceDate"));
             val("dueDate", value("dueDate"));
 
-            string customerId = isPost ? form("customerId") : Db.str(invoice, "customerId");
+            string customerId = isPost ? form("customerId") : Db.linkedId(invoice, "customer");
             var customerList = draft ? Db.forCompany("customer", companyId).OrderBy(c => Db.str(c, "name")).ToList() : null;
             if (draft && string.IsNullOrEmpty(customerId) && customerList.Count == 1) {
                 customerId = customerList[0].id;
-                if (string.IsNullOrEmpty(Db.str(invoice, "customerId"))) {
-                    invoice.set("customerId", customerId);
+                if (string.IsNullOrEmpty(Db.linkedId(invoice, "customer"))) {
+                    Db.link(invoice, "customer", customerList[0]);
                     invoice.set("customerName", Db.str(customerList[0], "name"));
                     Db.commit(invoice);
                 }
@@ -186,7 +191,7 @@ namespace com.swecial.web {
             val("customerName", Db.str(invoice, "customerName"));
             val("paidDate", Db.str(invoice, "paidDate"));
             val("paidDateInput", isPost ? form("paidDate") : Dates.today());
-            string documentId = Db.str(invoice, "documentFileId");
+            string documentId = Db.linkedId(invoice, "documentFile");
             set("hasDocument", documentId.Length > 0);
             // VAT for customers abroad: reverse charge (EU business) or export
             string treatment = Invoicing.vatTreatmentOf(invoice);
@@ -257,7 +262,7 @@ namespace com.swecial.web {
                 rows("lines", lines.Select(line => row(("text", h(line.text)), ("qty", Money.formatDecimal(line.quantity)),
                     ("price", Money.formatOrBlank(line.unitPrice)), ("vat", line.vatRate.ToString()), ("net", Money.formatOrBlank(line.net)))));
                 // Booked when sent (accrual method) and/or when paid
-                var links = new[] { voucherLink("voucherId"), voucherLink("paymentVoucherId") }.Where(l => l.Length > 0).ToList();
+                var links = new[] { voucherLink("voucher"), voucherLink("paymentVoucher") }.Where(l => l.Length > 0).ToList();
                 set("bookkeeping", links.Count > 0 ? string.Join(", ", links) : T("invoice.bookedWhenPaid"));
                 string invoiceYear = Db.str(invoice, "invoiceDate").Substring(0, 4);
                 bool overYearEnd = status == Invoicing.Sent && !Invoicing.bookedAsReceivable(invoice) && Invoicing.overYearEnd(Db.str(invoice, "invoiceDate"), Dates.today());
@@ -272,7 +277,7 @@ namespace com.swecial.web {
         }
 
         string voucherLink(string key) {
-            var voucher = Db.getOwned("voucher", Db.str(invoice, key), companyId);
+            var voucher = Db.linked(invoice, key, "voucher");
             return voucher == null ? "" : "<a href='" + BasePath + "/voucher.html?id=" + u(voucher.id) + "'>" + h(Ledger.label(voucher)) + "</a>";
         }
     }

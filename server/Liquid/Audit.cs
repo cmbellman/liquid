@@ -17,7 +17,7 @@ namespace com.swecial.code {
             var e = Db.create("audit_entry", companyId);
             e.set("at", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
             e.set("seq", Db.nextNumber(companyId, "audit"));
-            e.set("userId", userId ?? "");
+            Db.linkUser(e, "user", userId);
             e.set("action", action);
             e.set("text", text);
             Db.commit(e);

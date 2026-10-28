@@ -48,7 +48,7 @@ namespace com.swecial.code {
         static List<(DateTime date, long moneyIn, long moneyOut, bool saving, long liquidNet)> movements(string companyId) {
             var result = new List<(DateTime, long, long, bool, long)>();
             foreach (var voucher in Ledger.vouchers(companyId)) {
-                if (Db.str(voucher, "reversedById").Length > 0 || Db.str(voucher, "reversesId").Length > 0) continue;
+                if (Db.linkedId(voucher, "reversedBy").Length > 0 || Db.linkedId(voucher, "reverses").Length > 0) continue;
                 long moneyIn = 0, moneyOut = 0;
                 long secNet = 0;
                 foreach (var row in Ledger.rows(voucher)) {

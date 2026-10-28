@@ -29,22 +29,15 @@ namespace com.swecial.web {
             set("closedText", "Bokslutet stängdes " + h(Db.str(closing, "closedAt")) + ". Skatt " + Money.format(Db.num(closing, "tax")) + " kr.");
 
             var names = Db.forCompany("account", companyId).ToDictionary(a => Db.str(a, "number"), a => Db.str(a, "name"));
-            var users = new Dictionary<string, string>();
-            string who(string id) {
-                if (id.Length == 0) return "";
-                if (!users.TryGetValue(id, out var name)) {
-                    var user = SwecialData.current.getUsers()?.getObject("_user", id) as SwecialUser;
-                    users[id] = name = user == null ? "" : (user.firstName ?? "").Length > 0 ? user.firstName : user.get<string>("_username");
-                }
-                return name;
-            }
+            string who(SwecialUser user) => user == null ? "" : (user.firstName ?? "").Length > 0 ? user.firstName : user.get<string>("_username") ?? "";
             var vouchers = Ledger.vouchers(companyId).Where(v => Db.str(v, "date").StartsWith(year + "-")).ToList();
             set("count", vouchers.Count.ToString());
             rows("vouchers", vouchers.Select(v => {
                 var lines = Ledger.rows(v);
                 var receipts = underlag(v);
+                string by = who(Db.linkedUser(v, "createdBy"));
                 return row(("label", h(Ledger.label(v))), ("date", h(Db.str(v, "date"))), ("text", h(Db.str(v, "text"))),
-                    ("booked", h(v.createdAt.LocalDateTime.ToString("yyyy-MM-dd HH:mm") + (who(Db.str(v, "createdBy")).Length > 0 ? ", " + who(Db.str(v, "createdBy")) : ""))),
+                    ("booked", h(v.createdAt.LocalDateTime.ToString("yyyy-MM-dd HH:mm") + (by.Length > 0 ? ", " + by : ""))),
                     ("correction", h(correction(v))),
                     ("lines", lines.Select(l => row(("account", h(l.account)), ("name", h(names.TryGetValue(l.account, out var n) ? n : "")),
                         ("debit", Money.formatOrBlank(l.debit)), ("credit", Money.formatOrBlank(l.credit)))).ToList()),
@@ -56,21 +49,20 @@ namespace com.swecial.web {
         }
 
         string correction(SwecialObject v) {
-            var reverses = Db.getOwned("voucher", Db.str(v, "reversesId"), companyId);
-            var reversedBy = Db.getOwned("voucher", Db.str(v, "reversedById"), companyId);
+            var reverses = Db.linked(v, "reverses", "voucher");
+            var reversedBy = Db.linked(v, "reversedBy", "voucher");
             if (reverses != null) return "Rättelse av " + Ledger.label(reverses) + ".";
             if (reversedBy != null) return "Makulerad genom " + Ledger.label(reversedBy) + ".";
             return "";
         }
 
         string sourceText(SwecialObject v) {
-            string id = Db.str(v, "sourceId");
             switch (Db.str(v, "sourceType")) {
                 case "invoice":
-                    var invoice = Db.getOwned("invoice", id, companyId);
+                    var invoice = Db.linked(v, "source", "invoice");
                     return invoice == null ? "" : "Kundfaktura " + Db.num(invoice, "number") + ", " + Db.str(invoice, "customerName") + ", fakturadatum " + Db.str(invoice, "invoiceDate") + ", " + Money.format(Db.num(invoice, "total")) + " kr";
                 case "expense":
-                    var expense = Db.getOwned("expense", id, companyId);
+                    var expense = Db.linked(v, "source", "expense");
                     return expense == null ? "" : "Utgift: " + Db.str(expense, "supplier") + (Db.str(expense, "note").Length > 0 ? ", " + Db.str(expense, "note") : "")
                         + (Db.str(expense, "attendees").Length > 0 ? ". Deltagare: " + Db.str(expense, "attendees") + ". Syfte: " + Db.str(expense, "purpose") : "");
                 case "bank_event": return "Bankhändelse";
@@ -86,7 +78,6 @@ namespace com.swecial.web {
         /// <summary>The voucher's underlag: the expense's receipt (and earlier ones it replaced), the invoice and its original document.</summary>
         List<Underlag> underlag(SwecialObject v) {
             var list = new List<Underlag>();
-            string id = Db.str(v, "sourceId");
             void add(string fileId, string src, string caption) {
                 var file = Expenses.receipt(fileId, companyId);
                 if (file == null) return;
@@ -95,19 +86,19 @@ namespace com.swecial.web {
             }
             switch (Db.str(v, "sourceType")) {
                 case "expense":
-                    var expense = Db.getOwned("expense", id, companyId);
+                    var expense = Db.linked(v, "source", "expense");
                     if (expense == null) break;
-                    string current = Db.str(expense, "receiptFileId");
+                    string current = Db.linkedId(expense, "receiptFile");
                     if (current.Length > 0) add(current, BasePath + "/receipt.html?id=" + u(expense.id) + "&amp;v=" + u(current), "Kvitto");
                     foreach (var old in Expenses.receiptHistory(expense)) {
                         add(old.fileId, BasePath + "/receipt.html?id=" + u(expense.id) + "&amp;file=" + u(old.fileId), "Tidigare kvitto, ersatt " + old.replacedAt);
                     }
                     break;
                 case "invoice":
-                    var invoice = Db.getOwned("invoice", id, companyId);
+                    var invoice = Db.linked(v, "source", "invoice");
                     if (invoice == null) break;
                     list.Add(new Underlag { src = BasePath + "/invoice-print.html?id=" + u(invoice.id), caption = "Fakturan" });
-                    string doc = Db.str(invoice, "documentFileId");
+                    string doc = Db.linkedId(invoice, "documentFile");
                     if (doc.Length > 0) add(doc, BasePath + "/receipt.html?invoice=" + u(invoice.id), "Originalfakturan");
                     break;
             }

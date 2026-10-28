@@ -12,17 +12,11 @@ namespace com.swecial.web {
         public override void processPage() {
             if (!requireCompany()) return;
             title(Tr("log.title"));
-            var names = new Dictionary<string, string>();
-            string who(string id) {
-                if (id.Length == 0) return "";
-                if (!names.TryGetValue(id, out var name)) {
-                    var user = SwecialData.current.getUsers()?.getObject("_user", id) as SwecialUser;
-                    name = user == null ? id : (user.firstName ?? "").Length > 0 ? user.firstName : user.get<string>("_username");
-                    names[id] = name;
-                }
-                return name;
+            string who(SwecialObject e) {
+                var user = Db.linkedUser(e, "user");
+                return user != null ? ((user.firstName ?? "").Length > 0 ? user.firstName : user.get<string>("_username") ?? "") : Db.linkedId(e, "user");
             }
-            rows("entries", Audit.entries(companyId).Select(e => row(("at", h(Db.str(e, "at"))), ("who", h(who(Db.str(e, "userId")))),
+            rows("entries", Audit.entries(companyId).Select(e => row(("at", h(Db.str(e, "at"))), ("who", h(who(e))),
                 ("what", h(Db.str(e, "text"))), ("class", Db.str(e, "action") == "admin" ? "off" : ""))));
         }
     }

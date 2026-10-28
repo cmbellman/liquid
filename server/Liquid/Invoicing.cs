@@ -64,7 +64,7 @@ namespace com.swecial.code {
         public static string vatTreatmentOf(SwecialObject invoice) {
             string fixedTreatment = Db.str(invoice, "vatTreatment");
             if (Db.str(invoice, "status") != Draft && fixedTreatment.Length > 0) return fixedTreatment;
-            var customer = Db.getOwned("customer", Db.str(invoice, "customerId"), Db.str(invoice, "companyId"));
+            var customer = Db.linked(invoice, "customer", "customer");
             return customer == null ? Domestic : vatTreatment(customer);
         }
 
@@ -175,7 +175,7 @@ namespace com.swecial.code {
                         customer.set("reference", text("customerReference"));
                         Db.commit(customer);
                     }
-                    invoice.set("customerId", customer.id);
+                    Db.link(invoice, "customer", customer);
                 }
                 if (text("invoiceDate").Length > 0) invoice.set("invoiceDate", text("invoiceDate"));
                 if (text("dueDate").Length > 0) invoice.set("dueDate", text("dueDate"));
@@ -186,12 +186,12 @@ namespace com.swecial.code {
                 }).ToList() ?? new List<InvoiceRow>();
                 setRows(invoice, lines);
                 invoice.set("issuedNumber", text("invoiceNumber"));
-                invoice.set("documentFileId", Db.str(document, "receiptFileId"));
+                Db.link(invoice, "documentFile", Db.linked(document, "receiptFile", "_file"));
                 invoice.set("documentTotal", sale["total"] != null ? (long)sale["total"] : 0L);
                 Db.commit(invoice);
 
                 document.set("status", Expenses.Converted);
-                document.set("invoiceId", invoice.id);
+                Db.link(document, "invoice", invoice);
                 Db.commit(document);
                 return invoice;
             }
@@ -207,7 +207,7 @@ namespace com.swecial.code {
                 if (!long.TryParse((numberText ?? "").Trim(), out long number) || number <= 0) {
                     throw new LiquidException("Fakturanumret ska vara ett heltal, som på fakturan.", "INVOICE NUMBER MUST BE AN INTEGER, AS ON THE DOCUMENT.");
                 }
-                string companyId = Db.str(invoice, "companyId");
+                string companyId = Db.companyId(invoice);
                 if (Db.forCompany("invoice", companyId).Any(i => i.id != invoice.id && Db.num(i, "number") == number)) {
                     throw new LiquidException("Fakturanummer " + number + " finns redan.", "INVOICE NUMBER " + number + " ALREADY EXISTS.");
                 }
@@ -247,8 +247,8 @@ namespace com.swecial.code {
         public static void send(SwecialObject invoice, string userId, long? issuedNumber = null) {
             lock (Db.Sync) {
                 requireDraft(invoice);
-                string companyId = Db.str(invoice, "companyId");
-                var customer = Db.getOwned("customer", Db.str(invoice, "customerId"), companyId);
+                string companyId = Db.companyId(invoice);
+                var customer = Db.linked(invoice, "customer", "customer");
                 if (customer == null) throw new LiquidException("Välj en kund innan fakturan skickas.", "ASSIGN A CLIENT BEFORE ISSUING.");
                 var rows = Invoicing.rows(invoice);
                 if (rows.Count == 0) throw new LiquidException("Fakturan har inga rader.", "INVOICE HAS NO LINES.");
@@ -257,7 +257,7 @@ namespace com.swecial.code {
                 if (t.total <= 0) throw new LiquidException("Fakturans belopp måste vara större än noll (kreditfakturor kommer senare).", "INVOICE TOTAL MUST BE ABOVE ZERO.");
                 Dates.parse(Db.str(invoice, "invoiceDate"));
                 Dates.parse(Db.str(invoice, "dueDate"));
-                var company = Db.get("company", companyId);
+                var company = Db.company(invoice);
                 // The customer decides the VAT; it is fixed on the invoice from now on
                 string treatment = vatTreatment(customer);
                 if (treatment != Domestic && rows.Any(r => r.vatRate != 0)) throw new LiquidException("Fakturor till kunder utomlands har ingen svensk moms. Spara utkastet igen så sätts momsen till 0 %.", "NO SWEDISH VAT ON INVOICES TO CLIENTS ABROAD. SAVE THE DRAFT AGAIN TO SET VAT TO 0 %.");
@@ -282,10 +282,10 @@ namespace com.swecial.code {
                 if (accrual) {
                     var voucher = Ledger.book(companyId, Ledger.Invoices, date,
                         "Kundfaktura " + number + ", " + Db.str(customer, "name"), saleRows(Bas.Receivables, t, invoice), userId, "invoice", invoice.id);
-                    invoice.set("voucherId", voucher.id);
+                    Db.link(invoice, "voucher", voucher);
                 }
                 invoice.set("status", Sent);
-                invoice.set("sentBy", userId);
+                Db.linkUser(invoice, "sentBy", userId);
                 invoice.set("customerName", Db.str(customer, "name"));
                 invoice.set("total", t.total);
                 Db.commit(invoice);
@@ -313,9 +313,9 @@ namespace com.swecial.code {
         /// <summary>
         /// Books the full payment: with the cash method the sale and its VAT against 1930; for an
         /// invoice already booked as a receivable (when sent with the accrual method, or in a closing:
-        /// closingVoucherId), 1930 against the receivable.
+        /// closingVoucher), 1930 against the receivable.
         /// An invoice paid in a later year than its invoice date was unpaid at year end, so its sale
-        /// belongs to that year: it is booked as a receivable on the year's last day (closingVoucherId,
+        /// belongs to that year: it is booked as a receivable on the year's last day (closingVoucher,
         /// closingByPayment) and the payment clears it. Only when the books have no income for that year
         /// (earlier years kept elsewhere, invoices booked when paid) may the user take it up as income
         /// in the year of payment instead (incomeWhenPaid).
@@ -324,7 +324,7 @@ namespace com.swecial.code {
             lock (Db.Sync) {
                 if (Db.str(invoice, "status") != Sent) throw new LiquidException("Bara skickade, obetalda fakturor kan markeras som betalda.", "ONLY ISSUED, OUTSTANDING INVOICES CAN BE SETTLED.");
                 paidDate = Dates.clean(paidDate);
-                string companyId = Db.str(invoice, "companyId");
+                string companyId = Db.companyId(invoice);
                 string invoiceDate = Db.str(invoice, "invoiceDate");
                 if (string.CompareOrdinal(paidDate, invoiceDate) < 0) throw new LiquidException("Betalningen kan inte vara före fakturadatumet " + invoiceDate + ".", "PAYMENT CANNOT PREDATE THE ISSUE DATE " + invoiceDate + ".");
                 var t = totals(rows(invoice));
@@ -335,7 +335,7 @@ namespace com.swecial.code {
                     int year = Dates.parse(invoiceDate).Year;
                     var closing = Ledger.book(companyId, Ledger.Invoices, year + "-12-31",
                         "Obetald kundfaktura " + number + " vid årsskiftet, " + customerName, saleRows(Bas.Receivables, t, invoice), userId, "invoice", invoice.id);
-                    invoice.set("closingVoucherId", closing.id);
+                    Db.link(invoice, "closingVoucher", closing);
                     invoice.set("closingByPayment", "true");
                     receivable = true;
                 }
@@ -349,29 +349,29 @@ namespace com.swecial.code {
                     "Inbetalning kundfaktura " + number + ", " + customerName, paymentRows, userId, "invoice", invoice.id);
                 invoice.set("status", Paid);
                 invoice.set("paidDate", paidDate);
-                invoice.set("paymentVoucherId", voucher.id);
+                Db.link(invoice, "paymentVoucher", voucher);
                 Db.commit(invoice);
             }
         }
 
         /// <summary>
         /// The closing (cash method): an invoice unpaid at year end is booked as a receivable on the
-        /// year's last day (closingVoucherId), and its payment clears it.
+        /// year's last day (closingVoucher), and its payment clears it.
         /// </summary>
         public static void bookAtYearEnd(SwecialObject invoice, string date, string userId) {
             lock (Db.Sync) {
                 if (Db.str(invoice, "status") != Sent || bookedAsReceivable(invoice)) return;
-                var voucher = Ledger.book(Db.str(invoice, "companyId"), Ledger.Invoices, date,
+                var voucher = Ledger.book(Db.companyId(invoice), Ledger.Invoices, date,
                     "Obetald kundfaktura " + Db.num(invoice, "number") + " vid årsskiftet, " + Db.str(invoice, "customerName"),
                     saleRows(Bas.Receivables, totals(rows(invoice)), invoice), userId, "invoice", invoice.id);
-                invoice.set("closingVoucherId", voucher.id);
+                Db.link(invoice, "closingVoucher", voucher);
                 Db.commit(invoice);
             }
         }
 
         /// <summary>Booked as a receivable before payment: when sent (accrual method) or in a closing.</summary>
         public static bool bookedAsReceivable(SwecialObject invoice) {
-            return Db.str(invoice, "voucherId").Length > 0 || Db.str(invoice, "closingVoucherId").Length > 0;
+            return Db.linkedId(invoice, "voucher").Length > 0 || Db.linkedId(invoice, "closingVoucher").Length > 0;
         }
 
         /// <summary>True when an invoice dated invoiceDate and paid on paidDate was unpaid at a year end.</summary>
@@ -386,8 +386,8 @@ namespace com.swecial.code {
         public static bool mayTakeUpWhenPaid(SwecialObject invoice) {
             if (bookedAsReceivable(invoice)) return false;
             string year = Dates.clean(Db.str(invoice, "invoiceDate")).Substring(0, 4);
-            return !Ledger.vouchers(Db.str(invoice, "companyId")).Any(v =>
-                Db.str(v, "date").StartsWith(year) && Db.str(v, "reversedById").Length == 0 && Db.str(v, "reversesId").Length == 0
+            return !Ledger.vouchers(Db.companyId(invoice)).Any(v =>
+                Db.str(v, "date").StartsWith(year) && Db.linkedId(v, "reversedBy").Length == 0 && Db.linkedId(v, "reverses").Length == 0
                 && Ledger.rows(v).Any(r => r.account.StartsWith("3") && r.credit > 0));
         }
 
@@ -399,18 +399,17 @@ namespace com.swecial.code {
         public static void unmarkPaid(SwecialObject invoice, string userId) {
             lock (Db.Sync) {
                 if (Db.str(invoice, "status") != Paid) throw new LiquidException("Fakturan är inte betald.", "INVOICE IS NOT SETTLED.");
-                string companyId = Db.str(invoice, "companyId");
-                var voucher = Db.getOwned("voucher", Db.str(invoice, "paymentVoucherId"), companyId);
+                var voucher = Db.linked(invoice, "paymentVoucher", "voucher");
                 if (voucher != null) Ledger.reverse(voucher, Db.str(voucher, "date"), userId, fromSource: true);
                 if (Db.str(invoice, "closingByPayment") == "true") {
-                    var closing = Db.getOwned("voucher", Db.str(invoice, "closingVoucherId"), companyId);
+                    var closing = Db.linked(invoice, "closingVoucher", "voucher");
                     if (closing != null) Ledger.reverse(closing, Db.str(closing, "date"), userId, fromSource: true);
-                    invoice.set("closingVoucherId", "");
+                    Db.unlink(invoice, "closingVoucher");
                     invoice.set("closingByPayment", "");
                 }
                 invoice.set("status", Sent);
                 invoice.set("paidDate", "");
-                invoice.set("paymentVoucherId", "");
+                Db.unlink(invoice, "paymentVoucher");
                 Db.commit(invoice);
             }
         }

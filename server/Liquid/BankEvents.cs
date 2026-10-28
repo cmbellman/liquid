@@ -66,15 +66,15 @@ namespace com.swecial.code {
                 e.set("amount", amount);
                 e.set("note", note);
                 e.set("status", Pending);
-                e.set("createdBy", userId);
-                if (!string.IsNullOrEmpty(fileId)) e.set("fileId", fileId);
+                Db.linkUser(e, "createdBy", userId);
+                if (!string.IsNullOrEmpty(fileId)) Db.link(e, "file", Db.getOwned("_file", fileId, companyId));
                 Db.commit(e);
                 return e;
             }
         }
 
         public static SwecialObject bookPending(SwecialObject pendingEvent, string userId) {
-            string companyId = Db.str(pendingEvent, "companyId");
+            string companyId = Db.companyId(pendingEvent);
             string kindKey = Db.str(pendingEvent, "kind");
             var kind = find(kindKey) ?? throw new LiquidException("Välj vad det gäller.", "SELECT TRANSACTION TYPE.");
             string date = Dates.clean(Db.str(pendingEvent, "date"));
@@ -89,7 +89,7 @@ namespace com.swecial.code {
 
             lock (Db.Sync) {
                 var voucher = Ledger.book(companyId, Ledger.BankEvents, date, text, rows, userId, "bank_event", pendingEvent.id);
-                pendingEvent.set("voucherId", voucher.id);
+                Db.link(pendingEvent, "voucher", voucher);
                 pendingEvent.set("status", Booked);
                 Db.commit(pendingEvent);
                 return pendingEvent;
@@ -114,8 +114,9 @@ namespace com.swecial.code {
                 e.set("amount", amount);
                 e.set("note", note);
                 e.set("status", Booked);
+                Db.linkUser(e, "createdBy", userId);
                 var voucher = Ledger.book(companyId, Ledger.BankEvents, date, text, rows, userId, "bank_event", e.id);
-                e.set("voucherId", voucher.id);
+                Db.link(e, "voucher", voucher);
                 Db.commit(e);
                 return e;
             }
@@ -124,12 +125,9 @@ namespace com.swecial.code {
         public static void remove(SwecialObject bankEvent, string userId) {
             lock (Db.Sync) {
                 if (Db.str(bankEvent, "status") == Removed) return;
-                string vId = Db.str(bankEvent, "voucherId");
-                if (vId.Length > 0) {
-                    var voucher = Db.getOwned("voucher", vId, Db.str(bankEvent, "companyId"));
-                    if (voucher != null && Db.str(voucher, "reversedById").Length == 0) {
-                        Ledger.reverse(voucher, Db.str(voucher, "date"), userId, fromSource: true);
-                    }
+                var voucher = Db.linked(bankEvent, "voucher", "voucher");
+                if (voucher != null && Db.linkedId(voucher, "reversedBy").Length == 0) {
+                    Ledger.reverse(voucher, Db.str(voucher, "date"), userId, fromSource: true);
                 }
                 bankEvent.set("status", Removed);
                 Db.commit(bankEvent);

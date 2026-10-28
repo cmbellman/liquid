@@ -90,7 +90,7 @@ namespace com.swecial.web {
                 string units = (sells ? "−" + Securities.formatUnits(Db.num(e, "fromUnits")) : "")
                     + (k == Securities.Switch ? " / " : "")
                     + (k != Securities.Sell ? "+" + Securities.formatUnits(Db.num(e, "toUnits")) : "");
-                var voucher = Db.getOwned("voucher", Db.str(e, "voucherId"), companyId);
+                var voucher = Db.linked(e, "voucher", "voucher");
                 return row(("id", h(e.id)), ("date", h(Db.str(e, "date"))),
                     ("text", T("securities.what." + k, h(Db.str(e, "fromFund")), h(Db.str(e, "toFund"))) + (Db.str(e, "note").Length > 0 ? " · " + h(Db.str(e, "note")) : "")),
                     ("units", units), ("amount", Money.format(Db.num(e, "amount"))),
