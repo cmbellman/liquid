@@ -180,7 +180,7 @@ namespace com.swecial.code {
 
         /// <summary>
         /// EBITDA buckets for the period: operating income (moneyIn), operating expenses excluding
-        /// depreciation and tax (moneyOut), and accumulated EBITDA over the period (accumulated).
+        /// depreciation and tax (moneyOut), and rolling 12-month EBITDA (accumulated).
         /// Sent invoices not yet booked (cash method) are forecast on their due date exkl. VAT.
         /// </summary>
         public static List<FlowBucket> ebitdaBuckets(string companyId, string period, DateTime today, string language = "sv") {
@@ -197,10 +197,12 @@ namespace com.swecial.code {
                 b.moneyOut += costs;
             }
 
-            long runningAcc = 0;
-            foreach (var b in buckets.Where(x => !x.forecast)) {
-                runningAcc += b.moneyIn - b.moneyOut;
-                b.accumulated = runningAcc;
+            foreach (var b in buckets) {
+                if (!b.forecast) {
+                    DateTime cutoff = b.end <= today ? b.end : today.AddDays(1);
+                    DateTime windowStart = period == Quarter ? b.end.AddYears(-1) : b.end.AddMonths(-12);
+                    b.accumulated = all.Where(m => m.date >= windowStart && m.date < cutoff).Sum(m => m.income - m.costs);
+                }
             }
 
             var current = buckets.FirstOrDefault(x => today >= x.start && today < x.end);
@@ -213,6 +215,7 @@ namespace com.swecial.code {
                 }
             }
 
+            long runningAcc = current != null ? current.accumulated : 0;
             long currentPendingIn = current != null ? Math.Max(0, current.moneyIn - currentBookedIn) : 0;
             runningAcc += currentPendingIn;
             foreach (var b in buckets.Where(x => x.forecast)) {
