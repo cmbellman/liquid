@@ -121,7 +121,5 @@ main > .heading .sub { font-size: 14px; }
     @keyframes phosphor { 50% { opacity: 0.85; } }
 }
 @media (max-width: 760px) {
-    .theme-nostromo .side nav a, .theme-nostromo .side .who a { font-size: 9px; border: none; }
-    .theme-nostromo .side nav a.active::after { display: none; }
     .theme-nostromo .clock { display: none; }
 }

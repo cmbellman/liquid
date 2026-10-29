@@ -16,19 +16,27 @@
 <body class="theme-<%theme%>">
     <div class="app">
         <aside class="side">
-            <a class="brand" href="/liquid/"><%logo%><span class="word"><%brand%></span></a>
-            <swe:condition source="clock"><div class="clock" aria-hidden="true"><span id="clock"></span><script>(function(){function t(){var d=new Date(),e=document.getElementById('clock');if(e)e.textContent=('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);}t();setInterval(t,10000);})();</script></div></swe:condition>
-            <swe:condition source="navItemsAny">
-            <nav>
-                <swe:iterator source="navItems"><a href="<%current.href%>" class="<%current.active%>"><%current.icon%><span><%current.text%></span><swe:condition source="current.hasBadge"><b class="badge"><%current.badge%></b></swe:condition></a></swe:iterator>
-            </nav>
-            <script>(function(){var n=document.querySelector('.side nav'),a=n&&n.querySelector('a.active');if(a&&n.scrollWidth>n.clientWidth)n.scrollLeft=a.offsetLeft-(n.clientWidth-a.offsetWidth)/2;})();</script>
-            </swe:condition>
-            <swe:condition source="signedIn">
-            <div class="who">
-                <swe:condition source="hasCompany"><span class="company"><%icons.company%><span><%companyName%></span></span></swe:condition>
-                <a href="/liquid/login.html?logout=true"><%icons.logout%><span><%t.nav.logout%></span></a>
+            <div class="side-bar">
+                <a class="brand" href="/liquid/"><%logo%><span class="word"><%brand%></span></a>
+                <swe:condition source="signedIn">
+                <button type="button" class="menu-btn" aria-label="<%t.nav.menu%>" aria-expanded="false"><%icons.menu%><%icons.close%><swe:condition source="navBadgeAny"><b class="badge"><%navBadge%></b></swe:condition></button>
+                </swe:condition>
             </div>
+            <swe:condition source="clock"><div class="clock" aria-hidden="true"><span id="clock"></span><script>(function(){function t(){var d=new Date(),e=document.getElementById('clock');if(e)e.textContent=('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);}t();setInterval(t,10000);})();</script></div></swe:condition>
+            <swe:condition source="signedIn">
+            <div class="drawer-backdrop"></div>
+            <div class="drawer">
+                <swe:condition source="navItemsAny">
+                <nav>
+                    <swe:iterator source="navItems"><a href="<%current.href%>" class="<%current.active%>"><%current.icon%><span><%current.text%></span><swe:condition source="current.hasBadge"><b class="badge"><%current.badge%></b></swe:condition></a></swe:iterator>
+                </nav>
+                </swe:condition>
+                <div class="who">
+                    <swe:condition source="hasCompany"><span class="company"><%icons.company%><span><%companyName%></span></span></swe:condition>
+                    <a href="/liquid/login.html?logout=true"><%icons.logout%><span><%t.nav.logout%></span></a>
+                </div>
+            </div>
+            <script>(function(){var b=document.querySelector('.menu-btn'),d=document.querySelector('.drawer-backdrop'),w=document.querySelector('.drawer');if(!b)return;function s(o){document.body.classList.toggle('nav-open',o);b.setAttribute('aria-expanded',o?'true':'false');}b.addEventListener('click',function(){s(!document.body.classList.contains('nav-open'));});if(d)d.addEventListener('click',function(){s(false);});if(w)w.addEventListener('click',function(e){if(e.target.closest('a'))s(false);});document.addEventListener('keydown',function(e){if(e.key==='Escape')s(false);});})();</script>
             </swe:condition>
         </aside>
         <main>

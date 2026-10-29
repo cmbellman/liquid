@@ -270,8 +270,6 @@ body.theme-skynet::after {
     @keyframes skynet-pulse { 50% { opacity: 0.82; text-shadow: 0 0 22px rgba(255, 59, 31, 1); } }
 }
 @media (max-width: 760px) {
-    .theme-skynet .side nav a, .theme-skynet .side .who a { font-size: 9px; border: none; }
-    .theme-skynet .side nav a.active::after { display: none; }
     .theme-skynet .clock { display: none; }
     .theme-skynet .brand { flex-wrap: nowrap; }
     .theme-skynet .brand::after { display: none; }

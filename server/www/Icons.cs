@@ -29,6 +29,8 @@ namespace com.swecial.web {
                 case "crosshair": return Crosshair;
                 case "shredder": return Shredder;
                 case "lock": return Lock;
+                case "menu": return Menu;
+                case "close": return Cross;
                 default: return null;
             }
         }
@@ -98,5 +100,7 @@ namespace com.swecial.web {
         public const string Crosshair = Open + "<circle cx='12' cy='12' r='7'/><path d='M12 2v4M12 18v4M2 12h4M18 12h4M10 12h4M12 10v4'/>" + Close;
         /// <summary>Document shredder / assimilation port.</summary>
         public const string Shredder = Open + "<path d='M7 3h7l3 3v4H7z'/><rect x='3' y='10' width='18' height='5' rx='1'/><path d='M6 15v5M9 15v6M12 15v4M15 15v6M18 15v5'/>" + Close;
+        public const string Menu = Open + "<path d='M4 7h16M4 12h16M4 17h16'/>" + Close;
+        public const string Cross = Open + "<path d='M6 6l12 12M18 6L6 18'/>" + Close;
     }
 }

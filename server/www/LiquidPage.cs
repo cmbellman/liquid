@@ -110,6 +110,8 @@ namespace com.swecial.web {
             o.set("ai", icon("ai", "sparkle"));
             o.set("company", Icons.Building);
             o.set("logout", icon("nav.logout", "logout"));
+            o.set("menu", Icons.Menu);
+            o.set("close", Icons.Cross);
             return o;
         }
 
@@ -279,8 +281,9 @@ namespace com.swecial.web {
             set("hasCompany", company != null);
             val("companyName", Db.str(company, "name"));
             var items = new List<SwecialObject>();
+            int bag = 0;
             if (company != null) {
-                int bag = Expenses.inbox(companyId).Count;
+                bag = Expenses.inbox(companyId).Count;
                 items.Add(navItem("/", "nav.bar", "bar", 0, "/index.html"));
                 items.Add(navItem("/invoices.html", "nav.invoices", "invoice", 0, "/invoice.html", "/invoice-print.html", "/invoice-pdf.html"));
                 items.Add(navItem("/expenses.html", "nav.expenses", "receipt", 0, "/expense.html"));
@@ -294,6 +297,8 @@ namespace com.swecial.web {
                 items.Add(navItem("/vouchers.html", "nav.advanced", "book", 0, "/voucher.html", "/accounts.html", "/rules.html", "/log.html", "/sie.html", "/archive.html"));
                 items.Add(navItem("/company.html", "nav.settings", "gear", 0));
             }
+            set("navBadgeAny", bag > 0);
+            set("navBadge", bag.ToString());
             rows("navItems", items);
         }
 
