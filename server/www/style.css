@@ -633,10 +633,7 @@ article.invoice.inv-accent-forest { --inv-primary: #1e4631; --inv-dark: #122d1f;
 article.invoice { position: relative; overflow: hidden; }
 article.invoice > * { position: relative; z-index: 1; }
 article.invoice.inv-theme-puben {
-    background:
-        radial-gradient(circle at calc(100% - 92px) 195px, transparent 44px, rgba(154, 102, 18, 0.08) 46px, rgba(154, 102, 18, 0.03) 49px, transparent 51px),
-        radial-gradient(circle at 245px calc(100% - 240px), transparent 38px, rgba(120, 72, 12, 0.06) 40px, transparent 43px),
-        #fdfaf2;
+    background: #fdfaf2;
     box-shadow: inset 0 0 0 1px rgba(154, 102, 18, 0.22), 0 18px 50px rgba(15, 23, 42, 0.12);
 }
 article.invoice.inv-theme-puben h1,
@@ -658,25 +655,44 @@ article.invoice.inv-theme-nostromo {
         radial-gradient(circle at calc(100% - 14px) 16px, rgba(19, 122, 44, 0.16) 4px, transparent 4.8px) 0 0 / 100% 32px repeat-y,
         #fff;
 }
-article.invoice.inv-theme-nostromo::before,
-article.invoice.inv-theme-skynet::before {
-    content: "";
-    position: absolute;
-    left: 50%;
-    top: 48%;
-    width: 300px;
-    height: 300px;
-    transform: translate(-50%, -50%);
-    border-radius: 50%;
-    border: 1.5px solid color-mix(in srgb, var(--inv-primary) 11%, transparent);
-    box-shadow:
-        inset 0 0 0 46px transparent,
-        inset 0 0 0 47.5px color-mix(in srgb, var(--inv-primary) 10%, transparent),
-        inset 0 0 0 96px transparent,
-        inset 0 0 0 97.5px color-mix(in srgb, var(--inv-primary) 10%, transparent);
+/* The theme's watermark (radar, reticle, pint stains) fills the free space above the payment card and
+   shrinks with it, so it never runs through text. Keep in step with InvoicePdf.drawWatermark. */
+article.invoice .inv-watermark {
+    flex: 1 1 0;
+    min-height: 0;
+    margin-bottom: -7mm;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 40%;
     pointer-events: none;
-    z-index: 0;
+    container-type: size;
 }
+/* Too little room: leave it out rather than draw a stray crosshair */
+@container (max-height: 90px) {
+    article.invoice .inv-watermark::before, article.invoice .inv-watermark::after { display: none; }
+}
+article.invoice.inv-theme-nostromo .inv-watermark::before,
+article.invoice.inv-theme-skynet .inv-watermark::before {
+    content: "";
+    height: min(100%, 260px);
+    aspect-ratio: 1;
+    --wm: color-mix(in srgb, var(--inv-primary) 13%, transparent);
+    background:
+        linear-gradient(var(--wm), var(--wm)) center / 100% 1px no-repeat,
+        linear-gradient(var(--wm), var(--wm)) center / 1px 100% no-repeat,
+        radial-gradient(circle closest-side, transparent calc(28% - 1px), var(--wm) 28%, transparent calc(28% + 1px),
+            transparent calc(60% - 1px), var(--wm) 60%, transparent calc(60% + 1.5px),
+            transparent calc(92% - 1px), var(--wm) 92%, transparent calc(92% + 1px));
+}
+article.invoice.inv-theme-puben .inv-watermark::before,
+article.invoice.inv-theme-puben .inv-watermark::after {
+    content: "";
+    height: min(100%, 80px);
+    aspect-ratio: 1;
+    background: radial-gradient(circle closest-side, transparent 84%, rgba(154, 102, 18, 0.09) 88%, rgba(154, 102, 18, 0.04) 94%, transparent 100%);
+}
+article.invoice.inv-theme-puben .inv-watermark::after { height: min(80%, 62px); margin-top: 16px; }
 article.invoice.inv-theme-skynet {
     border-top: 8px solid var(--inv-primary);
 }
@@ -742,25 +758,45 @@ article.invoice.inv-theme-puben .inv-top-banner {
     justify-content: center;
 }
 article.invoice.inv-theme-puben .inv-top-banner span:last-child { display: none; }
-article.invoice.inv-style-studio .inv-top-banner { margin-bottom: -12mm; position: relative; z-index: 2; }
-article.invoice.inv-style-studio:has(.inv-top-banner) .inv-head { padding-top: 15mm; }
+article.invoice.inv-theme-puben .inv-top-banner span:first-child::before { content: "★ "; }
+article.invoice.inv-theme-puben .inv-top-banner span:first-child::after { content: " ★"; }
+article.invoice.inv-style-studio .inv-top-banner {
+    margin: 0 -16mm -7mm;
+    background: var(--inv-dark);
+    color: var(--inv-glow);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.22);
+    position: relative;
+    z-index: 2;
+}
+article.invoice.inv-style-studio:has(.inv-top-banner) .inv-head { padding-top: 7mm; }
 article.invoice .inv-stamp {
     display: inline-flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 3px;
+    max-width: 100%;
+    box-sizing: border-box;
     margin-top: 10px;
-    padding: 7px 12px;
-    border: 2px solid var(--inv-primary);
-    outline: 1px solid var(--inv-primary);
-    outline-offset: -4px;
-    background: color-mix(in srgb, var(--inv-primary) 6%, transparent);
+    padding: 8px 13px;
+    border: 2.5px solid var(--inv-primary);
+    border-radius: 4px;
+    outline: 1px dashed var(--inv-primary);
+    outline-offset: -4.5px;
+    background: color-mix(in srgb, var(--inv-primary) 7%, transparent);
     color: var(--inv-primary);
-    transform: rotate(-2.5deg);
+    transform: rotate(-2.6deg);
     text-transform: uppercase;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.08em;
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--inv-primary) 18%, transparent),
+                inset 0 0 3px color-mix(in srgb, var(--inv-primary) 12%, transparent);
+    opacity: 0.88;
+    mix-blend-mode: multiply;
+    filter: drop-shadow(0.4px 0.4px 0 color-mix(in srgb, var(--inv-primary) 28%, transparent));
 }
-article.invoice .inv-stamp strong { font-size: 10.5px; font-weight: 800; }
-article.invoice .inv-stamp span { font-size: 8.5px; font-weight: 700; opacity: 0.9; }
+article.invoice .inv-stamp strong { font-size: 9.5px; font-weight: 900; line-height: 1.25; letter-spacing: 0.09em; text-shadow: 0.3px 0.3px 0 color-mix(in srgb, var(--inv-primary) 32%, transparent); }
+article.invoice .inv-stamp span { font-size: 7.5px; font-weight: 800; opacity: 0.95; line-height: 1.25; letter-spacing: 0.07em; }
+article.invoice.inv-theme-puben .inv-stamp { transform: rotate(-3.2deg); border-radius: 6px; }
+article.invoice.inv-theme-nostromo .inv-stamp { transform: rotate(-1.8deg); border-radius: 2px; }
+article.invoice.inv-theme-skynet .inv-stamp { transform: rotate(-2.4deg); border-radius: 2px; }
 article.invoice .inv-telemetry {
     display: flex;
     align-items: center;
@@ -770,6 +806,9 @@ article.invoice .inv-telemetry {
     color: #667085;
     letter-spacing: 0.06em;
     margin-top: -3mm;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
 }
 article.invoice .inv-telemetry .inv-bars {
     width: 68px;
@@ -847,9 +886,9 @@ article.invoice h1, article.invoice h2 { color: #141923; text-transform: none; m
 article.invoice .inv-company h1 { font-size: 20px; font-weight: 800; margin-bottom: 2px; }
 article.invoice .inv-company-addr { font-size: 12.5px; color: #667085; display: flex; gap: 10px; flex-wrap: wrap; }
 article.invoice .inv-company-addr span { display: inline; }
-article.invoice .doc { text-align: right; }
-article.invoice .doc h2 { font-size: 26px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: var(--inv-primary); }
-article.invoice.inv-style-executive .doc h2 { letter-spacing: 0.14em; }
+article.invoice .doc { text-align: right; flex-shrink: 0; }
+article.invoice .doc h2 { font-size: 23px; font-weight: 800; letter-spacing: 0.03em; text-transform: uppercase; color: var(--inv-primary); }
+article.invoice.inv-style-executive.inv-theme-boring .doc h2 { letter-spacing: 0.14em; }
 article.invoice .inv-num-sub { font-size: 13px; font-weight: 700; color: #3b4454; margin-top: 2px; }
 
 article.invoice .inv-strip {
@@ -1061,10 +1100,12 @@ article.invoice footer span { display: block; color: #3b4454; }
 @media screen and (max-width: 760px) {
     body.print main { padding: 12px 10px 24px; }
     article.invoice { min-height: 0; padding: 22px 18px; gap: 20px; }
+    article.invoice .inv-watermark { display: none; }
     article.invoice .inv-top-banner { margin: -22px -18px -6px; padding: 6px 14px; font-size: 8px; }
+    article.invoice.inv-style-studio .inv-top-banner { margin: 0 -18px -20px; }
     article.invoice .inv-top-banner span:last-child { display: none; }
-    article.invoice.inv-style-studio .inv-head { margin: 0 -18px; padding: 22px 18px 18px; }
-    article.invoice.inv-style-studio:has(.inv-top-banner) .inv-head { padding-top: 28px; }
+    article.invoice.inv-style-studio .inv-head { margin: 0 -18px; padding: 20px 18px 18px; }
+    article.invoice.inv-style-studio:has(.inv-top-banner) .inv-head { padding-top: 16px; }
     article.invoice .inv-head { flex-direction: column-reverse; gap: 14px; }
     article.invoice .doc { text-align: left; display: flex; align-items: baseline; gap: 10px; }
     article.invoice .doc h2 { font-size: 22px; }
