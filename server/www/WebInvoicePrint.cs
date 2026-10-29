@@ -31,6 +31,10 @@ namespace com.swecial.web {
             string style = query("style").Length > 0 ? Settings.cleanStyle(query("style")) : Settings.invoiceStyle(company);
             string accent = query("accent").Length > 0 ? Settings.cleanAccent(query("accent")) : Settings.invoiceAccent(company);
             string activeTheme = query("theme").Length > 0 ? query("theme").ToLowerInvariant() : (theme?.id ?? Themes.Default);
+            bool isHourly = Db.str(invoice, "isHourly") == "1";
+            string numberText = isDraft ? "Utkast" : number.ToString();
+            string orgNr = Db.str(company, "orgNumber");
+            var copy = InvoicePdf.copyFor(activeTheme, isDraft, isHourly, numberText, orgNr);
 
             set("found", true);
             set("invoiceStyle", h(style));
@@ -39,8 +43,41 @@ namespace com.swecial.web {
             set("isStudio", style == Settings.StyleStudio);
             set("isNordic", style == Settings.StyleNordic);
             set("isExecutive", style == Settings.StyleExecutive);
-            set("docTitle", isDraft ? "Fakturautkast" : "Faktura");
-            set("number", isDraft ? "Utkast" : number.ToString());
+            val("docTitle", copy.docTitle);
+            val("docSubPrefix", copy.docSubPrefix);
+            val("number", numberText);
+            set("hasTopBanner", copy.topBannerLeft.Length > 0);
+            val("topBannerLeft", copy.topBannerLeft);
+            val("topBannerRight", copy.topBannerRight);
+            val("recipientHeader", copy.recipientHeader);
+            val("labelInvoiceNumber", copy.labelInvoiceNumber);
+            val("labelInvoiceDate", copy.labelInvoiceDate);
+            val("labelDueDate", copy.labelDueDate);
+            val("labelOurRef", copy.labelOurRef);
+            val("labelYourRef", copy.labelYourRef);
+            val("stripDate", copy.stripDate);
+            val("stripDue", copy.stripDue);
+            val("stripBg", copy.stripBg);
+            val("stripTotal", copy.stripTotal);
+            val("descHeader", copy.colDesc);
+            val("qtyHeader", copy.colQty);
+            val("priceHeader", copy.colPrice);
+            val("vatHeader", copy.colVat);
+            val("amountHeader", copy.colAmount);
+            val("noteHeader", copy.noteHeader);
+            val("labelNetSum", copy.labelNetSum);
+            val("labelGrandTotal", copy.labelGrandTotal);
+            set("hasStamp", copy.stampTitle.Length > 0);
+            val("stampTitle", copy.stampTitle);
+            val("stampSub", copy.stampSub);
+            val("payHeader", copy.payHeader);
+            val("payColBg", copy.payColBg);
+            val("payColRef", copy.payColRef);
+            val("payColDue", copy.payColDue);
+            val("payColTotal", copy.payColTotal);
+            val("payPaidPrefix", copy.payPaidPrefix);
+            set("hasTelemetry", copy.telemetryText.Length > 0);
+            val("telemetryText", copy.telemetryText);
 
             string compName = Db.str(company, "name");
             val("companyName", compName);
@@ -71,16 +108,11 @@ namespace com.swecial.web {
             set("hasCustomerOrg", customerOrg.Length > 0);
             val("customerOrg", customerOrg);
 
-            bool isHourly = Db.str(invoice, "isHourly") == "1";
-            set("qtyHeader", isHourly ? "Timmar" : "Antal");
-            set("priceHeader", isHourly ? "Timarvode" : "À-pris");
-
             rows("lines", lines.Select(l => row(("text", h(l.text)), ("qty", Money.formatDecimal(l.quantity)), ("price", Money.formatOrBlank(l.unitPrice)),
                 ("vat", l.vatRate.ToString()), ("net", Money.formatOrBlank(l.net)))));
             set("net", Money.formatOrBlank(totals.net));
             rows("vatLines", totals.byRate.Where(r => r.Key > 0).Reverse().Select(r => row(
-                ("rate", r.Key.ToString()),
-                ("base", Money.format(r.Value.net)),
+                ("label", h(string.Format(copy.labelVatFormat, r.Key, Money.format(r.Value.net)))),
                 ("vat", Money.formatOrBlank(r.Value.vat)))));
             set("total", Money.format(totals.total));
 
@@ -121,10 +153,10 @@ namespace com.swecial.web {
             if (bankgiro.Length > 0) col4.Add(bankgiro);
 
             var footerCols = new List<(string label, List<string> items)> {
-                ("Adress", col1),
-                ("Kontakt", col2),
-                ("Företagsuppgifter", col3),
-                ("Bankgiro", col4)
+                (copy.footAddress, col1),
+                (copy.footContact, col2),
+                (copy.footLegal, col3),
+                (copy.footBg, col4)
             }.Where(c => c.items.Count > 0).ToList();
 
             rows("footer", footerCols.Select(c => row(

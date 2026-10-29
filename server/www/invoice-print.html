@@ -17,6 +17,9 @@
         <swe:condition source="found">
         <!-- The invoice is a legal document for the customer: always Swedish, styled with the company's layout, accent and subtle theme kinship -->
         <article class="invoice inv-theme-<%invoiceTheme%> inv-style-<%invoiceStyle%> inv-accent-<%invoiceAccent%>">
+            <swe:condition source="hasTopBanner">
+            <div class="inv-top-banner"><span><%topBannerLeft%></span><span><%topBannerRight%></span></div>
+            </swe:condition>
             <header class="inv-head">
                 <div class="inv-brand">
                     <div class="inv-monogram" aria-hidden="true"><%monogram%></div>
@@ -27,22 +30,22 @@
                 </div>
                 <div class="doc">
                     <h2><%docTitle%></h2>
-                    <span class="inv-num-sub">Nr <%number%></span>
+                    <span class="inv-num-sub"><%docSubPrefix%><%number%></span>
                 </div>
             </header>
 
             <swe:condition source="isStudio">
             <div class="inv-strip">
-                <div><small>Fakturadatum</small><strong><%invoiceDate%></strong></div>
-                <div><small>Förfallodatum</small><strong><%dueDate%></strong></div>
-                <div><small>Bankgiro</small><strong><%bankgiro%></strong></div>
-                <div class="inv-strip-total"><small>Att betala (SEK)</small><strong><%total%> kr</strong></div>
+                <div><small><%stripDate%></small><strong><%invoiceDate%></strong></div>
+                <div><small><%stripDue%></small><strong><%dueDate%></strong></div>
+                <div><small><%stripBg%></small><strong><%bankgiro%></strong></div>
+                <div class="inv-strip-total"><small><%stripTotal%></small><strong><%total%> kr</strong></div>
             </div>
             </swe:condition>
 
             <div class="inv-parties">
                 <section class="to">
-                    <small class="inv-eyebrow">Fakturamottagare</small>
+                    <small class="inv-eyebrow"><%recipientHeader%></small>
                     <strong><%customerName%></strong>
                     <%customerAddress%>
                     <swe:condition source="hasCustomerOrg"><span class="inv-muted">Org.nr <%customerOrg%></span></swe:condition>
@@ -52,23 +55,23 @@
                 <div class="inv-meta-wrap">
                     <swe:condition source="isNordic">
                     <div class="inv-pill">
-                        <div><small>Att betala (SEK)</small><strong><%total%> kr</strong></div>
-                        <div><small>Förfallodatum</small><strong><%dueDate%></strong></div>
+                        <div><small><%stripTotal%></small><strong><%total%> kr</strong></div>
+                        <div><small><%stripDue%></small><strong><%dueDate%></strong></div>
                     </div>
                     </swe:condition>
                     <dl class="inv-meta">
-                        <dt>Fakturanummer</dt><dd><%number%></dd>
-                        <dt>Fakturadatum</dt><dd><%invoiceDate%></dd>
-                        <dt>Förfallodatum</dt><dd><%dueDate%></dd>
-                        <swe:condition source="hasOurReference"><dt>Vår referens</dt><dd><%ourReference%></dd></swe:condition>
-                        <swe:condition source="hasYourReference"><dt>Er referens</dt><dd><%yourReference%></dd></swe:condition>
+                        <dt><%labelInvoiceNumber%></dt><dd><%number%></dd>
+                        <dt><%labelInvoiceDate%></dt><dd><%invoiceDate%></dd>
+                        <dt><%labelDueDate%></dt><dd><%dueDate%></dd>
+                        <swe:condition source="hasOurReference"><dt><%labelOurRef%></dt><dd><%ourReference%></dd></swe:condition>
+                        <swe:condition source="hasYourReference"><dt><%labelYourRef%></dt><dd><%yourReference%></dd></swe:condition>
                         <swe:condition source="hasPoNumber"><dt><%poLabel%></dt><dd><%poNumber%></dd></swe:condition>
                     </dl>
                 </div>
             </div>
 
             <table class="inv-table">
-                <thead><tr><th>Beskrivning</th><th class="num"><%qtyHeader%></th><th class="num"><%priceHeader%></th><th class="num">Moms</th><th class="num">Belopp</th></tr></thead>
+                <thead><tr><th><%descHeader%></th><th class="num"><%qtyHeader%></th><th class="num"><%priceHeader%></th><th class="num"><%vatHeader%></th><th class="num"><%amountHeader%></th></tr></thead>
                 <tbody>
                     <swe:iterator source="lines"><tr><td><%current.text%></td><td class="num"><%current.qty%></td><td class="num"><%current.price%></td><td class="num"><%current.vat%> %</td><td class="num"><strong><%current.net%></strong></td></tr></swe:iterator>
                 </tbody>
@@ -79,34 +82,43 @@
                     <swe:condition source="hasVatNote"><p class="note vat-note"><%vatNote%></p></swe:condition>
                     <swe:condition source="hasNote">
                     <div class="inv-note-box">
-                        <small class="inv-eyebrow">Meddelande</small>
+                        <small class="inv-eyebrow"><%noteHeader%></small>
                         <p class="note"><%note%></p>
+                    </div>
+                    </swe:condition>
+                    <swe:condition source="hasStamp">
+                    <div class="inv-stamp">
+                        <strong><%stampTitle%></strong>
+                        <span><%stampSub%></span>
                     </div>
                     </swe:condition>
                 </div>
                 <div class="inv-totals">
-                    <div class="inv-tot-row"><span>Summa exkl. moms</span><span class="num"><%net%> kr</span></div>
-                    <swe:iterator source="vatLines"><div class="inv-tot-row"><span>Moms <%current.rate%> % (på <%current.base%> kr)</span><span class="num"><%current.vat%> kr</span></div></swe:iterator>
-                    <div class="inv-tot-grand"><span>Att betala (SEK)</span><span class="num"><%total%> kr</span></div>
+                    <div class="inv-tot-row"><span><%labelNetSum%></span><span class="num"><%net%> kr</span></div>
+                    <swe:iterator source="vatLines"><div class="inv-tot-row"><span><%current.label%></span><span class="num"><%current.vat%> kr</span></div></swe:iterator>
+                    <div class="inv-tot-grand"><span><%labelGrandTotal%></span><span class="num"><%total%> kr</span></div>
                 </div>
             </div>
 
             <section class="inv-paycard">
-                <small class="inv-eyebrow">Betalningsuppgifter — ange fakturanummer vid betalning</small>
+                <small class="inv-eyebrow"><%payHeader%></small>
                 <div class="inv-paygrid">
-                    <div><span>Bankgiro</span><strong class="inv-pay-big"><%bankgiro%></strong></div>
-                    <div><span>Fakturanr / Referens</span><strong><%number%></strong></div>
-                    <div><span>Förfallodatum</span><strong><%dueDate%></strong></div>
+                    <div><span><%payColBg%></span><strong class="inv-pay-big"><%bankgiro%></strong></div>
+                    <div><span><%payColRef%></span><strong><%number%></strong></div>
+                    <div><span><%payColDue%></span><strong><%dueDate%></strong></div>
                     <div>
                         <swe:condition source="paid">
-                        <span class="paid-badge">Betald <%paidDate%></span>
+                        <span class="paid-badge"><%payPaidPrefix%> <%paidDate%></span>
                         <else>
-                        <span>Att betala (SEK)</span><strong class="inv-pay-big inv-pay-accent"><%total%> kr</strong>
+                        <span><%payColTotal%></span><strong class="inv-pay-big inv-pay-accent"><%total%> kr</strong>
                         </else>
                         </swe:condition>
                     </div>
                 </div>
             </section>
+            <swe:condition source="hasTelemetry">
+            <div class="inv-telemetry"><span class="inv-bars" aria-hidden="true"></span><span><%telemetryText%></span></div>
+            </swe:condition>
 
             <footer>
                 <swe:iterator source="footer"><div><small><%current.label%></small><%current.value%></div></swe:iterator>

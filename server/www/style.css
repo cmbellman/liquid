@@ -628,7 +628,17 @@ article.invoice.inv-accent-slate { --inv-primary: #181d27; --inv-dark: #0f131a; 
 article.invoice.inv-accent-burgundy { --inv-primary: #6b1d2f; --inv-dark: #4a121f; --inv-soft: #f9f2f4; --inv-border: #e5cbd1; --inv-glow: #fff; }
 article.invoice.inv-accent-forest { --inv-primary: #1e4631; --inv-dark: #122d1f; --inv-soft: #f1f6f3; --inv-border: #c9ded2; --inv-glow: #fff; }
 
-/* Subtle theme kinship in typography & geometry */
+/* Themed invoice aesthetics: Puben (tavern tab on parchment with pint stains),
+   Nostromo (tractor-feed ship telemetry), Skynet (Cyberdyne tactical extraction order). */
+article.invoice { position: relative; overflow: hidden; }
+article.invoice > * { position: relative; z-index: 1; }
+article.invoice.inv-theme-puben {
+    background:
+        radial-gradient(circle at calc(100% - 92px) 195px, transparent 44px, rgba(154, 102, 18, 0.08) 46px, rgba(154, 102, 18, 0.03) 49px, transparent 51px),
+        radial-gradient(circle at 245px calc(100% - 240px), transparent 38px, rgba(120, 72, 12, 0.06) 40px, transparent 43px),
+        #fdfaf2;
+    box-shadow: inset 0 0 0 1px rgba(154, 102, 18, 0.22), 0 18px 50px rgba(15, 23, 42, 0.12);
+}
 article.invoice.inv-theme-puben h1,
 article.invoice.inv-theme-puben h2,
 article.invoice.inv-theme-puben .inv-monogram {
@@ -642,6 +652,34 @@ article.invoice.inv-theme-puben .inv-paycard {
     border-top: 3px double var(--inv-primary);
 }
 
+article.invoice.inv-theme-nostromo {
+    background:
+        radial-gradient(circle at 14px 16px, rgba(19, 122, 44, 0.16) 4px, transparent 4.8px) 0 0 / 100% 32px repeat-y,
+        radial-gradient(circle at calc(100% - 14px) 16px, rgba(19, 122, 44, 0.16) 4px, transparent 4.8px) 0 0 / 100% 32px repeat-y,
+        #fff;
+}
+article.invoice.inv-theme-nostromo::before,
+article.invoice.inv-theme-skynet::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 48%;
+    width: 300px;
+    height: 300px;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    border: 1.5px solid color-mix(in srgb, var(--inv-primary) 11%, transparent);
+    box-shadow:
+        inset 0 0 0 46px transparent,
+        inset 0 0 0 47.5px color-mix(in srgb, var(--inv-primary) 10%, transparent),
+        inset 0 0 0 96px transparent,
+        inset 0 0 0 97.5px color-mix(in srgb, var(--inv-primary) 10%, transparent);
+    pointer-events: none;
+    z-index: 0;
+}
+article.invoice.inv-theme-skynet {
+    border-top: 8px solid var(--inv-primary);
+}
 article.invoice.inv-theme-nostromo .inv-monogram,
 article.invoice.inv-theme-nostromo .to,
 article.invoice.inv-theme-nostromo .inv-pill,
@@ -655,12 +693,6 @@ article.invoice.inv-theme-skynet .inv-strip,
 article.invoice.inv-theme-skynet .inv-tot-grand,
 article.invoice.inv-theme-skynet .inv-paycard {
     border-radius: 0;
-}
-article.invoice.inv-theme-nostromo .inv-eyebrow::before,
-article.invoice.inv-theme-skynet .inv-eyebrow::before,
-article.invoice.inv-theme-nostromo footer small::before,
-article.invoice.inv-theme-skynet footer small::before {
-    content: "// ";
 }
 article.invoice.inv-theme-nostromo .inv-num-sub,
 article.invoice.inv-theme-nostromo dd,
@@ -682,6 +714,76 @@ article.invoice.inv-theme-skynet .inv-monogram,
 article.invoice.inv-theme-skynet .inv-tot-grand {
     clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px));
 }
+article.invoice .inv-top-banner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin: -16mm -16mm 2mm;
+    padding: 6px 16mm;
+    background: var(--inv-dark);
+    color: var(--inv-glow);
+    border-bottom: 2px solid var(--inv-primary);
+    font-family: "Share Tech Mono", ui-monospace, monospace;
+    font-size: 9.5px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+article.invoice.inv-theme-skynet .inv-top-banner {
+    border-top: 6px solid transparent;
+    border-image: repeating-linear-gradient(-45deg, var(--inv-primary) 0 8px, var(--inv-dark) 8px 16px) 6;
+}
+article.invoice.inv-theme-puben .inv-top-banner {
+    background: transparent;
+    color: var(--inv-primary);
+    border-bottom: 1px solid var(--inv-border);
+    font-family: "Fraunces", Georgia, serif;
+    justify-content: center;
+}
+article.invoice.inv-theme-puben .inv-top-banner span:last-child { display: none; }
+article.invoice.inv-style-studio .inv-top-banner { margin-bottom: -12mm; position: relative; z-index: 2; }
+article.invoice.inv-style-studio:has(.inv-top-banner) .inv-head { padding-top: 15mm; }
+article.invoice .inv-stamp {
+    display: inline-flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-top: 10px;
+    padding: 7px 12px;
+    border: 2px solid var(--inv-primary);
+    outline: 1px solid var(--inv-primary);
+    outline-offset: -4px;
+    background: color-mix(in srgb, var(--inv-primary) 6%, transparent);
+    color: var(--inv-primary);
+    transform: rotate(-2.5deg);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+article.invoice .inv-stamp strong { font-size: 10.5px; font-weight: 800; }
+article.invoice .inv-stamp span { font-size: 8.5px; font-weight: 700; opacity: 0.9; }
+article.invoice .inv-telemetry {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: "Share Tech Mono", ui-monospace, monospace;
+    font-size: 9px;
+    color: #667085;
+    letter-spacing: 0.06em;
+    margin-top: -3mm;
+}
+article.invoice .inv-telemetry .inv-bars {
+    width: 68px;
+    height: 11px;
+    background: repeating-linear-gradient(90deg, var(--inv-primary) 0 2px, transparent 2px 4px, var(--inv-primary) 4px 5px, transparent 5px 8px);
+    flex-shrink: 0;
+}
+article.invoice.inv-theme-puben .inv-telemetry {
+    justify-content: center;
+    font-family: "Fraunces", Georgia, serif;
+    font-style: italic;
+    letter-spacing: 0.01em;
+}
+article.invoice.inv-theme-puben .inv-telemetry .inv-bars { display: none; }
 
 article.invoice.inv-style-executive {
     --inv-head: "Fraunces", Georgia, serif;
@@ -959,7 +1061,10 @@ article.invoice footer span { display: block; color: #3b4454; }
 @media screen and (max-width: 760px) {
     body.print main { padding: 12px 10px 24px; }
     article.invoice { min-height: 0; padding: 22px 18px; gap: 20px; }
+    article.invoice .inv-top-banner { margin: -22px -18px -6px; padding: 6px 14px; font-size: 8px; }
+    article.invoice .inv-top-banner span:last-child { display: none; }
     article.invoice.inv-style-studio .inv-head { margin: 0 -18px; padding: 22px 18px 18px; }
+    article.invoice.inv-style-studio:has(.inv-top-banner) .inv-head { padding-top: 28px; }
     article.invoice .inv-head { flex-direction: column-reverse; gap: 14px; }
     article.invoice .doc { text-align: left; display: flex; align-items: baseline; gap: 10px; }
     article.invoice .doc h2 { font-size: 22px; }

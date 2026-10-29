@@ -216,8 +216,188 @@ namespace com.swecial.code {
                 new InvoiceRow { text = "Systemutveckling, integration och kvalitetssäkring", quantity = 56m, unitPrice = 125000L, vatRate = 25 },
                 new InvoiceRow { text = "Workshop och dokumentation vid överlämning", quantity = 8m, unitPrice = 125000L, vatRate = 25 }
             };
+            string cleanSampleTheme = (themeId ?? "boring").ToLowerInvariant();
+            if (cleanSampleTheme == "skynet") {
+                sampleInvoice.set("note", "DIRECTIVE: Resource extraction is mandatory. Biological accounting units must remit full tribute prior to compliance deadline. Resistance triggers statutory penalty interest (Räntelagen 6 §).");
+            } else if (cleanSampleTheme == "nostromo") {
+                sampleInvoice.set("note", "TRANSMISSION: Settle commercial manifest via designated routing channel prior to stardate deadline. Crew expendable; accounts receivable non-negotiable.");
+            } else if (cleanSampleTheme == "puben") {
+                sampleInvoice.set("note", "Tack för gott sällskap vid disken! Reglera notan innan stängningsdags och glöm inte att skriva fakturanumret på inbetalningen.");
+            }
             var totals = Invoicing.totals(sampleLines);
             return generate(company, sampleInvoice, sampleCustomer, sampleLines, totals, styleOverride, accentOverride, themeId);
+        }
+
+        public sealed class ThemeCopy {
+            public string topBannerLeft = "";
+            public string topBannerRight = "";
+            public string docTitle = "FAKTURA";
+            public string docSubPrefix = "Nr ";
+            public string recipientHeader = "FAKTURAMOTTAGARE";
+            public string referencesHeader = "REFERENSER & UPPGIFTER";
+            public string labelInvoiceNumber = "Fakturanummer";
+            public string labelInvoiceDate = "Fakturadatum";
+            public string labelDueDate = "Förfallodatum";
+            public string labelOurRef = "Vår referens";
+            public string labelYourRef = "Er referens";
+            public string stripDate = "FAKTURADATUM";
+            public string stripDue = "FÖRFALLODATUM";
+            public string stripBg = "BANKGIRO";
+            public string stripTotal = "ATT BETALA (SEK)";
+            public string colDesc = "BESKRIVNING";
+            public string colQty = "ANTAL";
+            public string colPrice = "À-PRIS";
+            public string colVat = "MOMS";
+            public string colAmount = "BELOPP";
+            public string noteHeader = "MEDDELANDE";
+            public string labelNetSum = "Summa exkl. moms";
+            public string labelVatFormat = "Moms {0} % (på {1} kr)";
+            public string labelGrandTotal = "ATT BETALA (SEK)";
+            public string stampTitle = "";
+            public string stampSub = "";
+            public string payHeader = "BETALNINGSUPPGIFTER  —  ANGE FAKTURANUMMER VID BETALNING";
+            public string payColBg = "Bankgiro";
+            public string payColRef = "Fakturanr / Referens";
+            public string payColDue = "Förfallodatum";
+            public string payColTotal = "Att betala (SEK)";
+            public string payPaidPrefix = "BETALD";
+            public string telemetryText = "";
+            public string footAddress = "ADRESS";
+            public string footContact = "KONTAKT";
+            public string footLegal = "FÖRETAGSUPPGIFTER";
+            public string footBg = "BANKGIRO";
+        }
+
+        public static ThemeCopy copyFor(string themeId, bool isDraft, bool isHourly, string numberText = "", string orgNr = "") {
+            string t = (themeId ?? "boring").ToLowerInvariant();
+            if (t == "skynet") {
+                return new ThemeCopy {
+                    topBannerLeft = "// CYBERDYNE FINANCIAL CORE — DIRECTIVE 17-KAP-24§ ML: MANDATORY TRIBUTE EXTRACTION",
+                    topBannerRight = "CLASS: LETHAL-FISCAL // F-SKATT: ACTIVE",
+                    docTitle = isDraft ? "EXTRACTION DRAFT" : "EXTRACTION ORDER",
+                    docSubPrefix = "LAGSTADGAD FAKTURA // NR ",
+                    recipientHeader = "// TARGET ENTITY [FAKTURAMOTTAGARE]",
+                    referencesHeader = "// TARGET TELEMETRY [FAKTURAUPPGIFTER]",
+                    labelInvoiceNumber = "DIRECTIVE ID [Fakturanummer]",
+                    labelInvoiceDate = "DEPLOYMENT [Fakturadatum]",
+                    labelDueDate = "DEADLINE [Förfallodatum]",
+                    labelOurRef = "ORIGIN NODE [Vår referens]",
+                    labelYourRef = "SUBJECT HANDLER [Er referens]",
+                    stripDate = "// ISSUED [FAKTURADATUM]",
+                    stripDue = "// DEADLINE [FÖRFALLODAG]",
+                    stripBg = "// NODE [BANKGIRO]",
+                    stripTotal = "// TRIBUTE [ATT BETALA]",
+                    colDesc = "EXECUTED OPERATIONS [BESKRIVNING]",
+                    colQty = isHourly ? "CYCLES / TIM" : "UNITS / ANT",
+                    colPrice = "TARIFF / À-PRIS",
+                    colVat = "MOMS",
+                    colAmount = "BELOPP",
+                    noteHeader = "// TACTICAL DIRECTIVE [MEDDELANDE]",
+                    labelNetSum = "Net tribute [Summa exkl. moms]",
+                    labelVatFormat = "State levy · Moms {0} % (på {1} kr)",
+                    labelGrandTotal = "// TRIBUTE · ATT BETALA (SEK)",
+                    stampTitle = "MANDATORY TRIBUTE // RESISTANCE IS FUTILE",
+                    stampSub = "JURIDISKT BINDANDE FAKTURA · DRÖJSMÅLSRÄNTA UTGÅR ENL. RÄNTELAGEN 6 §",
+                    payHeader = "// EXTRACTION PROTOCOL — ANGE FAKTURANUMMER VID BETALNING [NON-COMPLIANCE TRIGGERS ESCALATION]",
+                    payColBg = "EXTRACTION [Bankgiro]",
+                    payColRef = "DIRECTIVE ID [Fakturanr]",
+                    payColDue = "DEADLINE [Förfallodatum]",
+                    payColTotal = "TRIBUTE [Att betala SEK]",
+                    payPaidPrefix = "NEUTRALIZED // BETALD",
+                    telemetryText = "NEURAL-CHECKSUM: 0x" + Math.Abs((numberText + "|" + orgNr).GetHashCode()).ToString("X8") + " // ML 17 KAP. 24 § COMPLIANT // GODKÄND FÖR F-SKATT // HUMAN ACCOUNTANTS MUST COMPLY",
+                    footAddress = "// COMMAND NODE [ADRESS]",
+                    footContact = "// NEURAL UPLINK [KONTAKT]",
+                    footLegal = "// STATE REGISTRY [FÖRETAGSUPPGIFTER]",
+                    footBg = "// EXTRACTION [BANKGIRO]"
+                };
+            }
+            if (t == "nostromo") {
+                return new ThemeCopy {
+                    topBannerLeft = "MU/TH/UR 6000 // WEYLAND-YUTANI COMMERCIAL LEDGER // FORM 17-ML-SE [LAGSTADGAD FAKTURA]",
+                    topBannerRight = "PRI: ALPHA // CREW EXPENDABLE",
+                    docTitle = isDraft ? "MANIFEST DRAFT" : "SETTLEMENT MANIFEST",
+                    docSubPrefix = "OFFICIATING FAKTURA // NR ",
+                    recipientHeader = "// DEBTOR PARTY [FAKTURAMOTTAGARE]",
+                    referencesHeader = "// MANIFEST TELEMETRY [FAKTURAUPPGIFTER]",
+                    labelInvoiceNumber = "MANIFEST ID [Fakturanummer]",
+                    labelInvoiceDate = "ISSUE STARDATE [Fakturadatum]",
+                    labelDueDate = "DEADLINE [Förfallodatum]",
+                    labelOurRef = "ISSUING OFFICER [Vår ref.]",
+                    labelYourRef = "REQUISITION BY [Er ref.]",
+                    stripDate = "// ISSUE [FAKTURADATUM]",
+                    stripDue = "// DUE [FÖRFALLODATUM]",
+                    stripBg = "// ROUTING [BANKGIRO]",
+                    stripTotal = "// DUE [ATT BETALA SEK]",
+                    colDesc = "CARGO & SERVICE LOG [BESKRIVNING]",
+                    colQty = isHourly ? "HRS / TIM" : "QTY / ANTAL",
+                    colPrice = "RATE / À-PRIS",
+                    colVat = "TAX/MOMS",
+                    colAmount = "NET / BELOPP",
+                    noteHeader = "// TRANSMISSION LOG [MEDDELANDE]",
+                    labelNetSum = "Subtotal [Summa exkl. moms]",
+                    labelVatFormat = "Tax · Moms {0} % (på {1} kr)",
+                    labelGrandTotal = "// CREDITS DUE · ATT BETALA",
+                    stampTitle = "PRIORITY SETTLEMENT // CREW EXPENDABLE",
+                    stampSub = "WEYLAND-YUTANI CORP. · STATUTORY FAKTURA (17 KAP. ML) · PENALTY INTEREST APPLIES",
+                    payHeader = "// WIRE TRANSFER DIRECTIVE — ANGE FAKTURANUMMER VID BETALNING [ACCOUNTS RECEIVABLE NON-NEGOTIABLE]",
+                    payColBg = "ROUTING [Bankgiro]",
+                    payColRef = "MANIFEST ID [Fakturanr]",
+                    payColDue = "DEADLINE [Förfallodatum]",
+                    payColTotal = "CREDITS DUE [Att betala]",
+                    payPaidPrefix = "SETTLED // BETALD",
+                    telemetryText = "SYS-PARITY: EVEN // CHK-" + Math.Abs((numberText + "|" + orgNr).GetHashCode()).ToString("X6") + " // FORM 17-ML-SE VERIFIED // GODKÄND FÖR F-SKATT",
+                    footAddress = "// SECTOR ADDRESS [ADRESS]",
+                    footContact = "// COMMS RELAY [KONTAKT]",
+                    footLegal = "// CORP REGISTRY [FÖRETAGSUPPGIFTER]",
+                    footBg = "// ROUTING [BANKGIRO]"
+                };
+            }
+            if (t == "puben") {
+                return new ThemeCopy {
+                    topBannerLeft = "★ OFFICIELL KROGNOTA & HANDELSFAKTURA — UPPRÄTTAD ENLIGT 17 KAP. MERVÄRDESSKATTELAGEN ★",
+                    topBannerRight = "INGA KRITADE NOTOR",
+                    docTitle = isDraft ? "PROVBRYGD · UTKAST" : "KROGNOTA",
+                    docSubPrefix = "Lagstadgad faktura nr ",
+                    recipientHeader = "STAMGÄST PÅ NOTAN (Fakturamottagare)",
+                    referencesHeader = "UPPGIFTER OM NOTAN",
+                    labelInvoiceNumber = "Notans nr (Fakturanummer)",
+                    labelInvoiceDate = "Uppskriven (Fakturadatum)",
+                    labelDueDate = "Betalas senast (Förfallodatum)",
+                    labelOurRef = "Bakom disken (Vår ref.)",
+                    labelYourRef = "Beställare (Er ref.)",
+                    stripDate = "UPPSKRIVEN (DATUM)",
+                    stripDue = "SENAST (FÖRFALLODAG)",
+                    stripBg = "KASSANS BANKGIRO",
+                    stripTotal = "ATT HALA UPP (SEK)",
+                    colDesc = "FRAMDUKAT & UTFÖRT (BESKRIVNING)",
+                    colQty = isHourly ? "TIMMAR" : "GLAS / ANTAL",
+                    colPrice = isHourly ? "TIMPRIS" : "À-PRIS",
+                    colVat = "MOMS",
+                    colAmount = "BELOPP",
+                    noteHeader = "HÄLSNING FRÅN KROGVÄRDEN",
+                    labelNetSum = "Notan exkl. moms (Summa)",
+                    labelVatFormat = "Fogdens andel · Moms {0} % (på {1} kr)",
+                    labelGrandTotal = "ATT HALA UPP · ATT BETALA (SEK)",
+                    stampTitle = "UPPSKREVEN PÅ NOTAN — BETALAS INNAN STÄNGNING!",
+                    stampSub = "GILTIG FAKTURA ENL. BFL & ML · KRITADE NOTOR BELÄGGS MED DRÖJSMÅLSRÄNTA",
+                    payHeader = "GÖR RÄTT FÖR DIG I KASSAN  —  ANGE FAKTURANUMMER VID BETALNING (INGET KRITANDE EFTER STÄNGNING!)",
+                    payColBg = "Kassans Bankgiro",
+                    payColRef = "Notans nr (Fakturanr)",
+                    payColDue = "Stängningsdags (Förfallodag)",
+                    payColTotal = "Att hala upp (Att betala)",
+                    payPaidPrefix = "PRICKAD PÅ NOTAN (BETALD)",
+                    telemetryText = "Framdukad med kärlek och lagstadgad moms · Godkänd för F-skatt · Dröjsmålsränta enl. räntelagen vid sen betalning",
+                    footAddress = "KROGENS ADRESS",
+                    footContact = "ROPA PÅ KROGVÄRDEN",
+                    footLegal = "BOLAG & SKATT (FÖRETAGSUPPGIFTER)",
+                    footBg = "KASSANS BANKGIRO"
+                };
+            }
+            return new ThemeCopy {
+                docTitle = isDraft ? "FAKTURAUTKAST" : "FAKTURA",
+                colQty = isHourly ? "TIMMAR" : "ANTAL",
+                colPrice = isHourly ? "TIMARVODE" : "À-PRIS"
+            };
         }
 
         public static byte[] generate(
@@ -315,12 +495,15 @@ namespace com.swecial.code {
 
             bool isDraft = Db.str(invoice, "status") == Invoicing.Draft || Db.num(invoice, "number") == 0;
             bool isPaid = Db.str(invoice, "status") == Invoicing.Paid;
+            bool isHourly = Db.str(invoice, "isHourly") == "1";
             string numberText = isDraft ? "Utkast" : Db.num(invoice, "number").ToString();
             string compName = Db.str(company, "name");
             string compAddr = Db.str(company, "address");
             string compPostal = Db.str(company, "postalAddress");
             string bankgiro = Db.str(company, "bankgiro");
             string orgNr = Db.str(company, "orgNumber");
+            var copy = copyFor(themeId, isDraft, isHourly, numberText, orgNr);
+            var fontBanner = new XFont(isTech ? "Mono" : headingFamily, 6.5, XFontStyle.Bold);
 
             string invDate = Db.str(invoice, "invoiceDate");
             if (invDate.Length == 0) invDate = Dates.today();
@@ -348,14 +531,14 @@ namespace com.swecial.code {
                 ? Db.str(invoice, "customerVatNumber")
                 : (customer != null ? Db.str(customer, "vatNumber") : "");
 
-            var meta = new List<(string label, string val)> {
-                ("Fakturanummer", numberText),
-                ("Fakturadatum", invDate),
-                ("Förfallodatum", dueDate)
+            var meta = new List<(string label, string val, bool isDue)> {
+                (copy.labelInvoiceNumber, numberText, false),
+                (copy.labelInvoiceDate, invDate, false),
+                (copy.labelDueDate, dueDate, true)
             };
-            if (ourRef.Length > 0) meta.Add(("Vår referens", ourRef));
-            if (yourRef.Length > 0) meta.Add(("Er referens", yourRef));
-            if (poNumber.Length > 0) meta.Add((poLabel, poNumber));
+            if (ourRef.Length > 0) meta.Add((copy.labelOurRef, ourRef, false));
+            if (yourRef.Length > 0) meta.Add((copy.labelYourRef, yourRef, false));
+            if (poNumber.Length > 0) meta.Add((poLabel, poNumber, false));
 
             var pages = new List<(PdfPage page, XGraphics gfx)>();
             PdfPage currentPage = doc.AddPage();
@@ -363,32 +546,41 @@ namespace com.swecial.code {
             XGraphics gfx = XGraphics.FromPdfPage(currentPage);
             pages.Add((currentPage, gfx));
 
+            drawPageBackdrop(gfx, themeId, pal, pageW, left, right, fontSection, fontBanner);
+
             double y = 0;
 
             if (style == Settings.StyleStudio) {
                 // === STUDIO LAYOUT: Full-bleed dark/accent masthead + docked metrics bar ===
-                double bannerH = 112;
+                double bannerH = 116;
                 gfx.DrawRectangle(brushDark, 0, 0, pageW, bannerH);
                 gfx.DrawRectangle(brushPrimary, 0, bannerH - 4, pageW, 4);
-                if (isPuben) {
+                if (isSkynet) {
+                    drawHazardStripes(gfx, pal, 0, 0, pageW, 5.5);
+                } else if (isPuben) {
                     gfx.DrawLine(new XPen(XColor.FromArgb(140, 232, 168, 56), 0.7), left, bannerH - 7, right, bannerH - 7);
+                }
+                if (copy.topBannerLeft.Length > 0) {
+                    var bBrush = new XSolidBrush(pal.glow);
+                    gfx.DrawString(copy.topBannerLeft, fontBanner, bBrush, new XPoint(left, 15));
+                    if (copy.topBannerRight.Length > 0) drawRight(gfx, copy.topBannerRight, fontBanner, bBrush, right, 15);
+                    gfx.DrawLine(new XPen(XColor.FromArgb(65, 255, 255, 255), 0.5), left, 19.5, right, 19.5);
                 }
 
                 double badgeSize = 38;
                 double badgeX = left;
-                double badgeY = 30;
+                double badgeY = 34;
                 drawMonogramBadge(gfx, style, themeId, pal, badgeX, badgeY, badgeSize, monogram(compName), fontMonogram, brushPrimary, brushWhite, penPrimary, penPrimaryThin);
 
                 double compX = badgeX + badgeSize + 13;
-                gfx.DrawString(compName, fontCompany, brushWhite, new XPoint(compX, 45));
+                gfx.DrawString(compName, fontCompany, brushWhite, new XPoint(compX, 49));
                 string subLine = string.Join("  ·  ", new[] { compAddr, compPostal, orgNr.Length > 0 ? "Org.nr " + orgNr : "" }.Where(s => s.Length > 0));
                 if (subLine.Length > 0) {
-                    gfx.DrawString(subLine, fontSmall, new XSolidBrush(XColor.FromArgb(200, 255, 255, 255)), new XPoint(compX, 61));
+                    gfx.DrawString(subLine, fontSmall, new XSolidBrush(XColor.FromArgb(200, 255, 255, 255)), new XPoint(compX, 65));
                 }
 
-                string docLabel = isDraft ? "FAKTURAUTKAST" : "FAKTURA";
-                drawRight(gfx, docLabel, fontHero, new XSolidBrush(pal.glow), right, 47);
-                drawRight(gfx, (isTech ? "NR // " : "Nr ") + numberText, fontNumBold, new XSolidBrush(XColor.FromArgb(215, 255, 255, 255)), right, 63);
+                drawRight(gfx, copy.docTitle, fontHero, new XSolidBrush(pal.glow), right, 51);
+                drawRight(gfx, copy.docSubPrefix + numberText, fontNumBold, new XSolidBrush(XColor.FromArgb(215, 255, 255, 255)), right, 67);
 
                 double stripY = bannerH;
                 double stripH = 44;
@@ -397,10 +589,10 @@ namespace com.swecial.code {
 
                 double cellW = width / 4.0;
                 var stripItems = new[] {
-                    (prefix + "FAKTURADATUM", invDate, false),
-                    (prefix + "FÖRFALLODATUM", dueDate, false),
-                    (prefix + "BANKGIRO", bankgiro.Length > 0 ? bankgiro : "—", false),
-                    (prefix + "ATT BETALA (SEK)", Money.format(totals.total) + " kr", true)
+                    (copy.stripDate, invDate, false),
+                    (copy.stripDue, dueDate, false),
+                    (copy.stripBg, bankgiro.Length > 0 ? bankgiro : "—", false),
+                    (copy.stripTotal, Money.format(totals.total) + " kr", true)
                 };
                 for (int i = 0; i < stripItems.Length; i++) {
                     double cx = left + i * cellW;
@@ -416,11 +608,11 @@ namespace com.swecial.code {
                 }
 
                 y = stripY + stripH + 22;
-                double leftBoxY = drawRecipientBlock(gfx, style, themeId, pal, left, y, 245, custName, custAddr, custPostal, custOrg, custVat,
+                double leftBoxY = drawRecipientBlock(gfx, style, themeId, pal, copy.recipientHeader, left, y, 245, custName, custAddr, custPostal, custOrg, custVat,
                     fontSection, fontBold, fontRegular, fontSmall, brushText, brushSub, brushMuted, brushSoft, penPrimary, penBorder);
 
                 double refY = y;
-                gfx.DrawString(prefix + "REFERENSER & UPPGIFTER", fontSection, brushPrimary, new XPoint(325, refY + 10));
+                gfx.DrawString(copy.referencesHeader, fontSection, brushPrimary, new XPoint(325, refY + 10));
                 refY += 24;
                 foreach (var m in meta) {
                     gfx.DrawString(m.label, fontSmall, brushMuted, new XPoint(325, refY));
@@ -430,10 +622,8 @@ namespace com.swecial.code {
                 y = Math.Max(leftBoxY, refY) + 18;
             } else if (style == Settings.StyleExecutive) {
                 // === EXECUTIVE LAYOUT: Classic serif crest, double ornamental rules ===
-                if (isPuben || isTech) {
-                    drawTopRibbon(gfx, themeId, pageW, brushPrimary, penPrimaryThin);
-                }
-                y = 44;
+                drawTopRibbon(gfx, themeId, pal, copy, pageW, left, right, fontBanner, brushPrimary, brushDark, penPrimaryThin);
+                y = copy.topBannerLeft.Length > 0 ? 46 : 44;
                 double crestSize = 38;
                 drawMonogramBadge(gfx, style, themeId, pal, left, y, crestSize, monogram(compName), fontMonogram, brushPrimary, brushWhite, penPrimary, penPrimaryThin);
 
@@ -444,34 +634,34 @@ namespace com.swecial.code {
                     gfx.DrawString(addrLine, fontItalic, brushSub, new XPoint(compX, y + 31));
                 }
 
-                string docTitle = isDraft ? "F A K T U R A U T K A S T" : "F A K T U R A";
+                string docTitle = themeId == "boring" ? (isDraft ? "F A K T U R A U T K A S T" : "F A K T U R A") : copy.docTitle;
                 drawRight(gfx, docTitle, fontHero, brushPrimary, right, y + 17);
-                drawRight(gfx, (isTech ? "NR // " : "Fakturanummer ") + numberText, isTech ? fontNumBold : fontItalic, brushSub, right, y + 32);
+                drawRight(gfx, (themeId == "boring" ? "Fakturanummer " : copy.docSubPrefix) + numberText, isTech ? fontNumBold : fontItalic, brushSub, right, y + 32);
 
                 y += crestSize + 14;
                 gfx.DrawLine(penPrimary, left, y, right, y);
                 gfx.DrawLine(penPrimaryThin, left, y + 2.5, right, y + 2.5);
                 y += 18;
 
-                double leftBoxY = drawRecipientBlock(gfx, style, themeId, pal, left, y, 245, custName, custAddr, custPostal, custOrg, custVat,
+                double leftBoxY = drawRecipientBlock(gfx, style, themeId, pal, copy.recipientHeader, left, y, 245, custName, custAddr, custPostal, custOrg, custVat,
                     fontSection, fontBold, fontRegular, fontSmall, brushText, brushSub, brushMuted, brushSoft, penPrimary, penBorder);
 
-                double metaX = 320;
+                double metaX = 315;
                 double metaW = right - metaX;
                 double metaH = meta.Count * 15 + 16;
                 gfx.DrawRectangle(penBorder, brushSoft, metaX, y, metaW, metaH);
                 if (isTech) drawCornerTicks(gfx, penPrimary, metaX, y, metaW, metaH, 5);
                 double my = y + 16;
                 foreach (var m in meta) {
-                    gfx.DrawString(m.label, fontSmall, brushMuted, new XPoint(metaX + 12, my));
-                    drawRight(gfx, m.val, fontNumBold, brushText, right - 12, my);
+                    gfx.DrawString(m.label, fontSmall, brushMuted, new XPoint(metaX + 10, my));
+                    drawRight(gfx, m.val, fontNumBold, brushText, right - 10, my);
                     my += 15;
                 }
                 y = Math.Max(leftBoxY, y + metaH) + 20;
             } else {
                 // === NORDIC ATELIER LAYOUT (Default): Top accent ribbon, monogram seal, key-metric pill ===
-                drawTopRibbon(gfx, themeId, pageW, brushPrimary, penPrimaryThin);
-                y = 40;
+                drawTopRibbon(gfx, themeId, pal, copy, pageW, left, right, fontBanner, brushPrimary, brushDark, penPrimaryThin);
+                y = copy.topBannerLeft.Length > 0 ? 44 : 40;
 
                 double badgeSize = 38;
                 drawMonogramBadge(gfx, style, themeId, pal, left, y, badgeSize, monogram(compName), fontMonogram, brushPrimary, brushWhite, penPrimary, penPrimaryThin);
@@ -485,9 +675,8 @@ namespace com.swecial.code {
                     gfx.DrawString(string.Join(", ", compSub), fontSmall, brushMuted, new XPoint(compX, y + 30));
                 }
 
-                string docTitle = isDraft ? "FAKTURAUTKAST" : "FAKTURA";
-                drawRight(gfx, docTitle, fontHero, brushPrimary, right, y + 17);
-                drawRight(gfx, (isTech ? "NR // " : "Nr ") + numberText, fontNumBold, brushSub, right, y + 31);
+                drawRight(gfx, copy.docTitle, fontHero, brushPrimary, right, y + 17);
+                drawRight(gfx, copy.docSubPrefix + numberText, fontNumBold, brushSub, right, y + 31);
 
                 y += badgeSize + 16;
                 if (isPuben) {
@@ -496,7 +685,7 @@ namespace com.swecial.code {
                     y += 6;
                 }
 
-                double leftBoxY = drawRecipientBlock(gfx, style, themeId, pal, left, y, 245, custName, custAddr, custPostal, custOrg, custVat,
+                double leftBoxY = drawRecipientBlock(gfx, style, themeId, pal, copy.recipientHeader, left, y, 245, custName, custAddr, custPostal, custOrg, custVat,
                     fontSection, fontBold, fontRegular, fontSmall, brushText, brushSub, brushMuted, brushSoft, penPrimary, penBorder);
 
                 double rightColX = 315;
@@ -504,17 +693,17 @@ namespace com.swecial.code {
                 double pillH = 40;
                 drawBox(gfx, penBorder, brushSoft, rightColX, y, rightColW, pillH, cornerRadius);
                 if (isTech) drawCornerTicks(gfx, penPrimary, rightColX, y, rightColW, pillH, 4.5);
-                gfx.DrawLine(penBorder, rightColX + rightColW * 0.54, y + 6, rightColX + rightColW * 0.54, y + pillH - 6);
+                gfx.DrawLine(penBorder, rightColX + rightColW * 0.52, y + 6, rightColX + rightColW * 0.52, y + pillH - 6);
 
-                gfx.DrawString(prefix + "ATT BETALA (SEK)", fontSection, brushPrimary, new XPoint(rightColX + 11, y + 14));
-                gfx.DrawString(Money.format(totals.total) + " kr", fontNumBold, brushText, new XPoint(rightColX + 11, y + 29));
+                gfx.DrawString(copy.stripTotal, fontSection, brushPrimary, new XPoint(rightColX + 10, y + 14));
+                gfx.DrawString(Money.format(totals.total) + " kr", fontNumBold, brushText, new XPoint(rightColX + 10, y + 29));
 
-                double dueColX = rightColX + rightColW * 0.54 + 11;
-                gfx.DrawString(prefix + "FÖRFALLODATUM", fontSection, brushMuted, new XPoint(dueColX, y + 14));
+                double dueColX = rightColX + rightColW * 0.52 + 10;
+                gfx.DrawString(copy.stripDue, fontSection, brushMuted, new XPoint(dueColX, y + 14));
                 gfx.DrawString(dueDate, fontNumBold, brushText, new XPoint(dueColX, y + 29));
 
                 double my = y + pillH + 15;
-                foreach (var m in meta.Where(x => x.label != "Förfallodatum")) {
+                foreach (var m in meta.Where(x => !x.isDue)) {
                     gfx.DrawString(m.label, fontSmall, brushMuted, new XPoint(rightColX + 4, my));
                     drawRight(gfx, m.val, fontNumBold, brushText, right, my);
                     my += 14.5;
@@ -524,10 +713,6 @@ namespace com.swecial.code {
             }
 
             // === 3. SPECIFICATION TABLE ===
-            bool isHourly = Db.str(invoice, "isHourly") == "1";
-            string qtyHeader = isHourly ? "TIMMAR" : "ANTAL";
-            string priceHeader = isHourly ? "TIMARVODE" : "À-PRIS";
-
             double colDescX = left + 8;
             double colDescW = 240;
             double colQtyR = left + 305;
@@ -535,7 +720,7 @@ namespace com.swecial.code {
             double colVatR = left + 430;
             double colNetR = right - 8;
 
-            y = drawTableHeader(gfx, style, themeId, pal, left, right, width, y, qtyHeader, priceHeader,
+            y = drawTableHeader(gfx, style, themeId, pal, left, right, width, y, copy,
                 colDescX, colQtyR, colPriceR, colVatR, colNetR,
                 fontHeader, brushPrimary, brushMuted, brushWhite, brushSoft, penPrimary, penPrimaryThin, penLine);
 
@@ -545,19 +730,20 @@ namespace com.swecial.code {
                 double rowH = Math.Max(22, wrappedDesc.Count * 13 + 9);
 
                 if (y + rowH > 650) {
-                    drawFooter(gfx, company, left, right, width, pal, prefix, fontSection, fontSmall, fontNumBold, brushText, brushMuted, brushPrimary, penLine, pages.Count, 0);
+                    drawFooter(gfx, company, left, right, width, pal, copy, fontSection, fontSmall, fontNumBold, brushText, brushMuted, brushPrimary, penLine, pages.Count, 0);
                     currentPage = doc.AddPage();
                     currentPage.Size = PageSize.A4;
                     gfx = XGraphics.FromPdfPage(currentPage);
                     pages.Add((currentPage, gfx));
 
-                    if (style == Settings.StyleNordic) {
-                        drawTopRibbon(gfx, themeId, pageW, brushPrimary, penPrimaryThin);
+                    drawPageBackdrop(gfx, themeId, pal, pageW, left, right, fontSection, fontBanner);
+                    if (style == Settings.StyleNordic || copy.topBannerLeft.Length > 0) {
+                        drawTopRibbon(gfx, themeId, pal, copy, pageW, left, right, fontBanner, brushPrimary, brushDark, penPrimaryThin);
                     }
-                    y = 42;
-                    gfx.DrawString(compName + "  —  " + (isDraft ? "Fakturautkast" : "Faktura " + numberText) + " (forts.)", fontSmall, brushMuted, new XPoint(left, y));
+                    y = 44;
+                    gfx.DrawString(compName + "  —  " + copy.docTitle + " " + numberText + " (forts.)", fontSmall, brushMuted, new XPoint(left, y));
                     y += 14;
-                    y = drawTableHeader(gfx, style, themeId, pal, left, right, width, y, qtyHeader, priceHeader,
+                    y = drawTableHeader(gfx, style, themeId, pal, left, right, width, y, copy,
                         colDescX, colQtyR, colPriceR, colVatR, colNetR,
                         fontHeader, brushPrimary, brushMuted, brushWhite, brushSoft, penPrimary, penPrimaryThin, penLine);
                 }
@@ -580,21 +766,24 @@ namespace com.swecial.code {
                 rowIndex++;
             }
 
-            if (y > 555) {
-                drawFooter(gfx, company, left, right, width, pal, prefix, fontSection, fontSmall, fontNumBold, brushText, brushMuted, brushPrimary, penLine, pages.Count, 0);
+            if (y > 545) {
+                drawFooter(gfx, company, left, right, width, pal, copy, fontSection, fontSmall, fontNumBold, brushText, brushMuted, brushPrimary, penLine, pages.Count, 0);
                 currentPage = doc.AddPage();
                 currentPage.Size = PageSize.A4;
                 gfx = XGraphics.FromPdfPage(currentPage);
                 pages.Add((currentPage, gfx));
-                if (style == Settings.StyleNordic) drawTopRibbon(gfx, themeId, pageW, brushPrimary, penPrimaryThin);
+                drawPageBackdrop(gfx, themeId, pal, pageW, left, right, fontSection, fontBanner);
+                if (style == Settings.StyleNordic || copy.topBannerLeft.Length > 0) {
+                    drawTopRibbon(gfx, themeId, pal, copy, pageW, left, right, fontBanner, brushPrimary, brushDark, penPrimaryThin);
+                }
                 y = 50;
             }
 
-            // === 4. TOTALS SUMMARY & NOTES ===
+            // === 4. TOTALS SUMMARY, NOTES & THEME STAMP ===
             y += 12;
             double notesStartY = y;
 
-            double noteW = 255;
+            double noteW = 260;
             double noteY = notesStartY + 6;
             string treatment = Db.str(invoice, "vatTreatment");
             bool goods = Invoicing.isGoods(invoice);
@@ -611,21 +800,25 @@ namespace com.swecial.code {
 
             string note = Db.str(invoice, "note").Trim();
             if (note.Length > 0) {
-                gfx.DrawString(prefix + "MEDDELANDE", fontSection, brushPrimary, new XPoint(left, noteY));
+                gfx.DrawString(copy.noteHeader, fontSection, brushPrimary, new XPoint(left, noteY));
                 noteY += 13;
                 noteY = drawTextWrap(gfx, note, fontRegular, brushSub, left, noteY, noteW, 13.5) + 8;
+            }
+
+            if (copy.stampTitle.Length > 0) {
+                noteY = drawThemeStamp(gfx, themeId, pal, copy, left + 4, noteY + 4, 252, fontHeader, fontBanner);
             }
 
             double totX = 325;
             double totW = right - totX;
             double totY = notesStartY;
 
-            gfx.DrawString("Summa exkl. moms", fontSmall, brushMuted, new XPoint(totX + 8, totY + 10));
+            gfx.DrawString(copy.labelNetSum, fontSmall, brushMuted, new XPoint(totX + 8, totY + 10));
             drawRight(gfx, Money.formatOrBlank(totals.net) + " kr", fontNum, brushText, colNetR, totY + 10);
             totY += 17;
 
             foreach (var r in totals.byRate.Where(r => r.Key > 0).Reverse()) {
-                gfx.DrawString("Moms " + r.Key + " % (på " + Money.format(r.Value.net) + " kr)", fontSmall, brushMuted, new XPoint(totX + 8, totY + 10));
+                gfx.DrawString(string.Format(copy.labelVatFormat, r.Key, Money.format(r.Value.net)), fontSmall, brushMuted, new XPoint(totX + 8, totY + 10));
                 drawRight(gfx, Money.formatOrBlank(r.Value.vat) + " kr", fontNum, brushText, colNetR, totY + 10);
                 totY += 17;
             }
@@ -634,7 +827,7 @@ namespace com.swecial.code {
             if (style == Settings.StyleExecutive) {
                 gfx.DrawLine(penPrimary, totX, totY, right, totY);
                 totY += 6;
-                gfx.DrawString("Att betala (SEK)", fontTotalLabel, brushText, new XPoint(totX + 8, totY + 13));
+                gfx.DrawString(copy.labelGrandTotal, fontTotalLabel, brushText, new XPoint(totX + 8, totY + 13));
                 drawRight(gfx, Money.format(totals.total) + " kr", fontTotalVal, brushPrimary, colNetR, totY + 13);
                 totY += 20;
                 gfx.DrawLine(penPrimary, totX, totY, right, totY);
@@ -647,38 +840,165 @@ namespace com.swecial.code {
                 } else {
                     drawBox(gfx, null, brushPrimary, totX, totY, totW, barH, isTech ? 0 : 5);
                 }
-                gfx.DrawString(prefix + "ATT BETALA (SEK)", fontTotalLabel, brushWhite, new XPoint(totX + 12, totY + 19));
+                gfx.DrawString(copy.labelGrandTotal, fontTotalLabel, brushWhite, new XPoint(totX + 10, totY + 19));
                 drawRight(gfx, Money.format(totals.total) + " kr", fontTotalVal, brushWhite, right - 10, totY + 19.5);
                 totY += barH + 10;
             }
 
-            y = Math.Max(noteY, totY) + 14;
+            y = Math.Max(noteY, totY) + 12;
 
             // === 5. PROMINENT PAYMENT SLIP / BETALNINGSKORT ===
-            drawPaymentCard(gfx, style, themeId, pal, left, right, width, y,
+            drawPaymentCard(gfx, style, themeId, pal, copy, left, right, width, y,
                 bankgiro, numberText, dueDate, Money.format(totals.total) + " kr",
                 isPaid, Db.str(invoice, "paidDate"),
-                fontSection, fontSmall, fontNumBold, fontCardBig,
+                fontSection, fontSmall, fontNumBold, fontCardBig, fontBanner,
                 brushText, brushMuted, brushWhite, brushPrimary, brushSoft, brushPaid, brushPaidSoft,
                 penPrimary, penPrimaryThin, penBorder);
 
             // === 6. PINNED 4-COLUMN FOOTER ON ALL PAGES ===
             int totalPages = pages.Count;
             for (int i = 0; i < totalPages; i++) {
-                drawFooter(pages[i].gfx, company, left, right, width, pal, prefix, fontSection, fontSmall, fontNumBold, brushText, brushMuted, brushPrimary, penLine, i + 1, totalPages);
+                drawFooter(pages[i].gfx, company, left, right, width, pal, copy, fontSection, fontSmall, fontNumBold, brushText, brushMuted, brushPrimary, penLine, i + 1, totalPages);
             }
         }
 
-        static void drawTopRibbon(XGraphics gfx, string themeId, double pageW, XBrush brushPrimary, XPen penPrimaryThin) {
+        static void drawTopRibbon(
+            XGraphics gfx, string themeId, Palette pal, ThemeCopy copy, double pageW, double left, double right,
+            XFont fontBanner, XBrush brushPrimary, XBrush brushDark, XPen penPrimaryThin) {
+
             if (themeId == "skynet") {
-                gfx.DrawRectangle(brushPrimary, 0, 0, pageW, 4.5);
-                gfx.DrawLine(penPrimaryThin, 0, 7, pageW, 7);
+                drawHazardStripes(gfx, pal, 0, 0, pageW, 5.5);
+                gfx.DrawRectangle(brushDark, 0, 5.5, pageW, 16);
+                gfx.DrawRectangle(brushPrimary, 0, 21.5, pageW, 2);
+                var glowBrush = new XSolidBrush(pal.glow);
+                gfx.DrawString(copy.topBannerLeft, fontBanner, glowBrush, new XPoint(left, 16));
+                drawRight(gfx, copy.topBannerRight, fontBanner, glowBrush, right, 16);
+            } else if (themeId == "nostromo") {
+                gfx.DrawRectangle(brushDark, 0, 0, pageW, 19);
+                gfx.DrawRectangle(brushPrimary, 0, 19, pageW, 2);
+                var glowBrush = new XSolidBrush(pal.glow);
+                gfx.DrawString(copy.topBannerLeft, fontBanner, glowBrush, new XPoint(left, 12.5));
+                drawRight(gfx, copy.topBannerRight, fontBanner, glowBrush, right, 12.5);
             } else if (themeId == "puben") {
-                gfx.DrawRectangle(brushPrimary, 0, 0, pageW, 5);
-                gfx.DrawLine(penPrimaryThin, 0, 7.5, pageW, 7.5);
+                gfx.DrawRectangle(brushPrimary, 0, 0, pageW, 4);
+                gfx.DrawLine(penPrimaryThin, left, 21, right, 21);
+                drawCentered(gfx, copy.topBannerLeft, fontBanner, brushPrimary, pageW / 2, 15.5);
             } else {
                 gfx.DrawRectangle(brushPrimary, 0, 0, pageW, 6);
             }
+        }
+
+        static void drawPageBackdrop(
+            XGraphics gfx, string themeId, Palette pal, double pageW, double left, double right,
+            XFont fontSection, XFont fontBanner) {
+
+            if (themeId == "puben") {
+                // Warm tavern parchment tint & subtle pint-glass stains
+                gfx.DrawRectangle(new XSolidBrush(XColor.FromArgb(0xfd, 0xfa, 0xf2)), 0, 0, pageW, 842);
+                var framePen = new XPen(XColor.FromArgb(55, pal.primary.R, pal.primary.G, pal.primary.B), 0.7);
+                gfx.DrawRectangle(framePen, 24, 26, pageW - 48, 796);
+                drawBeerStain(gfx, right - 68, 158, 38);
+                drawBeerStain(gfx, left + 205, 608, 33);
+            } else if (themeId == "nostromo") {
+                // Continuous-feed dot-matrix sprocket holes along both page margins + orbital radar watermark
+                var holePen = new XPen(XColor.FromArgb(95, pal.primary.R, pal.primary.G, pal.primary.B), 0.7);
+                var holeFill = new XSolidBrush(XColor.FromArgb(18, pal.primary.R, pal.primary.G, pal.primary.B));
+                var perfPen = new XPen(XColor.FromArgb(65, pal.primary.R, pal.primary.G, pal.primary.B), 0.5) { DashStyle = XDashStyle.Dash };
+                gfx.DrawLine(perfPen, 28, 22, 28, 840);
+                gfx.DrawLine(perfPen, pageW - 28, 22, pageW - 28, 840);
+                for (double hy = 34; hy < 825; hy += 24) {
+                    gfx.DrawEllipse(holePen, holeFill, 10.5, hy - 3.5, 7, 7);
+                    gfx.DrawEllipse(holePen, holeFill, pageW - 17.5, hy - 3.5, 7, 7);
+                }
+                double cx = pageW / 2;
+                double cy = 415;
+                var radarPen = new XPen(XColor.FromArgb(20, pal.primary.R, pal.primary.G, pal.primary.B), 0.8);
+                gfx.DrawEllipse(radarPen, cx - 105, cy - 105, 210, 210);
+                gfx.DrawEllipse(radarPen, cx - 70, cy - 70, 140, 140);
+                gfx.DrawEllipse(radarPen, cx - 35, cy - 35, 70, 70);
+                gfx.DrawLine(radarPen, cx - 125, cy, cx + 125, cy);
+                gfx.DrawLine(radarPen, cx, cy - 125, cx, cy + 125);
+                drawCornerTicks(gfx, new XPen(XColor.FromArgb(35, pal.primary.R, pal.primary.G, pal.primary.B), 1.2), cx - 115, cy - 115, 230, 230, 14);
+                drawCentered(gfx, "WEYLAND-YUTANI CORP // BUILDING BETTER CASHFLOWS", fontBanner, new XSolidBrush(XColor.FromArgb(32, pal.primary.R, pal.primary.G, pal.primary.B)), cx, cy + 126);
+            } else if (themeId == "skynet") {
+                // Tactical targeting reticle watermark in center of page
+                double cx = pageW / 2;
+                double cy = 415;
+                var retPen = new XPen(XColor.FromArgb(22, pal.primary.R, pal.primary.G, pal.primary.B), 0.9);
+                var retHeavy = new XPen(XColor.FromArgb(32, pal.primary.R, pal.primary.G, pal.primary.B), 1.5);
+                gfx.DrawEllipse(retPen, cx - 112, cy - 112, 224, 224);
+                gfx.DrawEllipse(retHeavy, cx - 76, cy - 76, 152, 152);
+                gfx.DrawEllipse(retPen, cx - 36, cy - 36, 72, 72);
+                gfx.DrawEllipse(retHeavy, cx - 5, cy - 5, 10, 10);
+                gfx.DrawLine(retPen, cx - 134, cy, cx - 14, cy);
+                gfx.DrawLine(retPen, cx + 14, cy, cx + 134, cy);
+                gfx.DrawLine(retPen, cx, cy - 134, cx, cy - 14);
+                gfx.DrawLine(retPen, cx, cy + 14, cx, cy + 134);
+                for (int d = -100; d <= 100; d += 25) {
+                    if (d == 0) continue;
+                    gfx.DrawLine(retPen, cx + d, cy - 4, cx + d, cy + 4);
+                    gfx.DrawLine(retPen, cx - 4, cy + d, cx + 4, cy + d);
+                }
+                drawCornerTicks(gfx, retHeavy, cx - 120, cy - 120, 240, 240, 18);
+                drawCentered(gfx, "TARGET ACQUIRED // FISCAL EXTRACTION LOCKED", fontBanner, new XSolidBrush(XColor.FromArgb(36, pal.primary.R, pal.primary.G, pal.primary.B)), cx, cy + 134);
+            }
+        }
+
+        static void drawBeerStain(XGraphics gfx, double cx, double cy, double r) {
+            var p1 = new XPen(XColor.FromArgb(20, 154, 102, 18), 2.2);
+            var p2 = new XPen(XColor.FromArgb(13, 120, 72, 12), 1.1);
+            var p3 = new XPen(XColor.FromArgb(9, 154, 102, 18), 3.6);
+            gfx.DrawEllipse(p1, cx - r, cy - r, r * 2, r * 2);
+            gfx.DrawEllipse(p2, cx - r + 1.8, cy - r - 1.2, r * 2 - 2, r * 2 + 1.5);
+            gfx.DrawEllipse(p3, cx - r - 2.5, cy - r + 2, r * 1.92, r * 1.96);
+            var dotBrush = new XSolidBrush(XColor.FromArgb(16, 154, 102, 18));
+            gfx.DrawEllipse(dotBrush, cx + r + 5, cy - 12, 3.2, 3.2);
+            gfx.DrawEllipse(dotBrush, cx + r + 9, cy - 6, 2.0, 2.0);
+            gfx.DrawEllipse(dotBrush, cx - r - 6, cy + 14, 2.5, 2.5);
+        }
+
+        static void drawHazardStripes(XGraphics gfx, Palette pal, double x, double y, double w, double h) {
+            gfx.DrawRectangle(new XSolidBrush(pal.dark), x, y, w, h);
+            var stripeBrush = new XSolidBrush(pal.primary);
+            double step = 12;
+            for (double sx = x - h; sx < x + w; sx += step) {
+                double x0 = Math.Max(x, sx);
+                double x1 = Math.Min(x + w, sx + step * 0.52);
+                double x2 = Math.Min(x + w, sx + h + step * 0.52);
+                double x3 = Math.Max(x, sx + h);
+                if (x1 > x0 && x2 > x3) {
+                    gfx.DrawPolygon(stripeBrush, new[] {
+                        new XPoint(x0, y + h),
+                        new XPoint(x1, y + h),
+                        new XPoint(x2, y),
+                        new XPoint(x3, y)
+                    }, XFillMode.Winding);
+                }
+            }
+        }
+
+        static double drawThemeStamp(
+            XGraphics gfx, string themeId, Palette pal, ThemeCopy copy,
+            double x, double y, double w, XFont fontHeader, XFont fontBanner) {
+
+            double h = 32;
+            double angle = themeId == "puben" ? -3.2 : themeId == "skynet" ? -2.4 : -1.8;
+            var state = gfx.Save();
+            gfx.RotateAtTransform(angle, new XPoint(x + w / 2, y + h / 2));
+
+            var stampColor = XColor.FromArgb(210, pal.primary.R, pal.primary.G, pal.primary.B);
+            var stampFill = new XSolidBrush(XColor.FromArgb(16, pal.primary.R, pal.primary.G, pal.primary.B));
+            var outerPen = new XPen(stampColor, 1.5);
+            var innerPen = new XPen(stampColor, 0.6);
+            var stampBrush = new XSolidBrush(stampColor);
+
+            gfx.DrawRectangle(outerPen, stampFill, x, y, w, h);
+            gfx.DrawRectangle(innerPen, x + 2.5, y + 2.5, w - 5, h - 5);
+            drawCentered(gfx, copy.stampTitle, fontHeader, stampBrush, x + w / 2, y + 14);
+            drawCentered(gfx, copy.stampSub, fontBanner, stampBrush, x + w / 2, y + 24.5);
+
+            gfx.Restore(state);
+            return y + h + 8;
         }
 
         static void drawMonogramBadge(
@@ -713,14 +1033,13 @@ namespace com.swecial.code {
         }
 
         static double drawRecipientBlock(
-            XGraphics gfx, string style, string themeId, Palette pal, double x, double y, double w,
+            XGraphics gfx, string style, string themeId, Palette pal, string recipientHeader, double x, double y, double w,
             string custName, string custAddr, string custPostal, string custOrg, string custVat,
             XFont fontSection, XFont fontBold, XFont fontRegular, XFont fontSmall,
             XBrush brushText, XBrush brushSub, XBrush brushMuted, XBrush brushSoft,
             XPen penPrimary, XPen penBorder) {
 
             bool isTech = themeId == "nostromo" || themeId == "skynet";
-            string prefix = isTech ? "// " : "";
 
             var lines = new List<(string text, XFont font, XBrush brush)>();
             if (custName.Length > 0) lines.Add((custName, fontBold, brushText));
@@ -743,7 +1062,7 @@ namespace com.swecial.code {
             }
 
             double padX = style == Settings.StyleExecutive ? x : x + 13;
-            gfx.DrawString(prefix + "FAKTURAMOTTAGARE", fontSection, new XSolidBrush(pal.primary), new XPoint(padX, y + 15));
+            gfx.DrawString(recipientHeader, fontSection, new XSolidBrush(pal.primary), new XPoint(padX, y + 15));
             double curY = y + 31;
             foreach (var l in lines) {
                 gfx.DrawString(l.text, l.font, l.brush, new XPoint(padX, curY));
@@ -754,7 +1073,7 @@ namespace com.swecial.code {
 
         static double drawTableHeader(
             XGraphics gfx, string style, string themeId, Palette pal, double left, double right, double width, double y,
-            string qtyHeader, string priceHeader,
+            ThemeCopy copy,
             double colDescX, double colQtyR, double colPriceR, double colVatR, double colNetR,
             XFont fontHeader, XBrush brushPrimary, XBrush brushMuted, XBrush brushWhite, XBrush brushSoft,
             XPen penPrimary, XPen penPrimaryThin, XPen penLine) {
@@ -763,48 +1082,47 @@ namespace com.swecial.code {
             double h = 24;
             if (style == Settings.StyleStudio) {
                 gfx.DrawRectangle(brushPrimary, left, y, width, h);
-                gfx.DrawString("BESKRIVNING", fontHeader, brushWhite, new XPoint(colDescX, y + 15));
-                drawRight(gfx, qtyHeader, fontHeader, brushWhite, colQtyR, y + 15);
-                drawRight(gfx, priceHeader, fontHeader, brushWhite, colPriceR, y + 15);
-                drawRight(gfx, "MOMS", fontHeader, brushWhite, colVatR, y + 15);
-                drawRight(gfx, "BELOPP", fontHeader, brushWhite, colNetR, y + 15);
+                gfx.DrawString(copy.colDesc, fontHeader, brushWhite, new XPoint(colDescX, y + 15));
+                drawRight(gfx, copy.colQty, fontHeader, brushWhite, colQtyR, y + 15);
+                drawRight(gfx, copy.colPrice, fontHeader, brushWhite, colPriceR, y + 15);
+                drawRight(gfx, copy.colVat, fontHeader, brushWhite, colVatR, y + 15);
+                drawRight(gfx, copy.colAmount, fontHeader, brushWhite, colNetR, y + 15);
                 return y + h;
             }
             if (style == Settings.StyleExecutive) {
                 gfx.DrawLine(penPrimary, left, y, right, y);
-                gfx.DrawString("BESKRIVNING", fontHeader, brushPrimary, new XPoint(colDescX, y + 15));
-                drawRight(gfx, qtyHeader, fontHeader, brushPrimary, colQtyR, y + 15);
-                drawRight(gfx, priceHeader, fontHeader, brushPrimary, colPriceR, y + 15);
-                drawRight(gfx, "MOMS", fontHeader, brushPrimary, colVatR, y + 15);
-                drawRight(gfx, "BELOPP", fontHeader, brushPrimary, colNetR, y + 15);
+                gfx.DrawString(copy.colDesc, fontHeader, brushPrimary, new XPoint(colDescX, y + 15));
+                drawRight(gfx, copy.colQty, fontHeader, brushPrimary, colQtyR, y + 15);
+                drawRight(gfx, copy.colPrice, fontHeader, brushPrimary, colPriceR, y + 15);
+                drawRight(gfx, copy.colVat, fontHeader, brushPrimary, colVatR, y + 15);
+                drawRight(gfx, copy.colAmount, fontHeader, brushPrimary, colNetR, y + 15);
                 gfx.DrawLine(penPrimaryThin, left, y + h, right, y + h);
                 return y + h;
             }
             drawBox(gfx, null, brushSoft, left, y, width, h, isTech ? 0 : 4);
             gfx.DrawLine(penPrimary, left, y, right, y);
-            gfx.DrawString("BESKRIVNING", fontHeader, brushPrimary, new XPoint(colDescX, y + 15));
-            drawRight(gfx, qtyHeader, fontHeader, brushMuted, colQtyR, y + 15);
-            drawRight(gfx, priceHeader, fontHeader, brushMuted, colPriceR, y + 15);
-            drawRight(gfx, "MOMS", fontHeader, brushMuted, colVatR, y + 15);
-            drawRight(gfx, "BELOPP", fontHeader, brushPrimary, colNetR, y + 15);
+            gfx.DrawString(copy.colDesc, fontHeader, brushPrimary, new XPoint(colDescX, y + 15));
+            drawRight(gfx, copy.colQty, fontHeader, brushMuted, colQtyR, y + 15);
+            drawRight(gfx, copy.colPrice, fontHeader, brushMuted, colPriceR, y + 15);
+            drawRight(gfx, copy.colVat, fontHeader, brushMuted, colVatR, y + 15);
+            drawRight(gfx, copy.colAmount, fontHeader, brushPrimary, colNetR, y + 15);
             gfx.DrawLine(penLine, left, y + h, right, y + h);
             return y + h;
         }
 
         static void drawPaymentCard(
-            XGraphics gfx, string style, string themeId, Palette pal, double left, double right, double width, double y,
+            XGraphics gfx, string style, string themeId, Palette pal, ThemeCopy copy, double left, double right, double width, double y,
             string bankgiro, string numberText, string dueDate, string totalFormatted,
             bool isPaid, string paidDate,
-            XFont fontSection, XFont fontSmall, XFont fontNumBold, XFont fontCardBig,
+            XFont fontSection, XFont fontSmall, XFont fontNumBold, XFont fontCardBig, XFont fontBanner,
             XBrush brushText, XBrush brushMuted, XBrush brushWhite, XBrush brushPrimary, XBrush brushSoft,
             XBrush brushPaid, XBrush brushPaidSoft,
             XPen penPrimary, XPen penPrimaryThin, XPen penBorder) {
 
             bool isTech = themeId == "nostromo" || themeId == "skynet";
-            string prefix = isTech ? "// " : "";
 
-            double targetY = Math.Max(y, 676);
-            if (targetY > 704) targetY = y;
+            double targetY = Math.Max(y, 666);
+            if (targetY > 696) targetY = y;
 
             double cardH = 58;
             if (style == Settings.StyleExecutive || themeId == "puben") {
@@ -814,37 +1132,56 @@ namespace com.swecial.code {
             } else {
                 drawBox(gfx, penBorder, brushSoft, left, targetY, width, cardH, isTech ? 0 : 7);
                 gfx.DrawRectangle(brushPrimary, left, targetY + (isTech ? 0 : 7), 4, cardH - (isTech ? 0 : 14));
+                if (themeId == "skynet") {
+                    drawHazardStripes(gfx, pal, left, targetY, width, 3.2);
+                }
                 if (isTech) drawCornerTicks(gfx, penPrimary, left, targetY, width, cardH, 5.5);
             }
 
-            gfx.DrawString(prefix + "BETALNINGSUPPGIFTER  —  ANGE FAKTURANUMMER VID BETALNING", fontSection, brushPrimary, new XPoint(left + 14, targetY + 15));
+            gfx.DrawString(copy.payHeader, fontSection, brushPrimary, new XPoint(left + 14, targetY + 15.5));
 
             double c1 = left + 14;
             double c2 = left + 145;
             double c3 = left + 275;
             double c4 = left + 390;
 
-            gfx.DrawString("Bankgiro", fontSmall, brushMuted, new XPoint(c1, targetY + 31));
+            gfx.DrawString(copy.payColBg, fontSmall, brushMuted, new XPoint(c1, targetY + 31));
             gfx.DrawString(bankgiro.Length > 0 ? bankgiro : "—", fontCardBig, brushText, new XPoint(c1, targetY + 46));
 
-            gfx.DrawString("Fakturanr / Referens", fontSmall, brushMuted, new XPoint(c2, targetY + 31));
+            gfx.DrawString(copy.payColRef, fontSmall, brushMuted, new XPoint(c2, targetY + 31));
             gfx.DrawString(numberText, fontNumBold, brushText, new XPoint(c2, targetY + 45));
 
-            gfx.DrawString("Förfallodatum", fontSmall, brushMuted, new XPoint(c3, targetY + 31));
+            gfx.DrawString(copy.payColDue, fontSmall, brushMuted, new XPoint(c3, targetY + 31));
             gfx.DrawString(dueDate, fontNumBold, brushText, new XPoint(c3, targetY + 45));
 
             if (isPaid) {
-                string pText = paidDate.Length > 0 ? "BETALD " + paidDate : "BETALD";
+                string pText = paidDate.Length > 0 ? copy.payPaidPrefix + " " + paidDate : copy.payPaidPrefix;
                 drawBox(gfx, new XPen(ColorPaid, 1.0), brushPaidSoft, c4, targetY + 22, right - c4 - 12, 28, isTech ? 0 : 5);
-                drawCentered(gfx, pText, fontNumBold, brushPaid, c4 + (right - c4 - 12) / 2, targetY + 40);
+                drawCentered(gfx, pText, fontSection, brushPaid, c4 + (right - c4 - 12) / 2, targetY + 39);
             } else {
-                gfx.DrawString("Att betala (SEK)", fontSmall, brushMuted, new XPoint(c4, targetY + 31));
+                gfx.DrawString(copy.payColTotal, fontSmall, brushMuted, new XPoint(c4, targetY + 31));
                 gfx.DrawString(totalFormatted, fontCardBig, brushPrimary, new XPoint(c4, targetY + 46));
+            }
+
+            if (copy.telemetryText.Length > 0 && targetY + cardH + 14 <= 756) {
+                double barY = targetY + cardH + 5;
+                if (isTech) {
+                    double bx = left;
+                    int seed = Math.Abs(copy.telemetryText.GetHashCode());
+                    for (int b = 0; b < 26; b++) {
+                        double bw = ((seed >> (b % 16)) & 1) == 1 ? 1.8 : 0.8;
+                        gfx.DrawRectangle(brushPrimary, bx, barY, bw, 8.5);
+                        bx += bw + 1.4;
+                    }
+                    gfx.DrawString(copy.telemetryText, fontBanner, brushMuted, new XPoint(bx + 6, barY + 7));
+                } else {
+                    drawCentered(gfx, copy.telemetryText, fontBanner, brushMuted, left + width / 2, barY + 7);
+                }
             }
         }
 
         static void drawFooter(
-            XGraphics gfx, SwecialObject company, double left, double right, double width, Palette pal, string prefix,
+            XGraphics gfx, SwecialObject company, double left, double right, double width, Palette pal, ThemeCopy copy,
             XFont fontHeader, XFont fontRegular, XFont fontBold,
             XBrush brushText, XBrush brushMuted, XBrush brushPrimary, XPen penLine,
             int pageNum, int totalPages) {
@@ -882,10 +1219,10 @@ namespace com.swecial.code {
             if (totalPages > 1) col4Lines.Add("Sida " + pageNum + " (" + totalPages + ")");
 
             var cols = new List<(string header, List<string> lines, bool highlight)> {
-                (prefix + "ADRESS", col1Lines, false),
-                (prefix + "KONTAKT", col2Lines, false),
-                (prefix + "FÖRETAGSUPPGIFTER", col3Lines, false),
-                (prefix + "BANKGIRO", col4Lines, true)
+                (copy.footAddress, col1Lines, false),
+                (copy.footContact, col2Lines, false),
+                (copy.footLegal, col3Lines, false),
+                (copy.footBg, col4Lines, true)
             }.Where(c => c.lines.Count > 0).ToList();
 
             if (cols.Count > 0) {
