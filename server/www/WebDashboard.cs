@@ -38,8 +38,13 @@ namespace com.swecial.web {
             string period = query("period");
             if (period == "allt") period = Flow.FiveYears;
             if (period != Flow.Quarter && period != Flow.Year && period != Flow.FiveYears) period = Flow.TwelveMonths;
-            var buckets = Flow.buckets(companyId, period, today, english ? "en" : "sv");
+            string lang = english ? "en" : "sv";
+            var buckets = Flow.buckets(companyId, period, today, lang);
             var (moneyIn, moneyOut) = Flow.totals(buckets, companyId, today);
+            var ebitdaBuckets = Flow.ebitdaBuckets(companyId, period, today, lang);
+            var (ebitdaIn, ebitdaOut) = Flow.ebitdaTotals(ebitdaBuckets, companyId, today);
+            long ebitdaNet = ebitdaIn - ebitdaOut;
+            string periodText = T("bar.amount.period", T("bar.period." + period));
 
             set("chipQuarter", period == Flow.Quarter ? "on" : "");
             set("chip12m", period == Flow.TwelveMonths ? "on" : "");
@@ -48,7 +53,13 @@ namespace com.swecial.web {
             set("chart", FlowChart.svg(buckets, Tr("bar.chart.label"), Tr("bar.chart.now"), Tr("bar.chart.expected"), Tr("bar.chart.in"), Tr("bar.chart.out"), Tr("bar.chart.accumulated"), Tr("common.currency")));
             set("moneyIn", Money.formatWhole(moneyIn));
             set("moneyOut", Money.formatWhole(moneyOut));
-            set("periodText", T("bar.amount.period", T("bar.period." + period)));
+            set("periodText", periodText);
+            set("ebitdaChart", FlowChart.svg(ebitdaBuckets, Tr("bar.ebitda.chart.label"), Tr("bar.chart.now"), Tr("bar.chart.expected"), Tr("bar.ebitda.chart.in"), Tr("bar.ebitda.chart.out"), Tr("bar.ebitda.chart.accumulated"), Tr("common.currency"), Tr("bar.ebitda.chart.result"), includeDefs: false));
+            set("ebitdaIn", Money.formatWhole(ebitdaIn));
+            set("ebitdaOut", Money.formatWhole(ebitdaOut));
+            set("ebitdaNet", Money.formatWhole(ebitdaNet));
+            set("ebitdaResultClass", ebitdaNet < 0 ? "loss" : "");
+            set("ebitdaMargin", ebitdaIn > 0 ? T("bar.ebitda.margin", periodText, (long)Math.Round(100.0 * ebitdaNet / ebitdaIn)) : periodText);
             setGauge(Flow.runway(companyId, today));
             setTab(today);
             setReaderProblem();

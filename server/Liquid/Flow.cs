@@ -68,15 +68,32 @@ namespace com.swecial.code {
         }
 
         /// <summary>
-        /// Buckets for a period: "kvartal" is weeks from 12 weeks back to 4 ahead, "ar" the months of
-        /// this year, "12m" (default) months from 11 back to 3 ahead, and "5ar" months up to 5 years back
-        /// (or all available months since start). Future buckets are a forecast of the unpaid invoices
-        /// by due date; overdue ones are expected in the current bucket.
+        /// Operating income (3000–3999) and operating expenses excluding depreciation and tax
+        /// (4000–7699, 7900–7999) per voucher date, without reversal pairs, for the EBITDA chart.
         /// </summary>
-        public static List<FlowBucket> buckets(string companyId, string period, DateTime today, string language = "sv") {
+        static List<(DateTime date, long income, long costs)> ebitdaMovements(string companyId) {
+            var result = new List<(DateTime, long, long)>();
+            foreach (var voucher in Ledger.vouchers(companyId)) {
+                if (Db.linkedId(voucher, "reversedBy").Length > 0 || Db.linkedId(voucher, "reverses").Length > 0) continue;
+                long income = 0, costs = 0;
+                foreach (var row in Ledger.rows(voucher)) {
+                    if (row.account.Length != 4 || !int.TryParse(row.account, out int n)) continue;
+                    if (n >= 3000 && n <= 3999) {
+                        income += row.credit - row.debit;
+                    } else if ((n >= 4000 && n <= 7699) || (n >= 7900 && n <= 7999)) {
+                        costs += row.debit - row.credit;
+                    }
+                }
+                if (income != 0 || costs != 0) {
+                    result.Add((Dates.parse(Db.str(voucher, "date")), income, costs));
+                }
+            }
+            return result;
+        }
+
+        static List<FlowBucket> createBuckets(string period, DateTime today, string language, DateTime? earliest) {
             var culture = CultureInfo.GetCultureInfo(language == "en" ? "en-GB" : "sv-SE");
             var buckets = new List<FlowBucket>();
-            var all = movements(companyId);
             if (period == Quarter) {
                 DateTime monday = today.AddDays(-(((int)today.DayOfWeek + 6) % 7));
                 for (int i = -12; i <= 4; i++) {
@@ -86,9 +103,8 @@ namespace com.swecial.code {
             } else if (period == FiveYears) {
                 DateTime fiveYearsAgo = new DateTime(today.Year - 5, today.Month, 1);
                 DateTime startMonth = fiveYearsAgo;
-                if (all.Count > 0) {
-                    DateTime earliest = all.Min(m => m.date);
-                    DateTime earliestYearStart = new DateTime(earliest.Year, 1, 1);
+                if (earliest.HasValue) {
+                    DateTime earliestYearStart = new DateTime(earliest.Value.Year, 1, 1);
                     if (earliestYearStart > fiveYearsAgo) startMonth = earliestYearStart;
                 }
                 int totalMonths = (today.Year - startMonth.Year) * 12 + (today.Month - startMonth.Month) + 4;
@@ -106,6 +122,18 @@ namespace com.swecial.code {
                 }
             }
             foreach (var b in buckets) b.forecast = b.start > today;
+            return buckets;
+        }
+
+        /// <summary>
+        /// Buckets for a period: "kvartal" is weeks from 12 weeks back to 4 ahead, "ar" the months of
+        /// this year, "12m" (default) months from 11 back to 3 ahead, and "5ar" months up to 5 years back
+        /// (or all available months since start). Future buckets are a forecast of the unpaid invoices
+        /// by due date; overdue ones are expected in the current bucket.
+        /// </summary>
+        public static List<FlowBucket> buckets(string companyId, string period, DateTime today, string language = "sv") {
+            var all = movements(companyId);
+            var buckets = createBuckets(period, today, language, all.Count > 0 ? all.Min(m => m.date) : (DateTime?)null);
 
             foreach (var (date, moneyIn, moneyOut, saving, _) in all) {
                 var b = buckets.FirstOrDefault(x => date >= x.start && date < x.end);
@@ -150,6 +178,50 @@ namespace com.swecial.code {
             return buckets;
         }
 
+        /// <summary>
+        /// EBITDA buckets for the period: operating income (moneyIn), operating expenses excluding
+        /// depreciation and tax (moneyOut), and accumulated EBITDA over the period (accumulated).
+        /// Sent invoices not yet booked (cash method) are forecast on their due date exkl. VAT.
+        /// </summary>
+        public static List<FlowBucket> ebitdaBuckets(string companyId, string period, DateTime today, string language = "sv") {
+            var all = ebitdaMovements(companyId);
+            var cashAll = movements(companyId);
+            DateTime? earliest = all.Count > 0 ? all.Min(m => m.date) : (cashAll.Count > 0 ? cashAll.Min(m => m.date) : (DateTime?)null);
+            var buckets = createBuckets(period, today, language, earliest);
+
+            foreach (var (date, income, costs) in all) {
+                if (date > today) continue;
+                var b = buckets.FirstOrDefault(x => date >= x.start && date < x.end);
+                if (b == null || b.forecast) continue;
+                b.moneyIn += income;
+                b.moneyOut += costs;
+            }
+
+            long runningAcc = 0;
+            foreach (var b in buckets.Where(x => !x.forecast)) {
+                runningAcc += b.moneyIn - b.moneyOut;
+                b.accumulated = runningAcc;
+            }
+
+            var current = buckets.FirstOrDefault(x => today >= x.start && today < x.end);
+            long currentBookedIn = current != null ? current.moneyIn : 0;
+            foreach (var invoice in Db.forCompany("invoice", companyId).Where(i => Db.str(i, "status") == Invoicing.Sent && !Invoicing.bookedAsReceivable(i))) {
+                DateTime due = Dates.parse(Db.str(invoice, "dueDate"));
+                var b = due <= today ? current : buckets.FirstOrDefault(x => due >= x.start && due < x.end);
+                if (b != null && (b.forecast || b == current)) {
+                    b.moneyIn += Invoicing.totals(Invoicing.rows(invoice)).net;
+                }
+            }
+
+            long currentPendingIn = current != null ? Math.Max(0, current.moneyIn - currentBookedIn) : 0;
+            runningAcc += currentPendingIn;
+            foreach (var b in buckets.Where(x => x.forecast)) {
+                runningAcc += b.moneyIn - b.moneyOut;
+                b.accumulated = runningAcc;
+            }
+            return buckets;
+        }
+
         /// <summary>Sums of what actually happened in a period (no forecast), excluding fund transfers.</summary>
         public static (long moneyIn, long moneyOut) totals(List<FlowBucket> buckets, string companyId, DateTime today) {
             var past = buckets.Where(b => !b.forecast).ToList();
@@ -157,6 +229,15 @@ namespace com.swecial.code {
             DateTime from = past.First().start;
             var inPeriod = movements(companyId).Where(m => m.date >= from && m.date <= today && !m.saving).ToList();
             return (inPeriod.Sum(m => m.moneyIn), inPeriod.Sum(m => m.moneyOut));
+        }
+
+        /// <summary>Sums of booked operating income and operating expenses (excl. depreciation and tax) in the period.</summary>
+        public static (long income, long costs) ebitdaTotals(List<FlowBucket> buckets, string companyId, DateTime today) {
+            var past = buckets.Where(b => !b.forecast).ToList();
+            if (past.Count == 0) return (0, 0);
+            DateTime from = past.First().start;
+            var inPeriod = ebitdaMovements(companyId).Where(m => m.date >= from && m.date <= today).ToList();
+            return (inPeriod.Sum(m => m.income), inPeriod.Sum(m => m.costs));
         }
 
         public static Runway runway(string companyId, DateTime today) {

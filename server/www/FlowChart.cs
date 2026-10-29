@@ -18,13 +18,13 @@ namespace com.swecial.web {
         static string f(double v) => v.ToString("0.#", CultureInfo.InvariantCulture);
 
         /// <summary>The chart. The texts (aria label, "now", "expected", "in", "out", "accumulated") come from the theme.</summary>
-        public static string svg(List<FlowBucket> buckets, string label, string now, string expected, string inText, string outText, string accText, string currency) {
+        public static string svg(List<FlowBucket> buckets, string label, string now, string expected, string inText, string outText, string accText, string currency, string netText = null, bool includeDefs = true) {
             int n = buckets.Count;
             if (n < 2) return "";
             long maxFlow = buckets.Max(b => Math.Max(b.moneyIn, b.moneyOut));
             long maxAcc = buckets.Max(b => b.accumulated);
             long max = Math.Max(1, Math.Max(maxFlow, maxAcc));
-            long min = Math.Min(0, buckets.Min(b => b.accumulated));
+            long min = Math.Min(0, buckets.Min(b => Math.Min(b.accumulated, Math.Min(b.moneyIn, b.moneyOut))));
             double step = (W - Left - Right) / (n - 1);
             double x(int i) => Left + i * step;
             double y(long v) => Top + (H - Top - Bottom) * (1 - (double)(v - min) / (max - min));
@@ -37,11 +37,13 @@ namespace com.swecial.web {
 
             var sb = new StringBuilder();
             sb.Append("<svg class='flow' viewBox='0 0 " + f(W) + " " + f(H) + "' role='img' aria-label='" + LiquidPage.h(label) + "'>");
-            sb.Append("<defs>");
-            sb.Append("<linearGradient id='gradIn' x1='0' y1='0' x2='0' y2='1'><stop class='s-in' offset='0' stop-opacity='0.28'/><stop class='s-in' offset='1' stop-opacity='0'/></linearGradient>");
-            sb.Append("<linearGradient id='gradOut' x1='0' y1='0' x2='0' y2='1'><stop class='s-out' offset='0' stop-opacity='0.18'/><stop class='s-out' offset='1' stop-opacity='0'/></linearGradient>");
-            sb.Append("<linearGradient id='gradAcc' x1='0' y1='0' x2='0' y2='1'><stop class='s-acc' offset='0' stop-opacity='0.14'/><stop class='s-acc' offset='1' stop-opacity='0'/></linearGradient>");
-            sb.Append("</defs>");
+            if (includeDefs) {
+                sb.Append("<defs>");
+                sb.Append("<linearGradient id='gradIn' x1='0' y1='0' x2='0' y2='1'><stop class='s-in' offset='0' stop-opacity='0.28'/><stop class='s-in' offset='1' stop-opacity='0'/></linearGradient>");
+                sb.Append("<linearGradient id='gradOut' x1='0' y1='0' x2='0' y2='1'><stop class='s-out' offset='0' stop-opacity='0.18'/><stop class='s-out' offset='1' stop-opacity='0'/></linearGradient>");
+                sb.Append("<linearGradient id='gradAcc' x1='0' y1='0' x2='0' y2='1'><stop class='s-acc' offset='0' stop-opacity='0.14'/><stop class='s-acc' offset='1' stop-opacity='0'/></linearGradient>");
+                sb.Append("</defs>");
+            }
 
             double baseY = y(0);
             sb.Append("<line class='zero' x1='" + f(Left) + "' x2='" + f(W - Right) + "' y1='" + f(baseY) + "' y2='" + f(baseY) + "'/>");
@@ -49,7 +51,7 @@ namespace com.swecial.web {
             // Today, between the last real bucket and the forecast
             if (firstForecast > 0) {
                 double nowX = (x(lastPast) + x(firstForecast)) / 2;
-                sb.Append("<line class='now' x1='" + f(nowX) + "' x2='" + f(nowX) + "' y1='" + f(Top - 8) + "' y2='" + f(baseY) + "'/>");
+                sb.Append("<line class='now' x1='" + f(nowX) + "' x2='" + f(nowX) + "' y1='" + f(Top - 8) + "' y2='" + f(Math.Max(baseY, H - Bottom)) + "'/>");
                 sb.Append("<text x='" + f(nowX + 6) + "' y='" + f(Top - 2) + "'>" + LiquidPage.h(now) + "</text>");
             }
 
@@ -99,6 +101,7 @@ namespace com.swecial.web {
                 string tip = b.label + (b.forecast ? " (" + expected + ")" : "") + ": "
                     + inText + " " + Money.format(b.moneyIn) + " " + currency
                     + (b.forecast ? "" : ", " + outText + " " + Money.format(b.moneyOut) + " " + currency)
+                    + (netText != null && !b.forecast ? ", " + netText + " " + Money.format(b.moneyIn - b.moneyOut) + " " + currency : "")
                     + ", " + accText + " " + Money.format(b.accumulated) + " " + currency;
                 sb.Append("<rect class='hit' x='" + f(hx) + "' y='0' width='" + f(Math.Min(step, W - hx)) + "' height='" + f(H - Bottom) + "'><title>" + LiquidPage.h(tip) + "</title></rect>");
             }

@@ -30,6 +30,29 @@
                 </div>
             </div>
         </section>
+        <section class="panel">
+            <div class="tap-head">
+                <div><h2><%t.bar.ebitda.title%></h2><p class="sub"><%t.bar.ebitda.subtitle%></p></div>
+                <div class="chips">
+                    <a href="/liquid/?period=kvartal" class="<%chipQuarter%>"><%t.bar.chip.kvartal%></a>
+                    <a href="/liquid/?period=12m" class="<%chip12m%>"><%t.bar.chip.12m%></a>
+                    <a href="/liquid/?period=ar" class="<%chipYear%>"><%t.bar.chip.ar%></a>
+                    <a href="/liquid/?period=5ar" class="<%chipFiveYears%>"><%t.bar.chip.5ar%></a>
+                </div>
+            </div>
+            <%ebitdaChart%>
+            <div class="legend">
+                <span><i class="li"></i><%t.bar.ebitda.legend.in%></span>
+                <span><i class="lo"></i><%t.bar.ebitda.legend.out%></span>
+                <span><i class="la"></i><%t.bar.ebitda.legend.accumulated%></span>
+                <span><i class="lf"></i><%t.bar.ebitda.legend.expected%></span>
+            </div>
+            <div class="inout three">
+                <div class="big in"><small><%t.bar.ebitda.in%></small><strong><%ebitdaIn%></strong><span><%periodText%></span></div>
+                <div class="big out"><small><%t.bar.ebitda.out%></small><strong><%ebitdaOut%></strong><span><%periodText%></span></div>
+                <div class="big result <%ebitdaResultClass%>" title="<%t.bar.ebitda.explain%>"><small><%t.bar.ebitda.result%></small><strong><%ebitdaNet%></strong><span><%ebitdaMargin%></span></div>
+            </div>
+        </section>
         <swe:condition source="todoAny">
         <section class="panel">
             <h2><%t.bar.todo.title%></h2>

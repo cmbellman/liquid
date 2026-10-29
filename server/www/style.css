@@ -302,10 +302,13 @@ ul.todo li { margin-bottom: 6px; }
 .legend .lf { background: repeating-linear-gradient(90deg, var(--cyan) 0 3px, transparent 3px 7px); }
 
 .inout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; gap: 18px; align-items: end; margin-top: 18px; }
+.inout.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .big small { display: block; color: var(--muted); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; }
 .big strong { display: block; font-size: clamp(28px, 4vw, 44px); font-weight: 800; line-height: 1.05; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
 .big.in strong { color: var(--cyan); text-shadow: 0 0 22px color-mix(in srgb, var(--cyan) 35%, transparent); }
 .big.out strong { color: var(--amber); text-shadow: 0 0 22px color-mix(in srgb, var(--amber) 30%, transparent); }
+.big.result strong { color: var(--green); text-shadow: 0 0 22px color-mix(in srgb, var(--green) 30%, transparent); }
+.big.result.loss strong { color: var(--red); text-shadow: 0 0 22px color-mix(in srgb, var(--red) 30%, transparent); }
 .big span { color: var(--muted); font-size: 13px; }
 
 .glass { display: flex; align-items: center; gap: 14px; }
@@ -527,9 +530,9 @@ main p, main dd, main li { overflow-wrap: break-word; }
     #yearStart form { flex-wrap: wrap; }
     .actions.sticky { bottom: calc(80px + env(safe-area-inset-bottom)); }
     .tiles { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
-    .inout { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+    .inout, .inout.three { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
     .big strong { font-size: 30px; }
-    .inout .glass { grid-column: 1 / -1; }
+    .inout .glass, .inout .big.result { grid-column: 1 / -1; }
     .sort { grid-template-columns: 1fr; }
     .sort .preview { position: static; }
     .sort .preview img { max-height: 280px; object-fit: contain; }
