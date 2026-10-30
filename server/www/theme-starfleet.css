@@ -1,0 +1,223 @@
+/* ============================================================
+   Theme: Starfleet. The LCARS console of a Federation starship:
+   black glass, condensed Antonio capitals, rounded elbows and
+   pill buttons in orange, lavender, periwinkle and peach.
+   ============================================================ */
+body.theme-starfleet {
+    --bg: #000000;
+    --bg-2: #07070c;
+    --panel: #05050a;
+    --panel-2: #0d0d18;
+    --line: #22223a;
+    --line-2: #3d3d66;
+    --text: #f4dfc0;
+    --muted: #a6a6dd;
+    --faint: #6f6fa8;
+    --cyan: #ff9c00;
+    --cyan-2: #ff8500;
+    --cyan-ink: #000000;
+    --amber: #cc99cc;
+    --amber-ink: #000000;
+    --red: #ff5a4f;
+    --green: #8fd18f;
+    --beer-top: #ffcc66;
+    --beer-bottom: #ff9c00;
+    --radius: 18px;
+    /* LCARS colours on the logo: lavender, periwinkle, orange and peach */
+    --logo-1: #9966cc;
+    --logo-2: #cc99cc;
+    --logo-3: #ff9c00;
+    --logo-4: #ffcc99;
+    --lcars-orange: #ff9c00;
+    --lcars-peach: #ffcc99;
+    --lcars-lavender: #cc99cc;
+    --lcars-blue: #9999ff;
+    --lcars-violet: #9966cc;
+    --lcars-red: #cc6666;
+    --glow: none;
+    background: var(--bg);
+    font-family: "Antonio", "Arial Narrow", "Roboto Condensed", sans-serif;
+    font-size: 16px;
+    letter-spacing: 0.03em;
+}
+
+.theme-starfleet h1, .theme-starfleet h2, .theme-starfleet h3,
+.theme-starfleet .sub, .theme-starfleet label, .theme-starfleet th,
+.theme-starfleet button, .theme-starfleet .button, .theme-starfleet .side nav a,
+.theme-starfleet .side .who a, .theme-starfleet .chips a, .theme-starfleet .status,
+.theme-starfleet .chip-btn, .theme-starfleet p.label, .theme-starfleet .legend,
+.theme-starfleet .big small, .theme-starfleet .glass small, .theme-starfleet .tab .who {
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+.theme-starfleet h1, .theme-starfleet h2 { font-family: "Antonio", sans-serif; font-weight: 700; }
+.theme-starfleet h1 { font-size: 34px; color: var(--lcars-orange); letter-spacing: 0.04em; }
+.theme-starfleet h2 { font-size: 19px; color: var(--lcars-peach); }
+.theme-starfleet strong, .theme-starfleet b { font-weight: 700; }
+
+/* Sidebar: the LCARS elbow. An orange bar sweeps across the top and down the right edge,
+   and the pages are stacked colour blocks with their labels on the right. */
+.theme-starfleet .side {
+    background: var(--bg);
+    border-right: none;
+    position: sticky;
+}
+.theme-starfleet .side::before {
+    content: "";
+    position: absolute;
+    top: 10px;
+    right: 0;
+    bottom: 10px;
+    width: 14px;
+    border-radius: 0 0 0 0;
+    background: linear-gradient(var(--lcars-orange) 0 36%, #000 36% calc(36% + 5px), var(--lcars-lavender) calc(36% + 5px) 70%, #000 70% calc(70% + 5px), var(--lcars-blue) calc(70% + 5px));
+}
+.theme-starfleet .brand {
+    flex-wrap: wrap;
+    color: var(--lcars-orange);
+    padding: 10px 26px 12px 14px;
+    margin-right: 0;
+    border-radius: 0 0 0 28px;
+    border-bottom: 14px solid var(--lcars-orange);
+    border-left: 14px solid var(--lcars-orange);
+    border-top-left-radius: 40px;
+}
+.theme-starfleet .brand::after {
+    flex-basis: 100%;
+    content: "LCARS 47 · STARDATE ACCOUNTS";
+    display: block;
+    margin-top: 4px;
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    color: var(--lcars-peach);
+}
+.theme-starfleet .clock {
+    display: block;
+    margin: 6px 18px 0 0;
+    padding: 2px 12px;
+    border-radius: 999px 0 0 999px;
+    background: var(--lcars-peach);
+    color: #000;
+    font-size: 30px;
+    font-weight: 700;
+    line-height: 1.2;
+    text-align: right;
+    letter-spacing: 0.08em;
+}
+.theme-starfleet .side { padding-right: 0; }
+.theme-starfleet .side nav { gap: 5px; padding-right: 18px; }
+.theme-starfleet .side nav a, .theme-starfleet .side .who a {
+    justify-content: flex-end;
+    flex-direction: row-reverse;
+    border-radius: 999px 0 0 999px;
+    padding: 7px 14px;
+    font-size: 15px;
+    font-weight: 600;
+    color: #000;
+    background: var(--lcars-blue);
+}
+.theme-starfleet .side nav a:nth-child(4n+2) { background: var(--lcars-lavender); }
+.theme-starfleet .side nav a:nth-child(4n+3) { background: var(--lcars-peach); }
+.theme-starfleet .side nav a:nth-child(4n+4) { background: var(--lcars-violet); }
+.theme-starfleet .side nav a .icon { opacity: 0.75; }
+.theme-starfleet .side nav a:hover, .theme-starfleet .side .who a:hover { color: #000; filter: brightness(1.15); background-color: inherit; }
+.theme-starfleet .side nav a.active { background: var(--lcars-orange); color: #000; }
+.theme-starfleet .side nav a.active::before { display: none; }
+.theme-starfleet .side .who { border-top: none; padding-right: 18px; }
+.theme-starfleet .side .who .company { justify-content: flex-end; color: var(--lcars-peach); }
+.theme-starfleet .side .who a { background: var(--lcars-red); }
+.theme-starfleet .badge { background: #000; color: var(--lcars-orange); border-radius: 999px; font-weight: 700; }
+
+/* Page header: a pill bar with the title, like a console's top frame */
+.theme-starfleet main > .heading {
+    position: relative;
+    padding: 6px 0 10px 22px;
+    margin-bottom: 20px;
+    border-left: 14px solid var(--lcars-lavender);
+    border-bottom: 10px solid var(--lcars-lavender);
+    border-bottom-left-radius: 26px;
+}
+.theme-starfleet main > .heading .sub { color: var(--lcars-blue); font-size: 14px; letter-spacing: 0.14em; }
+
+/* Panels: black glass framed by an LCARS bracket on the left */
+.theme-starfleet .panel {
+    background: var(--panel);
+    border: none;
+    border-left: 12px solid var(--lcars-blue);
+    border-radius: 24px 0 0 24px;
+    box-shadow: inset 0 3px 0 0 var(--lcars-blue), inset 0 -3px 0 0 var(--lcars-blue);
+    padding: 18px 22px;
+}
+.theme-starfleet .panel:nth-of-type(3n+2) { border-left-color: var(--lcars-peach); box-shadow: inset 0 3px 0 0 var(--lcars-peach), inset 0 -3px 0 0 var(--lcars-peach); }
+.theme-starfleet .panel:nth-of-type(3n+3) { border-left-color: var(--lcars-lavender); box-shadow: inset 0 3px 0 0 var(--lcars-lavender), inset 0 -3px 0 0 var(--lcars-lavender); }
+.theme-starfleet .panel .heading, .theme-starfleet .tap-head {
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--line-2);
+    margin-bottom: 14px;
+}
+.theme-starfleet .panel .heading .sub, .theme-starfleet .tap-head .sub { color: var(--muted); font-size: 14px; }
+
+/* Controls: pill buttons, flat black fields */
+.theme-starfleet input, .theme-starfleet select, .theme-starfleet textarea {
+    border-radius: 10px;
+    background: #0b0b14;
+    border-color: var(--line-2);
+    color: var(--text);
+    font-family: inherit;
+}
+.theme-starfleet input:focus, .theme-starfleet select:focus, .theme-starfleet textarea:focus {
+    border-color: var(--lcars-orange);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--lcars-orange) 35%, transparent);
+}
+.theme-starfleet button, .theme-starfleet .button {
+    border-radius: 999px;
+    background: var(--lcars-orange);
+    color: #000;
+    border: none;
+    box-shadow: none;
+    font-weight: 700;
+    padding: 9px 22px;
+}
+.theme-starfleet button:hover, .theme-starfleet .button:hover { filter: brightness(1.15); }
+.theme-starfleet button.amber, .theme-starfleet .button.amber { background: var(--lcars-lavender); color: #000; }
+.theme-starfleet button.link { background: none; color: var(--lcars-orange); padding: 0; border-radius: 0; }
+.theme-starfleet .chip-btn {
+    border-radius: 999px;
+    background: var(--lcars-peach);
+    color: #000;
+    border: none;
+    font-weight: 700;
+    padding: 4px 14px;
+}
+.theme-starfleet .chips a { border-radius: 999px; }
+.theme-starfleet .chips a.active, .theme-starfleet .chips a[aria-current] { background: var(--lcars-orange); color: #000; }
+.theme-starfleet .tile, .theme-starfleet .tab, .theme-starfleet .bag-item,
+.theme-starfleet .choice, .theme-starfleet .drop, .theme-starfleet .ai,
+.theme-starfleet .error, .theme-starfleet .message {
+    border-radius: 16px;
+}
+.theme-starfleet .choice:has(input[type=radio]:checked) { box-shadow: 0 0 0 2px var(--lcars-orange); }
+.theme-starfleet .drop { border: 2px dashed var(--lcars-blue); background: rgba(153, 153, 255, 0.05); }
+.theme-starfleet .drop:hover, .theme-starfleet .drop.over { border-color: var(--lcars-orange); background: rgba(255, 156, 0, 0.08); }
+.theme-starfleet th { color: var(--lcars-lavender); font-weight: 600; border-bottom-color: var(--line-2); }
+.theme-starfleet tbody tr:hover td { background: rgba(153, 153, 255, 0.07); }
+
+/* Readouts */
+.theme-starfleet .big strong {
+    font-family: "Antonio", sans-serif;
+    font-weight: 700;
+    font-size: clamp(34px, 4.8vw, 56px);
+    letter-spacing: 0.02em;
+}
+.theme-starfleet .big.in strong { color: var(--lcars-orange); }
+.theme-starfleet .big.out strong { color: var(--lcars-lavender); }
+.theme-starfleet .flow text { font-family: "Antonio", sans-serif; text-transform: uppercase; fill: var(--muted); }
+
+@media (max-width: 760px) {
+    .theme-starfleet .side::before, .theme-starfleet .clock, .theme-starfleet .brand::after { display: none; }
+    .theme-starfleet .brand { border: none; border-radius: 0; padding: 0; flex-wrap: nowrap; }
+    .theme-starfleet .side { border-bottom: 8px solid var(--lcars-orange); }
+    .theme-starfleet .side nav { padding-right: 0; }
+    .theme-starfleet main > .heading { border-left-width: 10px; border-bottom-width: 7px; padding-left: 14px; }
+    .theme-starfleet .panel { border-left-width: 8px; border-radius: 16px 0 0 16px; padding: 14px 14px; }
+}

@@ -28,6 +28,8 @@ namespace com.swecial.web {
                 case "reticle": return Reticle;
                 case "crosshair": return Crosshair;
                 case "shredder": return Shredder;
+                case "delta": return Delta;
+                case "transporter": return Transporter;
                 case "lock": return Lock;
                 case "menu": return Menu;
                 case "close": return Cross;
@@ -100,6 +102,10 @@ namespace com.swecial.web {
         public const string Crosshair = Open + "<circle cx='12' cy='12' r='7'/><path d='M12 2v4M12 18v4M2 12h4M18 12h4M10 12h4M12 10v4'/>" + Close;
         /// <summary>Document shredder / assimilation port.</summary>
         public const string Shredder = Open + "<path d='M7 3h7l3 3v4H7z'/><rect x='3' y='10' width='18' height='5' rx='1'/><path d='M6 15v5M9 15v6M12 15v4M15 15v6M18 15v5'/>" + Close;
+        /// <summary>The Starfleet delta: an arrowhead with a star cut into it.</summary>
+        public const string Delta = Open + "<path d='M12 2.5c-2.6 5.2-4.6 11-5.5 18.5 2-1.8 3.7-2.7 5.5-2.7s3.5.9 5.5 2.7C16.6 13.5 14.6 7.7 12 2.5z'/><path d='M12 9.5l.9 2 2.1.2-1.6 1.4.5 2.1-1.9-1.1-1.9 1.1.5-2.1-1.6-1.4 2.1-.2z'/>" + Close;
+        /// <summary>A transporter pad: a beam materialising on a platform.</summary>
+        public const string Transporter = Open + "<ellipse cx='12' cy='19' rx='8' ry='2.5'/><path d='M7 18V6M17 18V6M10 16V9M14 16V8M12 15v-3'/><ellipse cx='12' cy='5' rx='5' ry='1.5'/>" + Close;
         public const string Menu = Open + "<path d='M4 7h16M4 12h16M4 17h16'/>" + Close;
         public const string Cross = Open + "<path d='M6 6l12 12M18 6L6 18'/>" + Close;
     }

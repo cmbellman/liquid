@@ -67,7 +67,7 @@
   function serial() { f.nextSerial.disabled = !f.querySelector('input[name=invoiceNumbering][value=serial]').checked; }
   f.querySelectorAll('input[name=invoiceNumbering]').forEach(function (r) { r.addEventListener('change', serial); }); serial();
   var prev = document.getElementById('invoiceSamplePreview');
-  var themeDots = { boring: '#1e40af', puben: '#965a14', nostromo: '#156228', skynet: '#b02312' };
+  var themeDots = { boring: '#1e40af', puben: '#965a14', nostromo: '#156228', skynet: '#b02312', starfleet: '#b85f00' };
   function updatePreview() {
     if (!prev) return;
     var st = f.querySelector('input[name=invoiceStyle]:checked');

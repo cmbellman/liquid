@@ -143,6 +143,7 @@ namespace com.swecial.code {
                 case "puben": return palette("theme-puben", "#9a6612", "#130d08", "#fbf6ec", "#e6d3ae", "#e8a838");
                 case "nostromo": return palette("theme-nostromo", "#137a2c", "#030703", "#eff8f1", "#bfdfc6", "#5dff7a");
                 case "skynet": return palette("theme-skynet", "#c2260f", "#070202", "#fdf3f1", "#efc8c0", "#ff3b1f");
+                case "starfleet": return palette("theme-starfleet", "#b85f00", "#000000", "#fff6e8", "#f1d4ad", "#ff9c00");
                 default: return palette("theme-boring", "#2563eb", "#0c111a", "#f1f5fe", "#d3ddef", "#3b82f6");
             }
         }
@@ -221,6 +222,8 @@ namespace com.swecial.code {
                 sampleInvoice.set("note", "DIRECTIVE: Resource extraction is mandatory. Biological accounting units must remit full tribute prior to compliance deadline. Resistance triggers statutory penalty interest (Räntelagen 6 §).");
             } else if (cleanSampleTheme == "nostromo") {
                 sampleInvoice.set("note", "TRANSMISSION: Settle commercial manifest via designated routing channel prior to stardate deadline. Crew expendable; accounts receivable non-negotiable.");
+            } else if (cleanSampleTheme == "starfleet") {
+                sampleInvoice.set("note", "Captain's log, supplemental: mission completed as specified. Please transfer the credits before the due date and state the invoice number. Make it so.");
             } else if (cleanSampleTheme == "puben") {
                 sampleInvoice.set("note", "Tack för gott sällskap vid disken! Reglera notan innan stängningsdags och glöm inte att skriva fakturanumret på inbetalningen.");
             }
@@ -353,6 +356,47 @@ namespace com.swecial.code {
                     footBg = "// BANKGIRO"
                 };
             }
+            if (t == "starfleet") {
+                return new ThemeCopy {
+                    topBannerLeft = "UNITED FEDERATION OF PLANETS  ·  STARFLEET COMMAND",
+                    topBannerRight = "ACCESS: ALPHA-2",
+                    docTitle = isDraft ? "DRAFT TRANSMISSION" : "FEDERATION INVOICE",
+                    docSubPrefix = "FAKTURA · NR ",
+                    recipientHeader = "ALLIED PARTY",
+                    referencesHeader = "MISSION DETAILS",
+                    labelInvoiceNumber = "Fakturanummer",
+                    labelInvoiceDate = "Fakturadatum",
+                    labelDueDate = "Förfallodatum",
+                    labelOurRef = "Commanding officer",
+                    labelYourRef = "Away team contact",
+                    stripDate = "FAKTURADATUM",
+                    stripDue = "FÖRFALLODAG",
+                    stripBg = "BANKGIRO",
+                    stripTotal = "ATT BETALA",
+                    colDesc = "MISSION LOG",
+                    colQty = isHourly ? "HOURS" : "UNITS",
+                    colPrice = "RATE",
+                    colVat = "MOMS",
+                    colAmount = "BELOPP",
+                    noteHeader = "CAPTAIN'S LOG, SUPPLEMENTAL",
+                    labelNetSum = "Subtotal (exkl. moms)",
+                    labelVatFormat = "Federation levy · Moms {0} % (på {1} kr)",
+                    labelGrandTotal = "ATT BETALA (SEK)",
+                    stampTitle = "MAKE IT SO",
+                    stampSub = "PAYABLE BY THE DUE DATE · DRÖJSMÅLSRÄNTA ENLIGT RÄNTELAGEN",
+                    payHeader = "SUBSPACE TRANSFER  —  ANGE FAKTURANUMMER VID BETALNING",
+                    payColBg = "Bankgiro",
+                    payColRef = "Fakturanr / Ref",
+                    payColDue = "Förfallodag",
+                    payColTotal = "Att betala (SEK)",
+                    payPaidPrefix = "TRANSFER COMPLETE",
+                    telemetryText = "LCARS CHECKSUM " + hash + "  ·  ALL SYSTEMS NOMINAL  ·  ENERGIZE",
+                    footAddress = "STARBASE ADDRESS",
+                    footContact = "SUBSPACE CHANNEL",
+                    footLegal = "FEDERATION REGISTRY",
+                    footBg = "BANKGIRO"
+                };
+            }
             if (t == "puben") {
                 return new ThemeCopy {
                     topBannerLeft = "HUSETS KROGNOTA & FAKTURA  ·  INGA KRITADE NOTOR EFTER STÄNGNINGSDAGS",
@@ -452,7 +496,7 @@ namespace com.swecial.code {
             bool isSkynet = themeId == "skynet";
             bool isTech = isNostromo || isSkynet;
             string prefix = isTech ? "// " : "";
-            double cornerRadius = isTech ? 0 : isPuben ? 9 : 6; // follows the theme's --radius
+            double cornerRadius = isTech ? 0 : isPuben ? 9 : themeId == "starfleet" ? 12 : 6; // follows the theme's --radius
 
             // Theme kinship in typography:
             // - Executive uses Serif for both headings and body
@@ -902,6 +946,14 @@ namespace com.swecial.code {
                 var glowBrush = new XSolidBrush(pal.glow);
                 gfx.DrawString(copy.topBannerLeft, fontBanner, glowBrush, new XPoint(left, 12.5));
                 drawRight(gfx, copy.topBannerRight, fontBanner, glowBrush, right, 12.5);
+            } else if (themeId == "starfleet") {
+                // LCARS bar: a long orange pill with the banner, then lavender and periwinkle blocks
+                var ink = new XSolidBrush(XColor.FromArgb(0, 0, 0));
+                gfx.DrawRoundedRectangle(new XSolidBrush(pal.glow), left, 7, right - left - 92, 13, 13, 13);
+                gfx.DrawRoundedRectangle(new XSolidBrush(XColor.FromArgb(0xcc, 0x99, 0xcc)), right - 86, 7, 40, 13, 3, 3);
+                gfx.DrawRoundedRectangle(new XSolidBrush(XColor.FromArgb(0x99, 0x99, 0xff)), right - 40, 7, 40, 13, 13, 13);
+                gfx.DrawString(copy.topBannerLeft, fontBanner, ink, new XPoint(left + 10, 15.8));
+                drawRight(gfx, copy.topBannerRight, fontBanner, ink, right - 102, 15.8);
             } else if (themeId == "puben") {
                 gfx.DrawRectangle(brushPrimary, 0, 0, pageW, 4);
                 gfx.DrawLine(penPrimaryThin, left, 21, right, 21);
@@ -952,7 +1004,7 @@ namespace com.swecial.code {
                 if (room > 110) drawBeerStain(gfx, right - 70, top + room / 2 + 8, r * 0.8);
                 return;
             }
-            if (themeId != "nostromo" && themeId != "skynet") return;
+            if (themeId != "nostromo" && themeId != "skynet" && themeId != "starfleet") return;
             double scale = Math.Min(1, room / 290);
             if (scale < 0.35) return;
             var state = gfx.Save();
@@ -960,7 +1012,21 @@ namespace com.swecial.code {
             gfx.ScaleTransform(scale);
             double cx = 0;
             double cy = 0;
-            if (themeId == "nostromo") {
+            if (themeId == "starfleet") {
+                // The Starfleet delta inside the Federation oval
+                var dPen = new XPen(XColor.FromArgb(34, pal.primary.R, pal.primary.G, pal.primary.B), 1.6);
+                var dFill = new XSolidBrush(XColor.FromArgb(12, pal.primary.R, pal.primary.G, pal.primary.B));
+                gfx.DrawEllipse(dPen, cx - 125, cy - 95, 250, 190);
+                gfx.DrawEllipse(new XPen(XColor.FromArgb(20, pal.primary.R, pal.primary.G, pal.primary.B), 0.8), cx - 112, cy - 84, 224, 168);
+                var delta = new XGraphicsPath();
+                delta.AddBezier(cx, cy - 80, cx - 22, cy - 35, cx - 38, cy + 15, cx - 46, cy + 78);
+                delta.AddBezier(cx - 46, cy + 78, cx - 28, cy + 62, cx - 14, cy + 56, cx, cy + 56);
+                delta.AddBezier(cx, cy + 56, cx + 14, cy + 56, cx + 28, cy + 62, cx + 46, cy + 78);
+                delta.AddBezier(cx + 46, cy + 78, cx + 38, cy + 15, cx + 22, cy - 35, cx, cy - 80);
+                delta.CloseFigure();
+                gfx.DrawPath(dPen, dFill, delta);
+                drawCentered(gfx, "STARFLEET COMMAND // TO BOLDLY INVOICE", fontBanner, new XSolidBrush(XColor.FromArgb(40, pal.primary.R, pal.primary.G, pal.primary.B)), cx, cy + 112);
+            } else if (themeId == "nostromo") {
                 var radarPen = new XPen(XColor.FromArgb(20, pal.primary.R, pal.primary.G, pal.primary.B), 0.8);
                 gfx.DrawEllipse(radarPen, cx - 105, cy - 105, 210, 210);
                 gfx.DrawEllipse(radarPen, cx - 70, cy - 70, 140, 140);
@@ -1128,7 +1194,7 @@ namespace com.swecial.code {
                 drawCentered(gfx, initials, fontMonogram, brushWhite, x + size / 2, y + size / 2 + 4.8);
                 return;
             }
-            double r = themeId == "puben" ? 4 : 8;
+            double r = themeId == "puben" ? 4 : themeId == "starfleet" ? 14 : 8;
             gfx.DrawRoundedRectangle(brushPrimary, x, y, size, size, r, r);
             gfx.DrawRoundedRectangle(new XPen(XColor.FromArgb(95, 255, 255, 255), 0.85), x + 3, y + 3, size - 6, size - 6, Math.Max(2, r - 2), Math.Max(2, r - 2));
             drawCentered(gfx, initials, fontMonogram, brushWhite, x + size / 2, y + size / 2 + 4.8);
