@@ -894,6 +894,8 @@ article.invoice .inv-monogram {
     flex-shrink: 0;
 }
 article.invoice .company-logo.inv-logo { height: 48px; width: auto; max-width: 56mm; color: var(--inv-primary); --logo-knockout: #fff; --logo-outline: #000; }
+/* A logo with black outlines: the parts between them in a lighter tint of the invoice's colour */
+article.invoice .company-logo.inv-logo.outlined { color: color-mix(in srgb, var(--inv-primary) 60%, #fff); }
 article.invoice.inv-theme-puben .company-logo.inv-logo { --logo-knockout: #fdfaf2; }
 article.invoice.inv-style-studio .company-logo.inv-logo { color: var(--inv-glow); --logo-knockout: var(--inv-dark); --logo-outline: var(--inv-dark); }
 article.invoice.inv-style-executive .inv-monogram {

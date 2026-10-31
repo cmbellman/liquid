@@ -156,6 +156,10 @@ namespace com.swecial.code {
             };
         }
 
+        /// <summary>The colour mixed with white: share of the colour kept, like color-mix(in srgb, c share, #fff).</summary>
+        static XColor tint(XColor c, double share) =>
+            XColor.FromArgb((int)Math.Round(c.R * share + 255 * (1 - share)), (int)Math.Round(c.G * share + 255 * (1 - share)), (int)Math.Round(c.B * share + 255 * (1 - share)));
+
         static XColor hex(string h) {
             int v = Convert.ToInt32(h.TrimStart('#'), 16);
             return XColor.FromArgb((v >> 16) & 0xff, (v >> 8) & 0xff, v & 0xff);
@@ -1183,7 +1187,9 @@ namespace com.swecial.code {
             if (logo != null) {
                 bool onDark = style == Settings.StyleStudio;
                 var paper = themeId == "puben" ? XColor.FromArgb(0xfd, 0xfa, 0xf2) : ColorWhite;
-                return drawLogo(gfx, logo, x, y, 150, size, onDark ? pal.glow : pal.primary, onDark ? pal.dark : paper, onDark ? pal.dark : XColor.FromArgb(0, 0, 0));
+                // Parts between black outlines take a lighter tint of the colour (as in style.css)
+                var ink = onDark ? pal.glow : Logo.hasOutlines(logo) ? tint(pal.primary, 0.6) : pal.primary;
+                return drawLogo(gfx, logo, x, y, 150, size, ink, onDark ? pal.dark : paper, onDark ? pal.dark : XColor.FromArgb(0, 0, 0));
             }
             bool isTech = themeId == "nostromo" || themeId == "skynet";
             if (style == Settings.StyleExecutive) {

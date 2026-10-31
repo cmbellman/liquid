@@ -59,7 +59,7 @@ namespace com.swecial.code {
         public static string svg(Drawing d, string cssClass, string label) {
             if (d == null) return "";
             var sb = new StringBuilder();
-            sb.Append("<svg class='company-logo ").Append(cssClass).Append("' viewBox='")
+            sb.Append("<svg class='company-logo ").Append(cssClass).Append(hasOutlines(d) ? " outlined" : "").Append("' viewBox='")
               .Append(n(d.x)).Append(' ').Append(n(d.y)).Append(' ').Append(n(d.w)).Append(' ').Append(n(d.h))
               .Append("' role='img' aria-label='").Append(System.Net.WebUtility.HtmlEncode(label ?? "")).Append("'>");
             foreach (var s in d.shapes) {
@@ -78,6 +78,9 @@ namespace com.swecial.code {
             }
             return sb.Append("</svg>").ToString();
         }
+
+        /// <summary>Whether the logo has dark outlines, so its parts can take a lighter colour between them.</summary>
+        public static bool hasOutlines(Drawing d) => d != null && d.shapes.Any(s => s.outline || s.strokeOutline);
 
         /// <summary>Stored path data is ours, but check it anyway before it goes into markup.</summary>
         static readonly Regex PathData = new Regex(@"^[MLCZ0-9 .\-e]*$", RegexOptions.Compiled);
