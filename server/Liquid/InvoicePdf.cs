@@ -1183,7 +1183,7 @@ namespace com.swecial.code {
             if (logo != null) {
                 bool onDark = style == Settings.StyleStudio;
                 var paper = themeId == "puben" ? XColor.FromArgb(0xfd, 0xfa, 0xf2) : ColorWhite;
-                return drawLogo(gfx, logo, x, y, 150, size, onDark ? pal.glow : pal.primary, onDark ? pal.dark : paper);
+                return drawLogo(gfx, logo, x, y, 150, size, onDark ? pal.glow : pal.primary, onDark ? pal.dark : paper, onDark ? pal.dark : XColor.FromArgb(0, 0, 0));
             }
             bool isTech = themeId == "nostromo" || themeId == "skynet";
             if (style == Settings.StyleExecutive) {
@@ -1213,9 +1213,9 @@ namespace com.swecial.code {
 
         /// <summary>
         /// Draws a logo (Logo.Drawing: absolute M, L, C, Z paths) fitted into maxW × h at (x, y), in one colour,
-        /// with near-white parts in the background colour. Returns the width it took.
+        /// with near-white parts in the background colour and dark outlines in the outline colour. Returns the width it took.
         /// </summary>
-        static double drawLogo(XGraphics gfx, Logo.Drawing logo, double x, double y, double maxW, double h, XColor color, XColor knockout) {
+        static double drawLogo(XGraphics gfx, Logo.Drawing logo, double x, double y, double maxW, double h, XColor color, XColor knockout, XColor outline) {
             double scale = Math.Min(h / logo.h, maxW / logo.w);
             double w = logo.w * scale;
             double top = y + (h - logo.h * scale) / 2;
@@ -1225,13 +1225,14 @@ namespace com.swecial.code {
             gfx.TranslateTransform(-logo.x, -logo.y);
             var ink = new XSolidBrush(color);
             var paper = new XSolidBrush(knockout);
+            var lines = new XSolidBrush(outline);
             foreach (var shape in logo.shapes) {
                 if (!Logo.isPathData(shape.d)) continue;
                 var path = logoPath(shape.d);
                 path.FillMode = shape.evenOdd ? XFillMode.Alternate : XFillMode.Winding;
-                if (shape.fill) gfx.DrawPath(shape.knockout ? paper : ink, path);
+                if (shape.fill) gfx.DrawPath(shape.outline ? lines : shape.knockout ? paper : ink, path);
                 if (shape.stroke > 0) {
-                    var pen = new XPen(shape.strokeKnockout ? knockout : color, shape.stroke);
+                    var pen = new XPen(shape.strokeOutline ? outline : shape.strokeKnockout ? knockout : color, shape.stroke);
                     if (shape.cap == "round") pen.LineCap = XLineCap.Round;
                     else if (shape.cap == "square") pen.LineCap = XLineCap.Square;
                     if (shape.join == "round") pen.LineJoin = XLineJoin.Round;

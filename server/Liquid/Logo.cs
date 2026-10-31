@@ -14,7 +14,8 @@ namespace com.swecial.code {
     /// only shapes are read), every shape becomes an absolute path of M, L, C and Z with its transforms applied,
     /// and only those numbers are stored (`logoJson` on the company). So nothing from the file reaches a page:
     /// the SVG on pages (`svg`) and the PDF (`InvoicePdf`) are drawn from the stored paths.
-    /// Fills and strokes take the theme's colour; near-white fills are "knockouts" painted in the background.
+    /// Fills and strokes take the theme's colour; near-white fills are "knockouts" painted in the background,
+    /// and dark outlines drawn over lighter parts are "outlines" (black on the invoice, the background on pages).
     /// </summary>
     public static class Logo {
         public const int MaxBytes = 512 * 1024;
@@ -28,9 +29,12 @@ namespace com.swecial.code {
             public bool fill;
             public bool evenOdd;
             public bool knockout;
+            /// <summary>A dark outline over lighter parts, painted in the outline colour (wins over knockout).</summary>
+            public bool outline;
             /// <summary>Stroke width in the logo's units, 0 for no stroke.</summary>
             public double stroke;
             public bool strokeKnockout;
+            public bool strokeOutline;
             public string cap;
             public string join;
         }
@@ -51,7 +55,7 @@ namespace com.swecial.code {
             company.set("logoJson", drawing == null ? "" : JsonConvert.SerializeObject(drawing));
         }
 
-        /// <summary>The logo as inline SVG: fills and strokes in currentColor, knockouts in --logo-knockout (CSS in style.css).</summary>
+        /// <summary>The logo as inline SVG: fills and strokes in currentColor, knockouts in --logo-knockout, outlines in --logo-outline (CSS in style.css).</summary>
         public static string svg(Drawing d, string cssClass, string label) {
             if (d == null) return "";
             var sb = new StringBuilder();
@@ -61,12 +65,12 @@ namespace com.swecial.code {
             foreach (var s in d.shapes) {
                 if (!isPathData(s.d)) continue;
                 if (s.fill) {
-                    sb.Append("<path class='").Append(s.knockout ? "k" : "f").Append("' d='").Append(s.d).Append('\'');
+                    sb.Append("<path class='").Append(s.outline ? "o" : s.knockout ? "k" : "f").Append("' d='").Append(s.d).Append('\'');
                     if (s.evenOdd) sb.Append(" fill-rule='evenodd'");
                     sb.Append("/>");
                 }
                 if (s.stroke > 0) {
-                    sb.Append("<path class='").Append(s.strokeKnockout ? "sk" : "s").Append("' d='").Append(s.d).Append("' stroke-width='").Append(n(s.stroke)).Append('\'');
+                    sb.Append("<path class='").Append(s.strokeOutline ? "so" : s.strokeKnockout ? "sk" : "s").Append("' d='").Append(s.d).Append("' stroke-width='").Append(n(s.stroke)).Append('\'');
                     if (s.cap == "round" || s.cap == "square") sb.Append(" stroke-linecap='").Append(s.cap).Append('\'');
                     if (s.join == "round" || s.join == "bevel") sb.Append(" stroke-linejoin='").Append(s.join).Append('\'');
                     sb.Append("/>");
@@ -499,14 +503,14 @@ namespace com.swecial.code {
             bool lighterInk;
 
             /// <summary>
-            /// Near-white is a knockout. So is near-black drawn on top of lighter coloured parts: in one colour,
-            /// dark outlines between parts become gaps, so the parts stay apart. A logo all in black stays ink.
+            /// Near-white is a knockout. Near-black drawn on top of lighter coloured parts is an outline: in one colour,
+            /// dark outlines between parts become gaps or stay dark, so the parts stay apart. A logo all in black stays ink.
             /// </summary>
-            bool knockout((bool paints, bool light, double lum) p) {
-                if (p.light) return true;
-                if (p.lum < 40 && lighterInk) return true;
+            (bool knockout, bool outline) kind((bool paints, bool light, double lum) p) {
+                if (p.light) return (true, false);
+                if (p.lum < 40 && lighterInk) return (true, true);
                 if (p.lum >= 80) lighterInk = true;
-                return false;
+                return (false, false);
             }
 
             void shape(Element el, Matrix m, Style s) {
@@ -525,7 +529,7 @@ namespace com.swecial.code {
                         var cpath = geometry(cel, m.times(cm), false);
                         if (cpath == null) continue;
                         string rule = cel.attrs.TryGetValue("clip-rule", out string cr) ? cr : cel.attrs.TryGetValue("fill-rule", out string fr) ? fr : "nonzero";
-                        add(cpath, true, rule == "evenodd", knockout(fillPaint), 0, false, null, null);
+                        add(cpath, true, rule == "evenodd", kind(fillPaint), 0, (false, false), null, null);
                     }
                     return;
                 }
@@ -533,17 +537,18 @@ namespace com.swecial.code {
                 if (path == null) return;
                 double width = stroke ? s.strokeWidth * m.scale : 0;
                 if (el.name.ToLowerInvariant() == "line") fill = false;
-                add(path, fill, s.fillRule == "evenodd", fill && knockout(fillPaint), width, stroke && knockout(strokePaint),
+                add(path, fill, s.fillRule == "evenodd", fill ? kind(fillPaint) : (false, false), width, stroke ? kind(strokePaint) : (false, false),
                     s.cap == "butt" ? null : s.cap, s.join == "miter" ? null : s.join);
             }
 
-            void add(PathBuilder path, bool fill, bool evenOdd, bool knockout, double stroke, bool strokeKnockout, string cap, string join) {
+            void add(PathBuilder path, bool fill, bool evenOdd, (bool knockout, bool outline) fillKind, double stroke, (bool knockout, bool outline) strokeKind, string cap, string join) {
                 string data = path.result();
                 if (data.Length == 0) return;
                 pathChars += data.Length;
                 points.AddRange(path.points);
                 maxStroke = Math.Max(maxStroke, stroke);
-                shapes.Add(new Shape { d = data, fill = fill, evenOdd = evenOdd, knockout = knockout, stroke = stroke, strokeKnockout = strokeKnockout, cap = cap, join = join });
+                shapes.Add(new Shape { d = data, fill = fill, evenOdd = evenOdd, knockout = fillKind.knockout, outline = fillKind.outline, stroke = stroke,
+                    strokeKnockout = strokeKind.knockout, strokeOutline = strokeKind.outline, cap = cap, join = join });
             }
 
             /// <summary>An element's outline as a path, null for elements that aren't shapes.</summary>

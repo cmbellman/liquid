@@ -127,12 +127,15 @@ h2 { font-size: 15px; margin: 0 0 12px; text-transform: uppercase; letter-spacin
 .side .who span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .side .who .company { display: flex; align-items: center; gap: 12px; padding: 6px 10px; color: var(--faint); font-size: 13px; font-weight: 600; }
 
-/* The company's own logo (Logo.svg): one colour that follows the theme, near-white parts in the background colour */
-.company-logo { display: block; flex: none; overflow: visible; --logo-knockout: var(--bg); }
+/* The company's own logo (Logo.svg): one colour that follows the theme, near-white parts in the background colour,
+   dark outlines in --logo-outline (the background on pages, black on the invoice) */
+.company-logo { display: block; flex: none; overflow: visible; --logo-knockout: var(--bg); --logo-outline: var(--logo-knockout); }
 .company-logo .f { fill: currentColor; }
 .company-logo .k { fill: var(--logo-knockout); }
 .company-logo .s { fill: none; stroke: currentColor; }
 .company-logo .sk { fill: none; stroke: var(--logo-knockout); }
+.company-logo .o { fill: var(--logo-outline); }
+.company-logo .so { fill: none; stroke: var(--logo-outline); }
 .company-logo.icon { width: auto; max-width: 64px; height: 21px; color: var(--text); --logo-knockout: var(--panel); }
 .logo-field { display: grid; gap: 10px; margin-top: 16px; }
 .logo-preview { display: flex; align-items: center; padding: 16px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg-2); color: var(--cyan); width: fit-content; max-width: 100%; box-sizing: border-box; }
@@ -890,9 +893,9 @@ article.invoice .inv-monogram {
     box-shadow: inset 0 0 0 3px var(--inv-primary), inset 0 0 0 4px rgba(255, 255, 255, 0.35);
     flex-shrink: 0;
 }
-article.invoice .company-logo.inv-logo { height: 48px; width: auto; max-width: 56mm; color: var(--inv-primary); --logo-knockout: #fff; }
+article.invoice .company-logo.inv-logo { height: 48px; width: auto; max-width: 56mm; color: var(--inv-primary); --logo-knockout: #fff; --logo-outline: #000; }
 article.invoice.inv-theme-puben .company-logo.inv-logo { --logo-knockout: #fdfaf2; }
-article.invoice.inv-style-studio .company-logo.inv-logo { color: var(--inv-glow); --logo-knockout: var(--inv-dark); }
+article.invoice.inv-style-studio .company-logo.inv-logo { color: var(--inv-glow); --logo-knockout: var(--inv-dark); --logo-outline: var(--inv-dark); }
 article.invoice.inv-style-executive .inv-monogram {
     background: transparent;
     color: var(--inv-primary);
