@@ -145,13 +145,9 @@ namespace com.swecial.code {
             int pathChars;
             public bool sawText;
 
-            public void read(string text) {
-                // CSS first, since Illustrator and Figma style shapes by class
-                foreach (Match m in Regex.Matches(text, @"<style[^>]*>(.*?)</style>", RegexOptions.Singleline | RegexOptions.IgnoreCase)) {
-                    readCss(m.Groups[1].Value.Replace("<![CDATA[", "").Replace("]]>", ""));
-                }
-                var stack = new Stack<(Matrix m, Style s, string name, bool skip)>();
-                stack.Push((Matrix.Identity, new Style(), "", false));
+            /// <summary>The file's tags in order: an element, or the name of a closing tag. Comments, CDATA, &lt;?…?&gt; and DOCTYPEs are skipped.</summary>
+            static List<(Element el, string closing)> tokens(string text) {
+                var list = new List<(Element, string)>();
                 int i = 0;
                 while (i < text.Length) {
                     int lt = text.IndexOf('<', i);
@@ -162,8 +158,79 @@ namespace com.swecial.code {
                     int gt = tagEnd(text, lt);
                     string tag = text.Substring(lt + 1, gt - lt - 1);
                     i = gt + 1;
-                    if (tag.StartsWith("/")) {
-                        string closing = localName(tag.Substring(1).Trim());
+                    if (tag.StartsWith("/")) list.Add((null, localName(tag.Substring(1).Trim())));
+                    else list.Add((parseTag(tag), null));
+                }
+                return list;
+            }
+
+            /// <summary>A gradient as one paint: its average colour, and whether it is visible at all (overlays that fade to nothing aren't).</summary>
+            sealed class Gradient {
+                public List<(double r, double g, double b, double opacity)> stops = new List<(double, double, double, double)>();
+                public string href;
+            }
+
+            readonly Dictionary<string, Gradient> gradients = new Dictionary<string, Gradient>();
+            /// <summary>clipPath id → its shapes, each with its transform inside the clipPath.</summary>
+            readonly Dictionary<string, List<(Element el, Matrix m)>> clipPaths = new Dictionary<string, List<(Element, Matrix)>>();
+
+            /// <summary>Reads gradients and clip paths, which live in defs and are used by reference.</summary>
+            void collectDefinitions(List<(Element el, string closing)> list) {
+                Gradient gradient = null;
+                string clipId = null;
+                var clipStack = new Stack<(string name, Matrix m)>();
+                foreach (var (el, closing) in list) {
+                    if (closing != null) {
+                        if (closing == "linearGradient" || closing == "radialGradient") gradient = null;
+                        if (clipId != null) {
+                            if (clipStack.Count > 0 && clipStack.Peek().name == closing) clipStack.Pop();
+                            if (clipStack.Count == 0) clipId = null;
+                        }
+                        continue;
+                    }
+                    el.attrs.TryGetValue("id", out string id);
+                    if (el.name == "linearGradient" || el.name == "radialGradient") {
+                        gradient = new Gradient();
+                        el.attrs.TryGetValue("href", out gradient.href);
+                        if (!string.IsNullOrEmpty(id)) gradients[id] = gradient;
+                        if (el.selfClosing) gradient = null;
+                        continue;
+                    }
+                    if (el.name == "stop" && gradient != null) {
+                        var props = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                        foreach (var key in new[] { "stop-color", "stop-opacity" }) if (el.attrs.TryGetValue(key, out string v)) props[key] = v;
+                        if (el.attrs.TryGetValue("style", out string st)) foreach (var kv in declarations(st)) props[kv.Key] = kv.Value;
+                        var rgb = color(props.TryGetValue("stop-color", out string c) ? c : "black");
+                        if (rgb != null) gradient.stops.Add((rgb.Value.r, rgb.Value.g, rgb.Value.b, props.TryGetValue("stop-opacity", out string o) ? length(o, 1) : 1));
+                        continue;
+                    }
+                    if (el.name == "clipPath" && !string.IsNullOrEmpty(id) && clipId == null) {
+                        if (el.selfClosing) continue;
+                        clipId = id;
+                        clipPaths[id] = new List<(Element, Matrix)>();
+                        clipStack.Push((el.name, el.attrs.TryGetValue("transform", out string ct) ? transform(ct) : Matrix.Identity));
+                        continue;
+                    }
+                    if (clipId != null) {
+                        var m = clipStack.Peek().m;
+                        if (el.attrs.TryGetValue("transform", out string t)) m = m.times(transform(t));
+                        clipPaths[clipId].Add((el, m));
+                        if (!el.selfClosing) clipStack.Push((el.name, m));
+                    }
+                }
+            }
+
+            public void read(string text) {
+                // CSS first, since Illustrator and Figma style shapes by class
+                foreach (Match m in Regex.Matches(text, @"<style[^>]*>(.*?)</style>", RegexOptions.Singleline | RegexOptions.IgnoreCase)) {
+                    readCss(m.Groups[1].Value.Replace("<![CDATA[", "").Replace("]]>", ""));
+                }
+                var list = tokens(text);
+                collectDefinitions(list);
+                var stack = new Stack<(Matrix m, Style s, string name, bool skip)>();
+                stack.Push((Matrix.Identity, new Style(), "", false));
+                foreach (var (el, closing) in list) {
+                    if (closing != null) {
                         // Pop to the matching element (tolerates sloppy files)
                         while (stack.Count > 1) {
                             var top = stack.Pop();
@@ -171,7 +238,6 @@ namespace com.swecial.code {
                         }
                         continue;
                     }
-                    var el = parseTag(tag);
                     var parent = stack.Peek();
                     if (parent.skip || Skipped.Contains(el.name)) {
                         if (string.Equals(el.name, "text", StringComparison.OrdinalIgnoreCase) && !parent.skip) sawText = true;
@@ -386,44 +452,111 @@ namespace com.swecial.code {
                 return list;
             }
 
-            static bool paints(string color) {
-                string c = (color ?? "").Trim().ToLowerInvariant();
-                return c.Length > 0 && c != "none" && c != "transparent";
-            }
-
-            /// <summary>Near-white paint: a cut-out in the logo, painted in the background colour.</summary>
-            static bool light(string color) {
-                string c = (color ?? "").Trim().ToLowerInvariant();
-                if (c == "white") return true;
-                double r, g, b;
+            static (double r, double g, double b)? color(string value) {
+                string c = (value ?? "").Trim().ToLowerInvariant();
+                if (c == "white") return (255, 255, 255);
+                if (c == "black") return (0, 0, 0);
                 var hex = Regex.Match(c, @"^#([0-9a-f]{3}|[0-9a-f]{6})$");
-                var rgb = Regex.Match(c, @"^rgba?\(\s*([\d.]+%?)\s*,?\s*([\d.]+%?)\s*,?\s*([\d.]+%?)");
                 if (hex.Success) {
                     string h = hex.Groups[1].Value;
                     if (h.Length == 3) h = string.Concat(h.Select(ch => new string(ch, 2)));
-                    r = Convert.ToInt32(h.Substring(0, 2), 16); g = Convert.ToInt32(h.Substring(2, 2), 16); b = Convert.ToInt32(h.Substring(4, 2), 16);
-                } else if (rgb.Success) {
-                    double part(string s) => s.EndsWith("%") ? double.Parse(s.TrimEnd('%'), CultureInfo.InvariantCulture) * 2.55 : double.Parse(s, CultureInfo.InvariantCulture);
-                    r = part(rgb.Groups[1].Value); g = part(rgb.Groups[2].Value); b = part(rgb.Groups[3].Value);
-                } else {
-                    return false;
+                    return (Convert.ToInt32(h.Substring(0, 2), 16), Convert.ToInt32(h.Substring(2, 2), 16), Convert.ToInt32(h.Substring(4, 2), 16));
                 }
-                return 0.2126 * r + 0.7152 * g + 0.0722 * b > 235;
+                var rgb = Regex.Match(c, @"^rgba?\(\s*([\d.]+%?)\s*,?\s*([\d.]+%?)\s*,?\s*([\d.]+%?)");
+                if (rgb.Success) {
+                    double part(string s) => s.EndsWith("%") ? double.Parse(s.TrimEnd('%'), CultureInfo.InvariantCulture) * 2.55 : double.Parse(s, CultureInfo.InvariantCulture);
+                    return (part(rgb.Groups[1].Value), part(rgb.Groups[2].Value), part(rgb.Groups[3].Value));
+                }
+                return null;
+            }
+
+            /// <summary>
+            /// Whether a paint shows, and whether it is near-white (a knockout). A gradient counts as its average colour;
+            /// one that is mostly transparent (a gloss or glow overlay) doesn't show.
+            /// </summary>
+            (bool paints, bool light, double lum) paint(string value) {
+                string c = (value ?? "").Trim();
+                if (c.Length == 0 || c == "none" || c == "transparent") return (false, false, 0);
+                var url = Regex.Match(c, @"^url\(\s*['""]?#([^'"")\s]+)['""]?\s*\)");
+                if (url.Success) {
+                    var g = gradients.TryGetValue(url.Groups[1].Value, out var found) ? found : null;
+                    for (int hops = 0; g != null && g.stops.Count == 0 && !string.IsNullOrEmpty(g.href) && hops < 5; hops++) {
+                        g = gradients.TryGetValue(g.href.TrimStart('#'), out var next) ? next : null;
+                    }
+                    if (g == null || g.stops.Count == 0) return (true, false, 0);
+                    if (g.stops.Max(st => st.opacity) < 0.5) return (false, false, 0);
+                    double l = lum(g.stops.Average(st => st.r), g.stops.Average(st => st.g), g.stops.Average(st => st.b));
+                    return (true, l > 235, l);
+                }
+                var rgbValue = color(c);
+                double v = rgbValue == null ? 0 : lum(rgbValue.Value.r, rgbValue.Value.g, rgbValue.Value.b);
+                return (true, v > 235, v);
+            }
+
+            static double lum(double r, double g, double b) => 0.2126 * r + 0.7152 * g + 0.0722 * b;
+
+            /// <summary>Whether a lighter part has been drawn in ink: near-black drawn over it is an outline that separates parts.</summary>
+            bool lighterInk;
+
+            /// <summary>
+            /// Near-white is a knockout. So is near-black drawn on top of lighter coloured parts: in one colour,
+            /// dark outlines between parts become gaps, so the parts stay apart. A logo all in black stays ink.
+            /// </summary>
+            bool knockout((bool paints, bool light, double lum) p) {
+                if (p.light) return true;
+                if (p.lum < 40 && lighterInk) return true;
+                if (p.lum >= 80) lighterInk = true;
+                return false;
             }
 
             void shape(Element el, Matrix m, Style s) {
-                bool fill = paints(s.fill);
-                bool stroke = paints(s.stroke) && s.strokeWidth > 0;
+                var fillPaint = paint(s.fill);
+                var strokePaint = paint(s.stroke);
+                bool fill = fillPaint.paints;
+                bool stroke = strokePaint.paints && s.strokeWidth > 0;
                 if (!fill && !stroke) return;
+                // A shape clipped by a clip path (a common way to paint a shape with a gradient: a big rect
+                // clipped to the shape) is drawn as the clip path's shapes in its paint
+                string clip = el.attrs.TryGetValue("clip-path", out string cp) ? cp : null;
+                if (el.attrs.TryGetValue("style", out string inline) && declarations(inline).TryGetValue("clip-path", out string cps)) clip = cps;
+                var clipRef = Regex.Match(clip ?? "", @"url\(\s*['""]?#([^'"")\s]+)");
+                if (clipRef.Success && clipPaths.TryGetValue(clipRef.Groups[1].Value, out var clipShapes)) {
+                    foreach (var (cel, cm) in clipShapes) {
+                        var cpath = geometry(cel, m.times(cm), false);
+                        if (cpath == null) continue;
+                        string rule = cel.attrs.TryGetValue("clip-rule", out string cr) ? cr : cel.attrs.TryGetValue("fill-rule", out string fr) ? fr : "nonzero";
+                        add(cpath, true, rule == "evenodd", knockout(fillPaint), 0, false, null, null);
+                    }
+                    return;
+                }
+                var path = geometry(el, m, stroke);
+                if (path == null) return;
+                double width = stroke ? s.strokeWidth * m.scale : 0;
+                if (el.name.ToLowerInvariant() == "line") fill = false;
+                add(path, fill, s.fillRule == "evenodd", fill && knockout(fillPaint), width, stroke && knockout(strokePaint),
+                    s.cap == "butt" ? null : s.cap, s.join == "miter" ? null : s.join);
+            }
+
+            void add(PathBuilder path, bool fill, bool evenOdd, bool knockout, double stroke, bool strokeKnockout, string cap, string join) {
+                string data = path.result();
+                if (data.Length == 0) return;
+                pathChars += data.Length;
+                points.AddRange(path.points);
+                maxStroke = Math.Max(maxStroke, stroke);
+                shapes.Add(new Shape { d = data, fill = fill, evenOdd = evenOdd, knockout = knockout, stroke = stroke, strokeKnockout = strokeKnockout, cap = cap, join = join });
+            }
+
+            /// <summary>An element's outline as a path, null for elements that aren't shapes.</summary>
+            PathBuilder geometry(Element el, Matrix m, bool stroke) {
                 var path = new PathBuilder(m);
                 switch (el.name.ToLowerInvariant()) {
                     case "path":
-                        if (!el.attrs.TryGetValue("d", out string d)) return;
+                        if (!el.attrs.TryGetValue("d", out string d)) return null;
                         path.parse(d);
                         break;
                     case "rect": {
                         double x = num(el, "x"), y = num(el, "y"), w = num(el, "width"), h = num(el, "height");
-                        if (w <= 0 || h <= 0) return;
+                        if (w <= 0 || h <= 0) return null;
                         double rx = num(el, "rx", -1), ry = num(el, "ry", -1);
                         if (rx < 0) rx = ry; if (ry < 0) ry = rx;
                         rx = Math.Min(Math.Max(rx, 0), w / 2); ry = Math.Min(Math.Max(ry, 0), h / 2);
@@ -442,7 +575,7 @@ namespace com.swecial.code {
                     case "ellipse": {
                         double cx = num(el, "cx"), cy = num(el, "cy");
                         double rx = el.name == "circle" ? num(el, "r") : num(el, "rx"), ry = el.name == "circle" ? rx : num(el, "ry");
-                        if (rx <= 0 || ry <= 0) return;
+                        if (rx <= 0 || ry <= 0) return null;
                         path.moveTo(cx + rx, cy);
                         path.arcTo(rx, ry, 0, false, true, cx, cy + ry);
                         path.arcTo(rx, ry, 0, false, true, cx - rx, cy);
@@ -452,39 +585,23 @@ namespace com.swecial.code {
                         break;
                     }
                     case "line":
-                        fill = false;
-                        if (!stroke) return;
+                        if (!stroke) return null;
                         path.moveTo(num(el, "x1"), num(el, "y1"));
                         path.lineTo(num(el, "x2"), num(el, "y2"));
                         break;
                     case "polyline":
                     case "polygon": {
                         var p = numbers(el.attrs.TryGetValue("points", out string pts) ? pts : "");
-                        if (p.Count < 4) return;
+                        if (p.Count < 4) return null;
                         path.moveTo(p[0], p[1]);
                         for (int i = 2; i + 1 < p.Count; i += 2) path.lineTo(p[i], p[i + 1]);
                         if (el.name == "polygon") path.close();
                         break;
                     }
                     default:
-                        return;
+                        return null;
                 }
-                string data = path.result();
-                if (data.Length == 0) return;
-                pathChars += data.Length;
-                points.AddRange(path.points);
-                double width = stroke ? s.strokeWidth * m.scale : 0;
-                maxStroke = Math.Max(maxStroke, width);
-                shapes.Add(new Shape {
-                    d = data,
-                    fill = fill,
-                    evenOdd = s.fillRule == "evenodd",
-                    knockout = fill && light(s.fill),
-                    stroke = width,
-                    strokeKnockout = stroke && light(s.stroke),
-                    cap = s.cap == "butt" ? null : s.cap,
-                    join = s.join == "miter" ? null : s.join
-                });
+                return path;
             }
         }
 
