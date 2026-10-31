@@ -37,6 +37,14 @@ namespace com.swecial.code {
         public const string AccentBurgundy = "burgundy";
         public const string AccentForest = "forest";
 
+        /// <summary>
+        /// How a logo's dark outlines are drawn on the invoice: black with the parts in a lighter tint of the
+        /// invoice's colour (default), everything in the invoice's colour, or as gaps in the paper's colour.
+        /// </summary>
+        public const string OutlinesBlack = "black";
+        public const string OutlinesAccent = "accent";
+        public const string OutlinesGaps = "gaps";
+
         /// <summary>The counter behind serial invoice numbers.</summary>
         public const string SerialCounter = "invoice";
         /// <summary>Serial numbers stay below the date numbers (2000010101 and up), so the two never collide.</summary>
@@ -61,6 +69,14 @@ namespace com.swecial.code {
         public static string cleanAccent(string accent) {
             return accent == AccentTeal || accent == AccentNavy || accent == AccentSlate || accent == AccentBurgundy || accent == AccentForest
                 ? accent : AccentTheme;
+        }
+
+        public static string logoOutlines(SwecialObject company) {
+            return cleanLogoOutlines(Db.str(company, "logoOutlines"));
+        }
+
+        public static string cleanLogoOutlines(string outlines) {
+            return outlines == OutlinesAccent || outlines == OutlinesGaps ? outlines : OutlinesBlack;
         }
 
         /// <summary>

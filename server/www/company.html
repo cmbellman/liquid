@@ -22,6 +22,8 @@
         <div class="logo-field">
             <swe:condition source="hasLogo"><div class="logo-preview" title="<%t.settings.logo.current%>"><%companyLogo%></div></swe:condition>
             <label><%t.settings.logo.label%><input type="file" name="logo" accept=".svg,image/svg+xml"></label>
+            <swe:condition source="logoHasOutlines"><p class="label"><%t.settings.logo.outlines.label%></p>
+            <div class="choices three"><swe:iterator source="logoOutlines"><label class="choice"><input type="radio" name="<%current.name%>" value="<%current.value%>" <%current.checked%>><b><%current.title%></b><span><%current.text%></span></label></swe:iterator></div></swe:condition>
             <swe:condition source="hasLogo"><label class="check"><input type="checkbox" name="removeLogo" value="1"><span><%t.settings.logo.remove%></span></label></swe:condition>
             <p class="hint"><%t.settings.logo.hint%></p>
         </div>

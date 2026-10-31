@@ -50,6 +50,7 @@ namespace com.swecial.web {
             all.Add(("Betalningsvillkor", Db.num(company, "paymentTerms").ToString()));
             all.Add(("Fakturamall", Settings.invoiceStyle(company)));
             all.Add(("Färgaccent", Settings.invoiceAccent(company)));
+            all.Add(("Logotypens konturer", Settings.logoOutlines(company)));
             all.Add(("Fakturanummer", Settings.invoiceNumbering(company)));
             all.Add(("Bokföringsmetod per år", Db.str(company, "methodsJson")));
             all.Add(("Momsperiod", Settings.vatPeriod(company)));
@@ -85,6 +86,7 @@ namespace com.swecial.web {
             company.set("paymentTerms", terms);
             company.set("invoiceStyle", invStyle);
             company.set("invoiceAccent", invAccent);
+            if (form("logoOutlines").Length > 0) company.set("logoOutlines", Settings.cleanLogoOutlines(form("logoOutlines")));
             company.set("invoiceNumbering", numbering);
             // The method is chosen per fiscal year: this year's on the cards, the others in the list
             int thisYear = DateTime.Today.Year;
@@ -127,6 +129,10 @@ namespace com.swecial.web {
             var logo = Logo.of(company);
             set("hasLogo", logo != null);
             set("companyLogo", Logo.svg(logo, "preview", Db.str(company, "name")));
+            set("logoHasOutlines", Logo.hasOutlines(logo));
+            string outlines = isPost ? Settings.cleanLogoOutlines(form("logoOutlines")) : Settings.logoOutlines(company);
+            rows("logoOutlines", new[] { Settings.OutlinesBlack, Settings.OutlinesAccent, Settings.OutlinesGaps }.Select(o =>
+                choice("logoOutlines", o, outlines, T("settings.logo.outlines." + o), T("settings.logo.outlines." + o + "Text"))));
             string currentTheme = isPost ? form("theme") : theme.id;
             string invStyle = isPost ? Settings.cleanStyle(form("invoiceStyle")) : Settings.invoiceStyle(company);
             rows("invoiceStyles", new[] { Settings.StyleNordic, Settings.StyleExecutive, Settings.StyleStudio }.Select(s =>

@@ -522,6 +522,7 @@ namespace com.swecial.code {
             string orgNr = Db.str(company, "orgNumber");
             var copy = copyFor(themeId, isDraft, isHourly, numberText, orgNr);
             var logo = Logo.of(company);
+            string logoOutlines = Settings.logoOutlines(company);
 
             var fontHero = new XFont(headingFamily, copy.docTitle.Length > 14 ? 17.5 : (style == Settings.StyleExecutive || isPuben) ? 20.5 : 19.5, XFontStyle.Bold);
             var fontCompany = new XFont(headingFamily, (style == Settings.StyleExecutive || isPuben) ? 15.5 : 14.5, XFontStyle.Bold);
@@ -623,7 +624,7 @@ namespace com.swecial.code {
                 double badgeSize = 38;
                 double badgeX = left;
                 double badgeY = hasTopBanner ? 40 : 30;
-                double markW = drawMonogramBadge(gfx, style, themeId, pal, badgeX, badgeY, badgeSize, monogram(compName), fontMonogram, brushPrimary, brushWhite, penPrimary, penPrimaryThin, logo);
+                double markW = drawMonogramBadge(gfx, style, themeId, pal, badgeX, badgeY, badgeSize, monogram(compName), fontMonogram, brushPrimary, brushWhite, penPrimary, penPrimaryThin, logo, logoOutlines);
 
                 var heroFont = fitFont(gfx, copy.docTitle, headingFamily, fontHero.Size, XFontStyle.Bold, 215);
                 double heroW = gfx.MeasureString(copy.docTitle, heroFont).Width;
@@ -682,7 +683,7 @@ namespace com.swecial.code {
                 drawTopRibbon(gfx, themeId, pal, copy, pageW, left, right, fontBanner, brushPrimary, brushDark, penPrimaryThin);
                 y = copy.topBannerLeft.Length > 0 ? 48 : 44;
                 double crestSize = 38;
-                double markW = drawMonogramBadge(gfx, style, themeId, pal, left, y, crestSize, monogram(compName), fontMonogram, brushPrimary, brushWhite, penPrimary, penPrimaryThin, logo);
+                double markW = drawMonogramBadge(gfx, style, themeId, pal, left, y, crestSize, monogram(compName), fontMonogram, brushPrimary, brushWhite, penPrimary, penPrimaryThin, logo, logoOutlines);
 
                 string docTitle = themeId == "boring" ? (isDraft ? "F A K T U R A U T K A S T" : "F A K T U R A") : copy.docTitle;
                 var heroFont = fitFont(gfx, docTitle, headingFamily, fontHero.Size, XFontStyle.Bold, 215);
@@ -724,7 +725,7 @@ namespace com.swecial.code {
                 y = copy.topBannerLeft.Length > 0 ? 46 : 40;
 
                 double badgeSize = 38;
-                double markW = drawMonogramBadge(gfx, style, themeId, pal, left, y, badgeSize, monogram(compName), fontMonogram, brushPrimary, brushWhite, penPrimary, penPrimaryThin, logo);
+                double markW = drawMonogramBadge(gfx, style, themeId, pal, left, y, badgeSize, monogram(compName), fontMonogram, brushPrimary, brushWhite, penPrimary, penPrimaryThin, logo, logoOutlines);
 
                 var heroFont = fitFont(gfx, copy.docTitle, headingFamily, fontHero.Size, XFontStyle.Bold, 215);
                 double heroW = gfx.MeasureString(copy.docTitle, heroFont).Width;
@@ -1182,14 +1183,20 @@ namespace com.swecial.code {
             XGraphics gfx, string style, string themeId, Palette pal,
             double x, double y, double size, string initials,
             XFont fontMonogram, XBrush brushPrimary, XBrush brushWhite,
-            XPen penPrimary, XPen penPrimaryThin, Logo.Drawing logo = null) {
+            XPen penPrimary, XPen penPrimaryThin, Logo.Drawing logo = null, string logoOutlines = Settings.OutlinesBlack) {
 
             if (logo != null) {
                 bool onDark = style == Settings.StyleStudio;
                 var paper = themeId == "puben" ? XColor.FromArgb(0xfd, 0xfa, 0xf2) : ColorWhite;
-                // Parts between black outlines take a lighter tint of the colour (as in style.css)
-                var ink = onDark ? pal.glow : Logo.hasOutlines(logo) ? tint(pal.primary, 0.6) : pal.primary;
-                return drawLogo(gfx, logo, x, y, 150, size, ink, onDark ? pal.dark : paper, onDark ? pal.dark : XColor.FromArgb(0, 0, 0));
+                if (onDark) return drawLogo(gfx, logo, x, y, 150, size, pal.glow, pal.dark, pal.dark);
+                // Outlines as the company chose (as in style.css): black with the parts between them in a lighter tint,
+                // everything in the invoice's colour, or gaps in the paper's colour
+                switch (Settings.cleanLogoOutlines(logoOutlines)) {
+                    case Settings.OutlinesAccent: return drawLogo(gfx, logo, x, y, 150, size, pal.primary, paper, pal.primary);
+                    case Settings.OutlinesGaps: return drawLogo(gfx, logo, x, y, 150, size, pal.primary, paper, paper);
+                }
+                var ink = Logo.hasOutlines(logo) ? tint(pal.primary, 0.6) : pal.primary;
+                return drawLogo(gfx, logo, x, y, 150, size, ink, paper, XColor.FromArgb(0, 0, 0));
             }
             bool isTech = themeId == "nostromo" || themeId == "skynet";
             if (style == Settings.StyleExecutive) {
