@@ -108,7 +108,8 @@ namespace com.swecial.web {
             o.set("drop", icon("pant.drop", "upload"));
             o.set("camera", icon("pant.camera", "camera"));
             o.set("ai", icon("ai", "sparkle"));
-            o.set("company", Icons.Building);
+            var logo = Logo.of(company);
+            o.set("company", logo != null ? Logo.svg(logo, "icon", Db.str(company, "name")) : Icons.Building);
             o.set("logout", icon("nav.logout", "logout"));
             o.set("menu", Icons.Menu);
             o.set("close", Icons.Cross);

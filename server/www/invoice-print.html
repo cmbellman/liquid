@@ -22,7 +22,7 @@
             </swe:condition>
             <header class="inv-head">
                 <div class="inv-brand">
-                    <div class="inv-monogram" aria-hidden="true"><%monogram%></div>
+                    <swe:condition source="hasLogo"><%companyLogo%><else><div class="inv-monogram" aria-hidden="true"><%monogram%></div></else></swe:condition>
                     <div class="inv-company">
                         <h1><%companyName%></h1>
                         <div class="inv-company-addr"><%companyAddress%></div>

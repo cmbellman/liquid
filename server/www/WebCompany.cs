@@ -59,6 +59,10 @@ namespace com.swecial.web {
         }
 
         void save(string name) {
+            // The logo first: a file that can't be read stops the save before anything is changed
+            HttpRequest.UploadedFile upload = null;
+            req.body.files?.TryGetValue("logo", out upload);
+            var logo = upload != null && upload.data != null && upload.data.Length > 0 ? Logo.parse(upload.data) : null;
             var before = snapshot();
             long serialBefore = Settings.highestSerial(companyId) + 1;
             int terms = parseTerms(form("paymentTerms"));
@@ -91,6 +95,13 @@ namespace com.swecial.web {
             company.set("vatPeriod", vatPeriod);
             company.set("fskatt", form("fskatt") == "1" ? "1" : "0");
             company.set("receiptReaderOff", form("receiptReader") != "1");
+            if (logo != null) {
+                Logo.set(company, logo);
+                Audit.log(companyId, account.id, "settings", "Ny logotyp: " + upload.fileName);
+            } else if (form("removeLogo") == "1" && Logo.of(company) != null) {
+                Logo.set(company, null);
+                Audit.log(companyId, account.id, "settings", "Logotypen togs bort");
+            }
             Db.commit(company);
             var after = snapshot();
             string changed = Audit.changes(before.Zip(after, (b, a) => (b.Item1.StartsWith("company.field.") ? Tr(b.Item1) : b.Item1, b.Item2, a.Item2)));
@@ -113,6 +124,9 @@ namespace com.swecial.web {
             if (creating) return;
 
             set("subtitle", T("settings.subtitle", h(Db.str(company, "name"))));
+            var logo = Logo.of(company);
+            set("hasLogo", logo != null);
+            set("companyLogo", Logo.svg(logo, "preview", Db.str(company, "name")));
             string currentTheme = isPost ? form("theme") : theme.id;
             string invStyle = isPost ? Settings.cleanStyle(form("invoiceStyle")) : Settings.invoiceStyle(company);
             rows("invoiceStyles", new[] { Settings.StyleNordic, Settings.StyleExecutive, Settings.StyleStudio }.Select(s =>

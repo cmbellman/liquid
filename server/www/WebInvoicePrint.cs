@@ -82,6 +82,9 @@ namespace com.swecial.web {
             string compName = Db.str(company, "name");
             val("companyName", compName);
             val("monogram", InvoicePdf.monogram(compName));
+            var logo = Logo.of(company);
+            set("hasLogo", logo != null);
+            set("companyLogo", Logo.svg(logo, "inv-logo", compName));
             set("companyAddress", spans(company, "address", "postalAddress"));
             val("invoiceDate", Db.str(invoice, "invoiceDate"));
             val("dueDate", Db.str(invoice, "dueDate"));

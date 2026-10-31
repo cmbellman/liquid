@@ -517,6 +517,7 @@ namespace com.swecial.code {
             string bankgiro = Db.str(company, "bankgiro");
             string orgNr = Db.str(company, "orgNumber");
             var copy = copyFor(themeId, isDraft, isHourly, numberText, orgNr);
+            var logo = Logo.of(company);
 
             var fontHero = new XFont(headingFamily, copy.docTitle.Length > 14 ? 17.5 : (style == Settings.StyleExecutive || isPuben) ? 20.5 : 19.5, XFontStyle.Bold);
             var fontCompany = new XFont(headingFamily, (style == Settings.StyleExecutive || isPuben) ? 15.5 : 14.5, XFontStyle.Bold);
@@ -618,11 +619,11 @@ namespace com.swecial.code {
                 double badgeSize = 38;
                 double badgeX = left;
                 double badgeY = hasTopBanner ? 40 : 30;
-                drawMonogramBadge(gfx, style, themeId, pal, badgeX, badgeY, badgeSize, monogram(compName), fontMonogram, brushPrimary, brushWhite, penPrimary, penPrimaryThin);
+                double markW = drawMonogramBadge(gfx, style, themeId, pal, badgeX, badgeY, badgeSize, monogram(compName), fontMonogram, brushPrimary, brushWhite, penPrimary, penPrimaryThin, logo);
 
                 var heroFont = fitFont(gfx, copy.docTitle, headingFamily, fontHero.Size, XFontStyle.Bold, 215);
                 double heroW = gfx.MeasureString(copy.docTitle, heroFont).Width;
-                double compX = badgeX + badgeSize + 13;
+                double compX = badgeX + markW + 13;
                 var compFont = fitFont(gfx, compName, headingFamily, fontCompany.Size, XFontStyle.Bold, Math.Max(140, right - compX - heroW - 14));
                 gfx.DrawString(compName, compFont, brushWhite, new XPoint(compX, badgeY + 15));
                 string subLine = string.Join("  ·  ", new[] { compAddr, compPostal, orgNr.Length > 0 ? "Org.nr " + orgNr : "" }.Where(s => s.Length > 0));
@@ -677,12 +678,12 @@ namespace com.swecial.code {
                 drawTopRibbon(gfx, themeId, pal, copy, pageW, left, right, fontBanner, brushPrimary, brushDark, penPrimaryThin);
                 y = copy.topBannerLeft.Length > 0 ? 48 : 44;
                 double crestSize = 38;
-                drawMonogramBadge(gfx, style, themeId, pal, left, y, crestSize, monogram(compName), fontMonogram, brushPrimary, brushWhite, penPrimary, penPrimaryThin);
+                double markW = drawMonogramBadge(gfx, style, themeId, pal, left, y, crestSize, monogram(compName), fontMonogram, brushPrimary, brushWhite, penPrimary, penPrimaryThin, logo);
 
                 string docTitle = themeId == "boring" ? (isDraft ? "F A K T U R A U T K A S T" : "F A K T U R A") : copy.docTitle;
                 var heroFont = fitFont(gfx, docTitle, headingFamily, fontHero.Size, XFontStyle.Bold, 215);
                 double heroW = gfx.MeasureString(docTitle, heroFont).Width;
-                double compX = left + crestSize + 14;
+                double compX = left + markW + 14;
                 var compFont = fitFont(gfx, compName, headingFamily, fontCompany.Size, XFontStyle.Bold, Math.Max(140, right - compX - heroW - 14));
                 gfx.DrawString(compName, compFont, brushText, new XPoint(compX, y + 16));
                 string addrLine = string.Join("  ·  ", new[] { compAddr, compPostal }.Where(s => s.Length > 0));
@@ -719,11 +720,11 @@ namespace com.swecial.code {
                 y = copy.topBannerLeft.Length > 0 ? 46 : 40;
 
                 double badgeSize = 38;
-                drawMonogramBadge(gfx, style, themeId, pal, left, y, badgeSize, monogram(compName), fontMonogram, brushPrimary, brushWhite, penPrimary, penPrimaryThin);
+                double markW = drawMonogramBadge(gfx, style, themeId, pal, left, y, badgeSize, monogram(compName), fontMonogram, brushPrimary, brushWhite, penPrimary, penPrimaryThin, logo);
 
                 var heroFont = fitFont(gfx, copy.docTitle, headingFamily, fontHero.Size, XFontStyle.Bold, 215);
                 double heroW = gfx.MeasureString(copy.docTitle, heroFont).Width;
-                double compX = left + badgeSize + 13;
+                double compX = left + markW + 13;
                 var compFont = fitFont(gfx, compName, headingFamily, fontCompany.Size, XFontStyle.Bold, Math.Max(140, right - compX - heroW - 14));
                 gfx.DrawString(compName, compFont, brushText, new XPoint(compX, y + 16));
                 var compSub = new List<string>();
@@ -1169,35 +1170,111 @@ namespace com.swecial.code {
             return y + h + 8;
         }
 
-        static void drawMonogramBadge(
+        /// <summary>
+        /// The company's mark at the top of the invoice: its own logo when it has uploaded one, painted in
+        /// the invoice's colour, otherwise a monogram badge. Returns the width it took.
+        /// </summary>
+        static double drawMonogramBadge(
             XGraphics gfx, string style, string themeId, Palette pal,
             double x, double y, double size, string initials,
             XFont fontMonogram, XBrush brushPrimary, XBrush brushWhite,
-            XPen penPrimary, XPen penPrimaryThin) {
+            XPen penPrimary, XPen penPrimaryThin, Logo.Drawing logo = null) {
 
+            if (logo != null) {
+                bool onDark = style == Settings.StyleStudio;
+                var paper = themeId == "puben" ? XColor.FromArgb(0xfd, 0xfa, 0xf2) : ColorWhite;
+                return drawLogo(gfx, logo, x, y, 150, size, onDark ? pal.glow : pal.primary, onDark ? pal.dark : paper);
+            }
             bool isTech = themeId == "nostromo" || themeId == "skynet";
             if (style == Settings.StyleExecutive) {
                 gfx.DrawRectangle(penPrimary, x, y, size, size);
                 gfx.DrawRectangle(penPrimaryThin, x + 3, y + 3, size - 6, size - 6);
                 drawCentered(gfx, initials, fontMonogram, brushPrimary, x + size / 2, y + size / 2 + 4.8);
-                return;
+                return size;
             }
             if (themeId == "skynet") {
                 drawChamferedBar(gfx, brushPrimary, x, y, size, size, 6);
                 drawCornerTicks(gfx, new XPen(XColor.FromArgb(160, 255, 255, 255), 0.8), x + 3, y + 3, size - 6, size - 6, 4);
                 drawCentered(gfx, initials, fontMonogram, brushWhite, x + size / 2, y + size / 2 + 4.8);
-                return;
+                return size;
             }
             if (isTech) {
                 gfx.DrawRectangle(brushPrimary, x, y, size, size);
                 drawCornerTicks(gfx, new XPen(XColor.FromArgb(150, 255, 255, 255), 0.85), x + 3, y + 3, size - 6, size - 6, 4.5);
                 drawCentered(gfx, initials, fontMonogram, brushWhite, x + size / 2, y + size / 2 + 4.8);
-                return;
+                return size;
             }
             double r = themeId == "puben" ? 4 : themeId == "starfleet" ? 14 : 8;
             gfx.DrawRoundedRectangle(brushPrimary, x, y, size, size, r, r);
             gfx.DrawRoundedRectangle(new XPen(XColor.FromArgb(95, 255, 255, 255), 0.85), x + 3, y + 3, size - 6, size - 6, Math.Max(2, r - 2), Math.Max(2, r - 2));
             drawCentered(gfx, initials, fontMonogram, brushWhite, x + size / 2, y + size / 2 + 4.8);
+            return size;
+        }
+
+        /// <summary>
+        /// Draws a logo (Logo.Drawing: absolute M, L, C, Z paths) fitted into maxW × h at (x, y), in one colour,
+        /// with near-white parts in the background colour. Returns the width it took.
+        /// </summary>
+        static double drawLogo(XGraphics gfx, Logo.Drawing logo, double x, double y, double maxW, double h, XColor color, XColor knockout) {
+            double scale = Math.Min(h / logo.h, maxW / logo.w);
+            double w = logo.w * scale;
+            double top = y + (h - logo.h * scale) / 2;
+            var state = gfx.Save();
+            gfx.TranslateTransform(x, top);
+            gfx.ScaleTransform(scale);
+            gfx.TranslateTransform(-logo.x, -logo.y);
+            var ink = new XSolidBrush(color);
+            var paper = new XSolidBrush(knockout);
+            foreach (var shape in logo.shapes) {
+                if (!Logo.isPathData(shape.d)) continue;
+                var path = logoPath(shape.d);
+                path.FillMode = shape.evenOdd ? XFillMode.Alternate : XFillMode.Winding;
+                if (shape.fill) gfx.DrawPath(shape.knockout ? paper : ink, path);
+                if (shape.stroke > 0) {
+                    var pen = new XPen(shape.strokeKnockout ? knockout : color, shape.stroke);
+                    if (shape.cap == "round") pen.LineCap = XLineCap.Round;
+                    else if (shape.cap == "square") pen.LineCap = XLineCap.Square;
+                    if (shape.join == "round") pen.LineJoin = XLineJoin.Round;
+                    else if (shape.join == "bevel") pen.LineJoin = XLineJoin.Bevel;
+                    gfx.DrawPath(pen, path);
+                }
+            }
+            gfx.Restore(state);
+            return w;
+        }
+
+        static XGraphicsPath logoPath(string d) {
+            var path = new XGraphicsPath();
+            var parts = d.Replace("M", " M ").Replace("L", " L ").Replace("C", " C ").Replace("Z", " Z ")
+                .Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            double cx = 0, cy = 0;
+            bool open = false;
+            double num(int i) => double.Parse(parts[i], System.Globalization.CultureInfo.InvariantCulture);
+            for (int i = 0; i < parts.Length;) {
+                switch (parts[i]) {
+                    case "M":
+                        if (open) path.StartFigure();
+                        cx = num(i + 1); cy = num(i + 2); i += 3; open = true;
+                        break;
+                    case "L": {
+                        double x = num(i + 1), y = num(i + 2);
+                        path.AddLine(cx, cy, x, y); cx = x; cy = y; i += 3;
+                        break;
+                    }
+                    case "C": {
+                        double x = num(i + 5), y = num(i + 6);
+                        path.AddBezier(cx, cy, num(i + 1), num(i + 2), num(i + 3), num(i + 4), x, y); cx = x; cy = y; i += 7;
+                        break;
+                    }
+                    case "Z":
+                        path.CloseFigure(); open = false; i++;
+                        break;
+                    default:
+                        i++;
+                        break;
+                }
+            }
+            return path;
         }
 
         static double drawRecipientBlock(

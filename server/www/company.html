@@ -11,7 +11,7 @@
 </section>
 <else>
 <div class="heading"><div><h1><%t.settings.title%></h1><p class="sub"><%subtitle%></p></div></div>
-<form method="post" id="settings">
+<form method="post" id="settings" enctype="multipart/form-data">
     <section class="panel">
         <div class="heading"><div><h2><%t.settings.company.title%></h2><p class="sub"><%t.settings.company.subtitle%></p></div></div>
         <div class="grid">
@@ -19,6 +19,12 @@
         </div>
         <p class="hint"><%t.settings.vatHint%></p>
         <label class="check"><input type="checkbox" name="fskatt" value="1" <%fskattChecked%>><span><%t.company.fskatt%></span></label>
+        <div class="logo-field">
+            <swe:condition source="hasLogo"><div class="logo-preview" title="<%t.settings.logo.current%>"><%companyLogo%></div></swe:condition>
+            <label><%t.settings.logo.label%><input type="file" name="logo" accept=".svg,image/svg+xml"></label>
+            <swe:condition source="hasLogo"><label class="check"><input type="checkbox" name="removeLogo" value="1"><span><%t.settings.logo.remove%></span></label></swe:condition>
+            <p class="hint"><%t.settings.logo.hint%></p>
+        </div>
     </section>
     <section class="panel">
         <div class="heading">
