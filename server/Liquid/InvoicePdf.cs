@@ -463,15 +463,17 @@ namespace com.swecial.code {
 
             bool isDraft = Db.str(invoice, "status") == Invoicing.Draft || Db.num(invoice, "number") == 0;
             long number = Db.num(invoice, "number");
-            string cleanTheme = (themeId ?? "boring").ToLowerInvariant();
-            string style = styleOverride != null ? Settings.cleanStyle(styleOverride) : Settings.invoiceStyle(company);
-            var pal = paletteFor(accentOverride ?? Settings.invoiceAccent(company), cleanTheme);
+            var comp = Invoicing.effectiveCompany(invoice, company);
+            var cust = Invoicing.effectiveCustomer(invoice, customer);
+            string cleanTheme = (themeId ?? (!isDraft && Db.str(invoice, "invoiceTheme").Length > 0 ? Db.str(invoice, "invoiceTheme") : "boring")).ToLowerInvariant();
+            string style = styleOverride != null ? Settings.cleanStyle(styleOverride) : (!isDraft && Db.str(invoice, "invoiceStyle").Length > 0 ? Db.str(invoice, "invoiceStyle") : Settings.invoiceStyle(comp));
+            var pal = paletteFor(accentOverride ?? (!isDraft && Db.str(invoice, "invoiceAccent").Length > 0 ? Db.str(invoice, "invoiceAccent") : Settings.invoiceAccent(comp)), cleanTheme);
 
             var doc = new PdfDocument();
             doc.Info.Title = isDraft ? "Fakturautkast" : "Faktura " + number;
-            doc.Info.Author = Db.str(company, "name");
+            doc.Info.Author = Db.str(comp, "name");
 
-            renderDocument(doc, company, invoice, customer, lines, totals, style, pal, cleanTheme);
+            renderDocument(doc, comp, invoice, cust, lines, totals, style, pal, cleanTheme);
 
             using (var ms = new MemoryStream()) {
                 doc.Save(ms);

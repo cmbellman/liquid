@@ -243,8 +243,9 @@ namespace com.swecial.code {
         /// <summary>
         /// Gives the invoice its number. Nothing is booked yet: with the cash method the sale is booked
         /// when the money comes in (markPaid). Invoices still unpaid at year end are booked in the closing.
+        /// Preserves the visual design and sender/recipient details at sending (snapshots + generated PDF).
         /// </summary>
-        public static void send(SwecialObject invoice, string userId, long? issuedNumber = null) {
+        public static void send(SwecialObject invoice, string userId, long? issuedNumber = null, string themeId = null) {
             lock (Db.Sync) {
                 requireDraft(invoice);
                 string companyId = Db.companyId(invoice);
@@ -284,12 +285,102 @@ namespace com.swecial.code {
                         "Kundfaktura " + number + ", " + Db.str(customer, "name"), saleRows(Bas.Receivables, t, invoice), userId, "invoice", invoice.id);
                     Db.link(invoice, "voucher", voucher);
                 }
+
+                // The invoice keeps the look and the details it was sent with (see snapshot).
+                string userTheme = Db.user(userId)?.get<string>("liquidTheme");
+                invoice.set("invoiceStyle", Settings.invoiceStyle(company));
+                invoice.set("invoiceAccent", Settings.invoiceAccent(company));
+                invoice.set("invoiceTheme", (!string.IsNullOrEmpty(themeId) ? themeId : !string.IsNullOrEmpty(userTheme) ? userTheme : "boring").ToLowerInvariant());
+                invoice.set("companySnapshotJson", snapshot(company, CompanySnapshotKeys));
+                invoice.set("customerSnapshotJson", snapshot(customer, CustomerSnapshotKeys));
+
                 invoice.set("status", Sent);
                 Db.linkUser(invoice, "sentBy", userId);
                 invoice.set("customerName", Db.str(customer, "name"));
                 invoice.set("total", t.total);
                 Db.commit(invoice);
+
+                saveInvoicePdf(invoice, company, customer, rows, t);
             }
+        }
+
+        /// <summary>The company's details that are printed on an invoice.</summary>
+        static readonly string[] CompanySnapshotKeys = {
+            "name", "address", "postalAddress", "orgNumber", "vatNumber", "fskatt",
+            "bankgiro", "email", "phone", "logoJson", "logoOutlines"
+        };
+
+        /// <summary>The customer's details that are printed on an invoice.</summary>
+        static readonly string[] CustomerSnapshotKeys = {
+            "name", "address", "postalAddress", "orgNumber", "vatNumber", "reference",
+            "orderRef", "orderRefLabel"
+        };
+
+        /// <summary>
+        /// The details as they are now, as JSON, all keys even when empty, so a detail added to the
+        /// company or customer later never shows up on an invoice sent before it.
+        /// </summary>
+        static string snapshot(SwecialObject o, string[] keys) {
+            if (o == null) return "";
+            var map = new Dictionary<string, string>();
+            foreach (var k in keys) map[k] = Db.str(o, k);
+            return JsonConvert.SerializeObject(map);
+        }
+
+        static SwecialObject fromSnapshot(string json, string[] keys, SwecialObject current) {
+            if (json.Length == 0) return current;
+            Dictionary<string, string> map;
+            try { map = JsonConvert.DeserializeObject<Dictionary<string, string>>(json); } catch { return current; }
+            if (map == null) return current;
+            var obj = new SwecialObject();
+            foreach (var k in keys) obj.set(k, map.TryGetValue(k, out var v) ? v ?? "" : "");
+            return obj;
+        }
+
+        /// <summary>
+        /// The company as printed on the invoice: the details it was sent with, or the company as it
+        /// is now for drafts and invoices sent before Liquid kept them.
+        /// </summary>
+        public static SwecialObject effectiveCompany(SwecialObject invoice, SwecialObject company) {
+            var obj = fromSnapshot(Db.str(invoice, "companySnapshotJson"), CompanySnapshotKeys, company);
+            if (obj != company) {
+                obj.set("invoiceStyle", Db.str(invoice, "invoiceStyle"));
+                obj.set("invoiceAccent", Db.str(invoice, "invoiceAccent"));
+            }
+            return obj;
+        }
+
+        /// <summary>The customer as printed on the invoice (see effectiveCompany).</summary>
+        public static SwecialObject effectiveCustomer(SwecialObject invoice, SwecialObject customer) {
+            return fromSnapshot(Db.str(invoice, "customerSnapshotJson"), CustomerSnapshotKeys, customer);
+        }
+
+        /// <summary>
+        /// Saves the PDF as it was sent (pdfFile), the document the customer got. A failure only
+        /// leaves the invoice without it: the PDF is then made from the kept details when asked for.
+        /// </summary>
+        static void saveInvoicePdf(SwecialObject invoice, SwecialObject company, SwecialObject customer, List<InvoiceRow> rows, InvoiceTotals totals) {
+            try {
+                byte[] pdf = InvoicePdf.generate(company, invoice, customer, rows, totals, null, null, Db.str(invoice, "invoiceTheme"));
+                if (pdf == null || pdf.Length == 0) return;
+                var file = SwecialFile.create(Db.app);
+                file.fileType = "pdf";
+                Db.link(file, "company", company);
+                file.set("contentType", "application/pdf");
+                file.set("originalName", "faktura-" + Db.num(invoice, "number") + ".pdf");
+                file.save(pdf);
+                file.saveNow();
+                Db.link(invoice, "pdfFile", file);
+                Db.commit(invoice);
+            } catch (Exception ex) {
+                SwecialData.current?.log?.write("liquid: failed to save invoice pdf: " + ex.Message);
+            }
+        }
+
+        /// <summary>The PDF saved when the invoice was sent, or null.</summary>
+        public static SwecialFile invoicePdfFile(SwecialObject invoice) {
+            string fileId = Db.linkedId(invoice, "pdfFile");
+            return fileId.Length == 0 ? null : Expenses.receipt(fileId, Db.companyId(invoice));
         }
 
         /// <summary>

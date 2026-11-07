@@ -307,6 +307,7 @@ namespace com.swecial.code {
                     ch |= migrateObjField(inv, "paymentVoucher", "paymentVoucherId", "voucher");
                     ch |= migrateObjField(inv, "closingVoucher", "closingVoucherId", "voucher");
                     ch |= migrateObjField(inv, "documentFile", "documentFileId", "_file");
+                    ch |= migrateObjField(inv, "pdfFile", "pdfFileId", "_file");
                     if (ch) commit(inv);
                 }
                 foreach (var exp in all("expense")) {

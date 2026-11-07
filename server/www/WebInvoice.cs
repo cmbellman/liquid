@@ -53,7 +53,7 @@ namespace com.swecial.web {
                     return;
                 }
                 if (action == "send") {
-                    Invoicing.send(invoice, account.id);
+                    Invoicing.send(invoice, account.id, themeId: theme?.id);
                     redirect(here() + "&ok=sent");
                     return;
                 }

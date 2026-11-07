@@ -28,12 +28,15 @@ namespace com.swecial.web {
             var lines = Invoicing.rows(invoice);
             var totals = Invoicing.totals(lines);
 
-            string style = query("style").Length > 0 ? Settings.cleanStyle(query("style")) : Settings.invoiceStyle(company);
-            string accent = query("accent").Length > 0 ? Settings.cleanAccent(query("accent")) : Settings.invoiceAccent(company);
-            string activeTheme = query("theme").Length > 0 ? query("theme").ToLowerInvariant() : (theme?.id ?? Themes.Default);
+            var comp = Invoicing.effectiveCompany(invoice, company);
+            var cust = Invoicing.effectiveCustomer(invoice, customer);
+
+            string style = query("style").Length > 0 ? Settings.cleanStyle(query("style")) : (!isDraft && Db.str(invoice, "invoiceStyle").Length > 0 ? Db.str(invoice, "invoiceStyle") : Settings.invoiceStyle(comp));
+            string accent = query("accent").Length > 0 ? Settings.cleanAccent(query("accent")) : (!isDraft && Db.str(invoice, "invoiceAccent").Length > 0 ? Db.str(invoice, "invoiceAccent") : Settings.invoiceAccent(comp));
+            string activeTheme = query("theme").Length > 0 ? query("theme").ToLowerInvariant() : (!isDraft && Db.str(invoice, "invoiceTheme").Length > 0 ? Db.str(invoice, "invoiceTheme") : (theme?.id ?? Themes.Default));
             bool isHourly = Db.str(invoice, "isHourly") == "1";
             string numberText = isDraft ? "Utkast" : number.ToString();
-            string orgNr = Db.str(company, "orgNumber");
+            string orgNr = Db.str(comp, "orgNumber");
             var copy = InvoicePdf.copyFor(activeTheme, isDraft, isHourly, numberText, orgNr);
 
             set("found", true);
@@ -79,35 +82,35 @@ namespace com.swecial.web {
             set("hasTelemetry", copy.telemetryText.Length > 0);
             val("telemetryText", copy.telemetryText);
 
-            string compName = Db.str(company, "name");
-            val("companyName", compName);
+            string compName = Db.str(comp, "name");
+            val("invCompanyName", compName); // not companyName: the navigation sets that to the company as it is now
             val("monogram", InvoicePdf.monogram(compName));
-            var logo = Logo.of(company);
+            var logo = Logo.of(comp);
             set("hasLogo", logo != null);
-            set("companyLogo", Logo.svg(logo, "inv-logo outlines-" + Settings.logoOutlines(company), compName));
-            set("companyAddress", spans(company, "address", "postalAddress"));
+            set("companyLogo", Logo.svg(logo, "inv-logo outlines-" + Settings.logoOutlines(comp), compName));
+            set("companyAddress", spans(comp, "address", "postalAddress"));
             val("invoiceDate", Db.str(invoice, "invoiceDate"));
             val("dueDate", Db.str(invoice, "dueDate"));
             set("hasOurReference", Db.str(invoice, "ourReference").Length > 0);
             val("ourReference", Db.str(invoice, "ourReference"));
             string yourRef = Db.str(invoice, "yourReference");
-            if (yourRef.Length == 0 && customer != null) yourRef = Db.str(customer, "reference");
+            if (yourRef.Length == 0 && cust != null) yourRef = Db.str(cust, "reference");
             set("hasYourReference", yourRef.Length > 0);
             val("yourReference", yourRef);
             string poNumber = Db.str(invoice, "poNumber");
-            if (poNumber.Length == 0 && customer != null) poNumber = Db.str(customer, "orderRef");
+            if (poNumber.Length == 0 && cust != null) poNumber = Db.str(cust, "orderRef");
             set("hasPoNumber", poNumber.Length > 0);
             val("poNumber", poNumber);
             string poLabel = Db.str(invoice, "poLabel");
-            if (poLabel.Length == 0 && customer != null) poLabel = Db.str(customer, "orderRefLabel");
+            if (poLabel.Length == 0 && cust != null) poLabel = Db.str(cust, "orderRefLabel");
             if (poLabel.Length == 0) poLabel = "PO#";
             val("poLabel", poLabel);
-            string bankgiro = Db.str(company, "bankgiro");
+            string bankgiro = Db.str(comp, "bankgiro");
             set("hasBankgiro", bankgiro.Length > 0);
             val("bankgiro", bankgiro.Length > 0 ? bankgiro : "—");
             val("customerName", Db.str(invoice, "customerName"));
-            set("customerAddress", spans(customer, "address", "postalAddress"));
-            string customerOrg = customer != null ? Db.str(customer, "orgNumber") : "";
+            set("customerAddress", spans(cust, "address", "postalAddress"));
+            string customerOrg = cust != null ? Db.str(cust, "orgNumber") : "";
             set("hasCustomerOrg", customerOrg.Length > 0);
             val("customerOrg", customerOrg);
 
@@ -130,7 +133,7 @@ namespace com.swecial.web {
                 : "";
             set("hasVatNote", vatNote.Length > 0);
             val("vatNote", vatNote);
-            string customerVat = Db.str(invoice, "customerVatNumber").Length > 0 ? Db.str(invoice, "customerVatNumber") : Db.str(customer, "vatNumber");
+            string customerVat = Db.str(invoice, "customerVatNumber").Length > 0 ? Db.str(invoice, "customerVatNumber") : (cust != null ? Db.str(cust, "vatNumber") : "");
             set("hasCustomerVat", customerVat.Length > 0);
             val("customerVat", customerVat);
             set("hasNote", Db.str(invoice, "note").Length > 0);
@@ -140,17 +143,17 @@ namespace com.swecial.web {
 
             var col1 = new List<string>();
             if (compName.Length > 0) col1.Add(compName);
-            if (Db.str(company, "address").Length > 0) col1.Add(Db.str(company, "address"));
-            if (Db.str(company, "postalAddress").Length > 0) col1.Add(Db.str(company, "postalAddress"));
+            if (Db.str(comp, "address").Length > 0) col1.Add(Db.str(comp, "address"));
+            if (Db.str(comp, "postalAddress").Length > 0) col1.Add(Db.str(comp, "postalAddress"));
 
             var col2 = new List<string>();
-            if (Db.str(company, "email").Length > 0) col2.Add(Db.str(company, "email"));
-            if (Db.str(company, "phone").Length > 0) col2.Add(Db.str(company, "phone"));
+            if (Db.str(comp, "email").Length > 0) col2.Add(Db.str(comp, "email"));
+            if (Db.str(comp, "phone").Length > 0) col2.Add(Db.str(comp, "phone"));
 
             var col3 = new List<string>();
-            if (Db.str(company, "orgNumber").Length > 0) col3.Add("Org.nr: " + Db.str(company, "orgNumber"));
-            if (Db.str(company, "vatNumber").Length > 0) col3.Add("Momsreg.nr: " + Db.str(company, "vatNumber"));
-            if (Db.str(company, "fskatt") != "0") col3.Add("Godkänd för F-skatt");
+            if (Db.str(comp, "orgNumber").Length > 0) col3.Add("Org.nr: " + Db.str(comp, "orgNumber"));
+            if (Db.str(comp, "vatNumber").Length > 0) col3.Add("Momsreg.nr: " + Db.str(comp, "vatNumber"));
+            if (Db.str(comp, "fskatt") != "0") col3.Add("Godkänd för F-skatt");
 
             var col4 = new List<string>();
             if (bankgiro.Length > 0) col4.Add(bankgiro);
