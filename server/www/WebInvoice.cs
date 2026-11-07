@@ -140,6 +140,7 @@ namespace com.swecial.web {
             set("isPaid", status == Invoicing.Paid);
             val("invoiceDate", value("invoiceDate"));
             val("dueDate", value("dueDate"));
+            val("paymentTerms", Invoicing.paymentTerms(company).ToString());
 
             string customerId = isPost ? form("customerId") : Db.linkedId(invoice, "customer");
             var customerList = draft ? Db.forCompany("customer", companyId).OrderBy(c => Db.str(c, "name")).ToList() : null;
