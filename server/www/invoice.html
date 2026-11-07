@@ -75,6 +75,51 @@
     </form>
     <script>
     (function() {
+        var invDateInput = document.getElementById('invoiceDate');
+        var dueDateInput = document.getElementById('dueDate');
+        if (invDateInput && dueDateInput) {
+            // Moving the invoice date moves the due date with it, keeping the
+            // days between them as they stand in the form (the company's
+            // payment terms when that isn't a positive number of days).
+            function parseYmd(s) {
+                var p = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || '');
+                if (!p || +p[1] < 1000) return null;
+                return new Date(+p[1], +p[2] - 1, +p[3]);
+            }
+
+            function formatYmd(d) {
+                var y = d.getFullYear();
+                var m = String(d.getMonth() + 1).padStart(2, '0');
+                var day = String(d.getDate()).padStart(2, '0');
+                return y + '-' + m + '-' + day;
+            }
+
+            var lastInvDate = invDateInput.value;
+
+            function updateDueDate() {
+                var newInvStr = invDateInput.value;
+                var newInv = parseYmd(newInvStr);
+                if (!newInv) return;
+
+                var days = parseInt(invDateInput.dataset.terms || '30', 10);
+                if (isNaN(days) || days <= 0) days = 30;
+
+                var prevInv = parseYmd(lastInvDate);
+                var prevDue = parseYmd(dueDateInput.value);
+                if (prevInv && prevDue) {
+                    var kept = Math.round((prevDue - prevInv) / 86400000);
+                    if (kept > 0) days = kept;
+                }
+
+                var newDue = new Date(newInv.getFullYear(), newInv.getMonth(), newInv.getDate() + days);
+                dueDateInput.value = formatYmd(newDue);
+                lastInvDate = newInvStr;
+            }
+
+            invDateInput.addEventListener('change', updateDueDate);
+            invDateInput.addEventListener('input', updateDueDate);
+        }
+
         var chk = document.getElementById('isHourly');
         var cust = document.getElementById('customerId');
         var ourRef = document.getElementById('ourReference');
@@ -126,49 +171,6 @@
         var pnInput = document.getElementById('poNumber');
         if (pnInput) pnInput.addEventListener('input', function() { delete pnInput.dataset.fromCust; });
 
-        var invDateInput = document.getElementById('invoiceDate');
-        var dueDateInput = document.getElementById('dueDate');
-        if (invDateInput && dueDateInput) {
-            // Moving the invoice date moves the due date with it, keeping the
-            // days between them as they stand in the form (the company's
-            // payment terms when that isn't a positive number of days).
-            function parseYmd(s) {
-                var p = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || '');
-                if (!p || +p[1] < 1000) return null;
-                return new Date(+p[1], +p[2] - 1, +p[3]);
-            }
-
-            function formatYmd(d) {
-                var y = d.getFullYear();
-                var m = String(d.getMonth() + 1).padStart(2, '0');
-                var day = String(d.getDate()).padStart(2, '0');
-                return y + '-' + m + '-' + day;
-            }
-
-            var lastInvDate = invDateInput.value;
-
-            function updateDueDate() {
-                var newInvStr = invDateInput.value;
-                var newInv = parseYmd(newInvStr);
-                if (!newInv) return;
-
-                var days = parseInt(invDateInput.dataset.terms || '30', 10);
-                if (isNaN(days) || days <= 0) days = 30;
-
-                var prevInv = parseYmd(lastInvDate);
-                var prevDue = parseYmd(dueDateInput.value);
-                if (prevInv && prevDue) {
-                    var kept = Math.round((prevDue - prevInv) / 86400000);
-                    if (kept > 0) days = kept;
-                }
-
-                var newDue = new Date(newInv.getFullYear(), newInv.getMonth(), newInv.getDate() + days);
-                dueDateInput.value = formatYmd(newDue);
-                lastInvDate = newInvStr;
-            }
-
-            invDateInput.addEventListener('change', updateDueDate);
-        }
 
         chk.addEventListener('change', function() {
             if (qh) qh.textContent = chk.checked ? chk.dataset.hours : chk.dataset.qty;

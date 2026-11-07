@@ -32,6 +32,9 @@ namespace com.swecial.web {
         bool redirected;
 
         public override void process() {
+            resp.header.add("Cache-Control: no-cache, no-store, must-revalidate, max-age=0");
+            resp.header.add("Pragma: no-cache");
+            resp.header.add("Expires: 0");
             account = getSessionUser();
             company = account != null ? Companies.forUser(account.id) : null;
             theme = Themes.get(Themes.of(account));
