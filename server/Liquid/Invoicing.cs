@@ -177,7 +177,12 @@ namespace com.swecial.code {
                     }
                     Db.link(invoice, "customer", customer);
                 }
-                if (text("invoiceDate").Length > 0) invoice.set("invoiceDate", text("invoiceDate"));
+                if (text("invoiceDate").Length > 0) {
+                    invoice.set("invoiceDate", text("invoiceDate"));
+                    if (text("dueDate").Length == 0 && DateTime.TryParse(text("invoiceDate"), out var invDateVal)) {
+                        invoice.set("dueDate", Dates.format(invDateVal.AddDays(paymentTerms(company))));
+                    }
+                }
                 if (text("dueDate").Length > 0) invoice.set("dueDate", text("dueDate"));
                 invoice.set("ourReference", text("ourReference"));
                 invoice.set("note", text("note"));

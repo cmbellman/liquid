@@ -85,8 +85,24 @@ namespace com.swecial.web {
             } else {
                 Db.unlink(invoice, "customer");
             }
-            invoice.set("invoiceDate", Dates.clean(form("invoiceDate")));
-            invoice.set("dueDate", Dates.clean(form("dueDate")));
+            string oldInvDate = Db.str(invoice, "invoiceDate");
+            string oldDueDate = Db.str(invoice, "dueDate");
+            string newInvDate = Dates.clean(form("invoiceDate"));
+            string newDueDate = Dates.clean(form("dueDate"));
+
+            if (newInvDate.Length > 0 && newInvDate != oldInvDate && newDueDate == oldDueDate) {
+                int days = Invoicing.paymentTerms(company);
+                if (DateTime.TryParse(oldInvDate, out var od) && DateTime.TryParse(oldDueDate, out var odd)) {
+                    int kept = (int)System.Math.Round((odd - od).TotalDays);
+                    if (kept > 0) days = kept;
+                }
+                if (DateTime.TryParse(newInvDate, out var nd)) {
+                    newDueDate = Dates.format(nd.AddDays(days));
+                }
+            }
+
+            invoice.set("invoiceDate", newInvDate);
+            invoice.set("dueDate", newDueDate);
             invoice.set("ourReference", form("ourReference").Trim());
             invoice.set("yourReference", form("yourReference").Trim());
             invoice.set("poLabel", form("poLabel").Trim());

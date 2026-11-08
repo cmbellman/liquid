@@ -98,6 +98,7 @@
 
             function updateDueDate() {
                 var newInvStr = invDateInput.value;
+                if (!newInvStr || newInvStr === lastInvDate) return;
                 var newInv = parseYmd(newInvStr);
                 if (!newInv) return;
 
@@ -116,8 +117,22 @@
                 lastInvDate = newInvStr;
             }
 
-            invDateInput.addEventListener('change', updateDueDate);
-            invDateInput.addEventListener('input', updateDueDate);
+            ['input', 'change', 'blur', 'keyup'].forEach(function(ev) {
+                invDateInput.addEventListener(ev, updateDueDate);
+            });
+
+            var checkTimer = null;
+            invDateInput.addEventListener('focus', function() {
+                if (!checkTimer) checkTimer = setInterval(updateDueDate, 150);
+            });
+            invDateInput.addEventListener('blur', function() {
+                if (checkTimer) { clearInterval(checkTimer); checkTimer = null; }
+                updateDueDate();
+            });
+
+            if (invDateInput.form) {
+                invDateInput.form.addEventListener('submit', updateDueDate);
+            }
         }
 
         var chk = document.getElementById('isHourly');
