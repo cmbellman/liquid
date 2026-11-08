@@ -89,15 +89,12 @@ namespace com.swecial.web {
             string oldDueDate = Db.str(invoice, "dueDate");
             string newInvDate = Dates.clean(form("invoiceDate"));
             string newDueDate = Dates.clean(form("dueDate"));
+            int terms = Invoicing.paymentTerms(company);
 
-            if (newInvDate.Length > 0 && newInvDate != oldInvDate && newDueDate == oldDueDate) {
-                int days = Invoicing.paymentTerms(company);
-                if (DateTime.TryParse(oldInvDate, out var od) && DateTime.TryParse(oldDueDate, out var odd)) {
-                    int kept = (int)System.Math.Round((odd - od).TotalDays);
-                    if (kept > 0) days = kept;
-                }
-                if (DateTime.TryParse(newInvDate, out var nd)) {
-                    newDueDate = Dates.format(nd.AddDays(days));
+            if (newInvDate.Length > 0 && DateTime.TryParse(newInvDate, out var nd)) {
+                string expectedDue = Dates.format(nd.AddDays(terms));
+                if (newDueDate.Length == 0 || (newDueDate == oldDueDate && (newInvDate != oldInvDate || newDueDate != expectedDue))) {
+                    newDueDate = expectedDue;
                 }
             }
 
@@ -155,8 +152,18 @@ namespace com.swecial.web {
             set("paid", Db.str(invoice, "paidDate").Length > 0);
             set("isPaid", status == Invoicing.Paid);
             val("invoiceDate", value("invoiceDate"));
-            val("dueDate", value("dueDate"));
-            val("paymentTerms", Invoicing.paymentTerms(company).ToString());
+            string dueDateVal = value("dueDate");
+            int terms = Invoicing.paymentTerms(company);
+            if (draft && !isPost && DateTime.TryParse(value("invoiceDate"), out var idv)) {
+                string expectedDue = Dates.format(idv.AddDays(terms));
+                if (dueDateVal.Length == 0 || dueDateVal != expectedDue) {
+                    dueDateVal = expectedDue;
+                    invoice.set("dueDate", expectedDue);
+                    Db.commit(invoice);
+                }
+            }
+            val("dueDate", dueDateVal);
+            val("paymentTerms", terms.ToString());
 
             string customerId = isPost ? form("customerId") : Db.linkedId(invoice, "customer");
             var customerList = draft ? Db.forCompany("customer", companyId).OrderBy(c => Db.str(c, "name")).ToList() : null;
