@@ -1,9 +1,11 @@
 using com.swecial.code;
 using com.swecial.server;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace com.swecial.web {
@@ -20,8 +22,12 @@ namespace com.swecial.web {
     public abstract class LiquidPage : WebPage {
         public const string BasePath = "/liquid";
         const string SessionCookie = "liquid_session";
-        const string SessionField = "liquidWebToken";
-        const int SessionDays = 30;
+        const string SessionsField = "liquidWebSessions";
+        const string LegacySessionField = "liquidWebToken";
+        const int RememberDays = 365;
+        const int SessionHours = 12;
+        const int MaxSessions = 10;
+        static readonly object SessionLock = new object();
 
         protected SwecialUser account;
         protected bool isAdmin => account != null && account.isAdmin;
@@ -156,6 +162,35 @@ namespace com.swecial.web {
 
         // --- Session ---
 
+        /// <summary>A signed-in browser: the hash of its token, when it expires and whether it stays signed in.</summary>
+        class Session {
+            public string hash;
+            public DateTime expires;
+            public bool remember;
+        }
+
+        static TimeSpan lifetime(bool remember) => remember ? TimeSpan.FromDays(RememberDays) : TimeSpan.FromHours(SessionHours);
+
+        static string tokenHash(string token) {
+            return Convert.ToBase64String(SHA256.Create().ComputeHash(Encoding.UTF8.GetBytes(token)));
+        }
+
+        static List<Session> sessions(SwecialUser user) {
+            string json = user.get<string>(SessionsField);
+            var list = string.IsNullOrEmpty(json) ? null : JsonConvert.DeserializeObject<List<Session>>(json);
+            return (list ?? new List<Session>()).Where(x => x.expires > DateTime.UtcNow).ToList();
+        }
+
+        static void saveSessions(SwecialUser user, List<Session> list) {
+            user.set(SessionsField, JsonConvert.SerializeObject(list.OrderByDescending(x => x.expires).Take(MaxSessions).ToList()));
+            user.save();
+        }
+
+        /// <summary>
+        /// The user of the session cookie. Each browser has its own session, so signing in on the phone
+        /// keeps the computer signed in. A session that stays signed in is renewed as it is used, so it
+        /// only ends after a year without a visit (or when signing out).
+        /// </summary>
         SwecialUser getSessionUser() {
             string cookie = req.header.getCookie(SessionCookie);
             if (string.IsNullOrEmpty(cookie)) return null;
@@ -166,30 +201,59 @@ namespace com.swecial.web {
             var users = SwecialData.current?.users;
             if (users == null || token.Length == 0) return null;
             var user = users.getObject("_user", userId) as SwecialUser;
-            if (user == null || user.get<string>(SessionField) != token || isAutoUser(user)) return null;
+            if (user == null || isAutoUser(user)) return null;
+            string hash = tokenHash(token);
+            lock (SessionLock) {
+                var list = sessions(user);
+                var session = list.FirstOrDefault(x => x.hash == hash);
+                if (session == null && user.get<string>(LegacySessionField) == token) {
+                    // Signed in before sessions per browser: keep it as one that stays signed in.
+                    session = new Session { hash = hash, remember = true, expires = DateTime.MinValue };
+                    list.Add(session);
+                    user.remove(LegacySessionField);
+                }
+                if (session == null) return null;
+                var time = lifetime(session.remember);
+                if (session.expires - DateTime.UtcNow < time - TimeSpan.FromTicks(time.Ticks / 30)) {
+                    session.expires = DateTime.UtcNow + time;
+                    saveSessions(user, list);
+                    if (session.remember) setSessionCookie(cookie, session.expires);
+                }
+            }
             return user;
         }
 
-        protected void signIn(SwecialUser user) {
+        /// <summary>Signs in this browser. With remember it stays signed in, otherwise until the browser closes.</summary>
+        protected void signIn(SwecialUser user, bool remember) {
             string token = Guid.NewGuid().ToString("N") + Guid.NewGuid().ToString("N");
-            user.set(SessionField, token);
-            user.save();
-            setSessionCookie(user.id + "." + token, DateTimeOffset.UtcNow.AddDays(SessionDays));
+            var session = new Session { hash = tokenHash(token), remember = remember, expires = DateTime.UtcNow + lifetime(remember) };
+            lock (SessionLock) {
+                var list = sessions(user);
+                list.Add(session);
+                saveSessions(user, list);
+            }
+            setSessionCookie(user.id + "." + token, remember ? session.expires : (DateTime?)null);
             account = user;
         }
 
+        /// <summary>Signs out this browser; the user's other browsers stay signed in.</summary>
         protected void signOut() {
-            if (account != null) {
-                account.remove(SessionField);
-                account.save();
+            string cookie = req.header.getCookie(SessionCookie) ?? "";
+            int dot = cookie.IndexOf('.');
+            if (account != null && dot > 0) {
+                string hash = tokenHash(cookie.Substring(dot + 1));
+                lock (SessionLock) {
+                    saveSessions(account, sessions(account).Where(x => x.hash != hash).ToList());
+                }
             }
-            setSessionCookie("", DateTimeOffset.UtcNow.AddDays(-1));
+            setSessionCookie("", DateTime.UtcNow.AddDays(-1));
             account = null;
         }
 
-        void setSessionCookie(string value, DateTimeOffset expires) {
+        /// <summary>Sets the cookie; without expires it is a session cookie that ends when the browser closes.</summary>
+        void setSessionCookie(string value, DateTime? expires) {
             string cookie = "Set-Cookie: " + SessionCookie + "=" + value + "; Path=" + BasePath
-                + "; Expires=" + expires.ToUniversalTime().ToString("R") + "; HttpOnly; SameSite=Lax";
+                + (expires.HasValue ? "; Expires=" + expires.Value.ToString("R") : "") + "; HttpOnly; SameSite=Lax";
             if (req.isHttps) cookie += "; Secure";
             resp.header.add(cookie);
         }

@@ -85,6 +85,7 @@
     "invoices.subtitle": "Claims transmitted to allies",
     "invoices.title": "Invoices",
     "login.lead": "State your Swecial credentials.",
+    "login.remember": "Keep me logged in",
     "login.locked": "SECURITY LOCKOUT. TOO MANY ATTEMPTS. TRY AGAIN IN 15 MINUTES.",
     "login.title": "Authorisation",
     "login.wrong": "ACCESS DENIED. AUTHORISATION CODE INCORRECT.",

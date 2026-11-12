@@ -47,7 +47,7 @@ namespace com.swecial.web {
                     user.set("liquidTermsAt", System.DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
                     user.save();
                 }
-                signIn(user);
+                signIn(user, true);
                 redirect(BasePath + "/company.html");
                 return;
             }

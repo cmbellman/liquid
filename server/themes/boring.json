@@ -333,6 +333,7 @@
     "login.lead": "Använd e-post och lösenord för ditt Swecial-konto.",
     "login.locked": "För många misslyckade försök. Försök igen om 15 minuter.",
     "login.password": "Lösenord",
+    "login.remember": "Håll mig inloggad",
     "login.title": "Logga in",
     "login.wrong": "Fel e-post eller lösenord.",
     "message.bagged": "Kvittot sparades. Bokför det när det passar.",

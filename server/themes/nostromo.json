@@ -320,6 +320,7 @@
     "login.lead": "Authenticate with your Swecial credentials.",
     "login.locked": "TOO MANY FAILED ATTEMPTS. ACCESS LOCKED FOR 15 MINUTES.",
     "login.password": "Password",
+    "login.remember": "Keep me logged in",
     "login.title": "Log in",
     "login.wrong": "ACCESS DENIED. INVALID CREDENTIALS.",
     "message.bagged": "DOCUMENTS RECEIVED IN INTAKE HOPPER. AWAITING PROCESSING.",

@@ -6,7 +6,7 @@ namespace com.swecial.web {
     /// <summary>
     /// /liquid/login.html : sign in with a Swecial account (email + password). Same lockout as Big
     /// Ring and the server admin: 5 failures per IP or per email lock it for 15 minutes.
-    /// ?logout=true signs out. ?redirect= returns to a Liquid page.
+    /// "Håll mig inloggad" keeps this browser signed in (LiquidPage). ?logout=true signs out. ?redirect= returns to a Liquid page.
     /// </summary>
     public class WebLogin : LiquidPage {
         const int MaxAttempts = 5;
@@ -15,6 +15,7 @@ namespace com.swecial.web {
             new ConcurrentDictionary<string, (int attempts, DateTime lockUntil)>();
 
         string email = "";
+        bool remember = true;
 
         public override void processPage() {
             title(Tr("login.title"));
@@ -36,6 +37,7 @@ namespace com.swecial.web {
 
             email = normalizeEmail(form("email"));
             string password = form("password").Trim();
+            remember = form("remember") == "1";
             renderForm();
 
             string ipKey = "ip:" + (req.ip ?? "unknown");
@@ -55,12 +57,13 @@ namespace com.swecial.web {
 
             attempts.TryRemove(ipKey, out _);
             attempts.TryRemove(emailKey, out _);
-            signIn(user);
+            signIn(user, remember);
             redirect(target);
         }
 
         void renderForm() {
             val("email", email);
+            set("rememberChecked", isChecked(remember));
         }
 
         static bool isLocked(string key) {

@@ -256,6 +256,7 @@
     "login.lead": "Present cryptographic credentials to access Command Core.",
     "login.locked": "INTRUSION DETECTED. ACCESS TERMINATED FOR 15 MINUTES.",
     "login.password": "Access key",
+    "login.remember": "Maintain persistent neural link",
     "login.title": "Establish neural link",
     "login.wrong": "AUTHENTICATION FAILURE. UNAUTHORIZED BIOLOGICAL ENTITY.",
     "message.bagged": "ARTIFACTS INGESTED INTO ASSIMILATION PORT. QUEUED FOR PROCESSING.",

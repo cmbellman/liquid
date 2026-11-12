@@ -6,6 +6,7 @@
     <form method="post">
         <label><%t.field.email%><input type="email" name="email" value="<%email%>" autocomplete="username" required autofocus></label>
         <label><%t.login.password%><input type="password" name="password" autocomplete="current-password" required></label>
+        <label class="check"><input type="checkbox" name="remember" value="1" <%rememberChecked%>><span><%t.login.remember%></span></label>
         <button type="submit"><%t.login.title%></button>
     </form>
     <p class="links"><a href="/liquid/signup.html"><%t.signup.title%></a></p>
